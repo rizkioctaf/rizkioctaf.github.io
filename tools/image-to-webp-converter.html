@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image to WebP Converter</title>
+    <link rel="icon" href="data:,">
+    <style>
+        :root {
+            --primary: #0070f3;
+            --primary-hover: #005bb5;
+            --bg-body: #f4f6f8;
+            --bg-card: #ffffff;
+            --border: #e2e8f0;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --radius: 12px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* Container Dinamis */
+        .workspace {
+            background: var(--bg-card);
+            padding: 30px;
+            border-radius: var(--radius);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+            width: 100%;
+            max-width: 500px;
+            transition: max-width 0.4s ease;
+        }
+
+        /* Saat gambar diload, layout berubah menjadi 2 kolom di desktop */
+        .workspace.active {
+            max-width: 900px;
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 30px;
+            align-items: flex-start;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 25px;
+            grid-column: 1 / -1;
+        }
+
+        .header h2 {
+            margin: 0 0 8px;
+            color: var(--text-main);
+        }
+
+        .header p {
+            margin: 0;
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        /* Area Drag & Drop */
+        .upload-area {
+            position: relative;
+            border: 2px dashed #cbd5e1;
+            padding: 40px 20px;
+            text-align: center;
+            border-radius: var(--radius);
+            background: #f8fafc;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .upload-area.active-workspace {
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .upload-area:hover,
+        .upload-area.dragover {
+            background: #eff6ff;
+            border-color: var(--primary);
+        }
+
+        .upload-area p {
+            margin: 0;
+            font-size: 14px;
+            color: var(--text-muted);
+            pointer-events: none;
+        }
+
+        .upload-area input[type="file"] {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        /* Panel Pengaturan */
+        .settings-panel {
+            display: none;
+        }
+
+        .workspace.active .settings-panel {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 22px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .dimensions-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 5px;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+
+        input[type="number"]:focus {
+            border-color: var(--primary);
+            outline: none;
+        }
+
+        .info-text {
+            font-size: 11px;
+            color: var(--text-muted);
+            display: block;
+            margin-bottom: 20px;
+        }
+
+        /* UI Titik Kualitas (Interactive Track) */
+        .quality-track {
+            position: relative;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            margin-top: 10px;
+        }
+
+        /* Garis penghubung di belakang titik */
+        .quality-track::before {
+            content: '';
+            position: absolute;
+            top: 18px;
+            /* Menengah di atas titik */
+            left: 10px;
+            right: 10px;
+            height: 4px;
+            background: var(--border);
+            z-index: 0;
+            border-radius: 2px;
+        }
+
+        .dot-item {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            width: 10%;
+        }
+
+        .dot {
+            width: 16px;
+            height: 16px;
+            background-color: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: 50%;
+            transition: all 0.2s ease;
+        }
+
+        .dot-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        /* Efek Hover dan Aktif pada Titik */
+        .dot-item:hover .dot {
+            border-color: var(--text-muted);
+            transform: scale(1.1);
+        }
+
+        .dot-item.active .dot {
+            background-color: var(--primary);
+            border-color: var(--primary);
+            transform: scale(1.3);
+            box-shadow: 0 0 0 4px rgba(0, 112, 243, 0.15);
+        }
+
+        .dot-item.active .dot-label {
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        /* Area Preview */
+        .preview-panel {
+            display: none;
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .workspace.active .preview-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            height: 100%;
+            box-sizing: border-box;
+        }
+
+        .stats-box {
+            display: flex;
+            justify-content: space-between;
+            background: var(--bg-card);
+            padding: 12px 15px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            border: 1px solid var(--border);
+        }
+
+        .stats-box .highlight {
+            color: var(--primary);
+            font-size: 15px;
+            display: block;
+            margin-top: 4px;
+        }
+
+        .image-wrapper {
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: repeating-conic-gradient(#e2e8f0 0% 25%, transparent 0% 50%) 50% / 20px 20px;
+            border-radius: 8px;
+            overflow: hidden;
+            min-height: 200px;
+        }
+
+        #previewImage {
+            max-width: 100%;
+            max-height: 400px;
+            object-fit: contain;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-download {
+            background-color: var(--primary);
+            color: white;
+            padding: 14px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: background 0.3s, transform 0.1s;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-download:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .btn-download:active {
+            transform: scale(0.98);
+        }
+
+        /* Responsif untuk Mobile */
+        @media (max-width: 768px) {
+            .workspace.active {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .upload-area.active-workspace {
+                display: none;
+            }
+
+            .dot-label {
+                font-size: 10px;
+            }
+
+            /* Perkecil teks titik di HP */
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="workspace" id="workspace">
+        <div class="header">
+            <h2>Image to WebP Converter</h2>
+            <p>Ubah format gambar dengan kontrol resolusi dan kualitas presisi.</p>
+        </div>
+
+        <!-- Sidebar / Kiri -->
+        <div class="panel-left">
+            <div class="upload-area" id="dropZone">
+                <p>📁 <b>Drag & Drop</b> gambar di sini<br>atau Klik untuk memilih file</p>
+                <input type="file" id="uploadInput" accept="image/png, image/jpeg, image/jpg, image/webp">
+            </div>
+
+            <div class="settings-panel" id="settingsPanel">
+                <div class="dimensions-grid">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label>Lebar (px)</label>
+                        <input type="number" id="inputWidth" min="1">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label>Tinggi (px)</label>
+                        <input type="number" id="inputHeight" min="1">
+                    </div>
+                </div>
+                <span class="info-text">*Aspek rasio dikunci otomatis</span>
+
+                <div class="form-group">
+                    <label>Kualitas Kompresi: <span id="qualityVal" style="color: var(--primary);">80</span>%</label>
+
+                    <!-- Pengganti Slider: Interactive Track dengan 10 Titik -->
+                    <div class="quality-track">
+                        <!-- Data-val menyimpan persentase kualitas -->
+                        <div class="dot-item" data-val="10">
+                            <div class="dot"></div><span class="dot-label">10</span>
+                        </div>
+                        <div class="dot-item" data-val="20">
+                            <div class="dot"></div><span class="dot-label">20</span>
+                        </div>
+                        <div class="dot-item" data-val="30">
+                            <div class="dot"></div><span class="dot-label">30</span>
+                        </div>
+                        <div class="dot-item" data-val="40">
+                            <div class="dot"></div><span class="dot-label">40</span>
+                        </div>
+                        <div class="dot-item" data-val="50">
+                            <div class="dot"></div><span class="dot-label">50</span>
+                        </div>
+                        <div class="dot-item" data-val="60">
+                            <div class="dot"></div><span class="dot-label">60</span>
+                        </div>
+                        <div class="dot-item" data-val="70">
+                            <div class="dot"></div><span class="dot-label">70</span>
+                        </div>
+                        <div class="dot-item active" data-val="80">
+                            <div class="dot"></div><span class="dot-label">80</span>
+                        </div>
+                        <div class="dot-item" data-val="90">
+                            <div class="dot"></div><span class="dot-label">90</span>
+                        </div>
+                        <div class="dot-item" data-val="100">
+                            <div class="dot"></div><span class="dot-label">100</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Area Kanan / Preview -->
+        <div class="preview-panel">
+            <div class="stats-box">
+                <div>File Asli <span class="highlight" id="origSize">-</span></div>
+                <div style="text-align: right;">Hasil WebP <span class="highlight" id="webpSize">-</span></div>
+            </div>
+
+            <div class="image-wrapper">
+                <img id="previewImage" alt="Preview WebP">
+            </div>
+
+            <a id="downloadBtn" class="btn-download">⬇ Download WebP</a>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const workspace = document.getElementById('workspace');
+        const dropZone = document.getElementById('dropZone');
+        const uploadInput = document.getElementById('uploadInput');
+
+        const inputWidth = document.getElementById('inputWidth');
+        const inputHeight = document.getElementById('inputHeight');
+
+        const qualityVal = document.getElementById('qualityVal');
+        const dotItems = document.querySelectorAll('.dot-item'); // Ambil elemen titik
+
+        const origSizeTxt = document.getElementById('origSize');
+        const webpSizeTxt = document.getElementById('webpSize');
+        const previewImage = document.getElementById('previewImage');
+        const downloadBtn = document.getElementById('downloadBtn');
+
+        // Global Variables
+        let currentFile = null;
+        let originalImage = null;
+        let originalRatio = 1;
+        let currentObjectUrl = null;
+        let currentQuality = 80; // Nilai default kualitas
+
+        // Constants
+        const DEFAULT_MAX = 800;
+
+        // --- Fitur Drag & Drop ---
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+        dropZone.addEventListener('dragleave', (e) => { e.preventDefault(); dropZone.classList.remove('dragover'); });
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+        });
+        uploadInput.addEventListener('change', (e) => {
+            if (e.target.files.length) handleFile(e.target.files[0]);
+        });
+
+        // --- Helper Formatting ---
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // --- Handler Pemrosesan File Awal ---
+        function handleFile(file) {
+            if (!file || !file.type.startsWith('image/')) {
+                alert('File tidak valid. Harap unggah gambar.');
+                return;
+            }
+
+            currentFile = file;
+            origSizeTxt.textContent = formatBytes(file.size);
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                originalImage = new Image();
+                originalImage.onload = () => {
+                    originalRatio = originalImage.width / originalImage.height;
+
+                    let w = originalImage.width;
+                    let h = originalImage.height;
+                    if (w > DEFAULT_MAX) { w = DEFAULT_MAX; h = Math.round(w / originalRatio); }
+                    if (h > DEFAULT_MAX) { h = DEFAULT_MAX; w = Math.round(h * originalRatio); }
+
+                    inputWidth.value = w;
+                    inputHeight.value = h;
+
+                    workspace.classList.add('active');
+                    dropZone.classList.add('active-workspace');
+
+                    processImage();
+                };
+                originalImage.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // --- Logic Klik untuk 10 Titik (Tanpa Slider) ---
+        dotItems.forEach(item => {
+            item.addEventListener('click', (e) => {
+                // Ambil nilai dari atribut data-val (10, 20... 100)
+                const val = e.currentTarget.dataset.val;
+                currentQuality = parseInt(val);
+                qualityVal.textContent = val;
+
+                // Ubah status aktif secara visual (UI)
+                dotItems.forEach(dot => {
+                    dot.classList.toggle('active', dot.dataset.val === val);
+                });
+
+                // Eksekusi render ulang dengan kualitas baru
+                processImage();
+            });
+        });
+
+        // --- Logic Auto Proporsional Resolusi ---
+        inputWidth.addEventListener('input', function () {
+            if (this.value > 0) inputHeight.value = Math.round(this.value / originalRatio);
+            processImage();
+        });
+        inputHeight.addEventListener('input', function () {
+            if (this.value > 0) inputWidth.value = Math.round(this.value * originalRatio);
+            processImage();
+        });
+
+        // --- Core Converter Engine ---
+        function processImage() {
+            if (!originalImage) return;
+
+            const width = parseInt(inputWidth.value) || originalImage.width;
+            const height = parseInt(inputHeight.value) || originalImage.height;
+            const quality = currentQuality / 100; // Gunakan variabel currentQuality
+
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = width;
+            canvas.height = height;
+
+            ctx.drawImage(originalImage, 0, 0, width, height);
+
+            canvas.toBlob((blob) => {
+                if (currentObjectUrl) URL.revokeObjectURL(currentObjectUrl);
+                currentObjectUrl = URL.createObjectURL(blob);
+
+                previewImage.src = currentObjectUrl;
+                webpSizeTxt.textContent = formatBytes(blob.size);
+
+                const fileName = currentFile.name.split('.').slice(0, -1).join('.');
+                downloadBtn.href = currentObjectUrl;
+                downloadBtn.download = `${fileName}_converted.webp`;
+            }, 'image/webp', quality);
+        }
+    </script>
+</body>
+
+</html>

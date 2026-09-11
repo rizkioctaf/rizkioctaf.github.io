@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pemarap Kode JavaScript (JS Beautifier)</title>
+    <link rel="icon" href="data:,">
+
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%);
+            --card-bg: #ffffff;
+            --border-color: #cbd5e1;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --accent: #2563eb;
+            --accent-hover: #1d4ed8;
+            --code-bg: #f8fafc;
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Verdana, Geneva, Tahoma, sans-serif;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+            color: var(--text-primary);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1300px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+            padding: 24px;
+        }
+
+        @media (min-width: 768px) {
+            .container {
+                padding: 32px;
+            }
+        }
+
+        header {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: var(--text-primary);
+        }
+
+        @media (min-width: 768px) {
+            header h1 {
+                font-size: 26px;
+            }
+        }
+
+        header p {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        @media (min-width: 768px) {
+            header p {
+                font-size: 14px;
+            }
+        }
+
+        .workspace {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        @media (min-width: 992px) {
+            .workspace {
+                grid-template-columns: 1fr 1fr;
+                gap: 24px;
+            }
+        }
+
+        .pane {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .pane label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        @media (min-width: 768px) {
+            .pane label {
+                font-size: 14px;
+            }
+        }
+
+        textarea {
+            width: 100%;
+            height: 320px;
+            background: var(--code-bg);
+            color: #0f172a;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 14px;
+            font-family: 'Fira Code', monospace;
+            font-size: 12px;
+            line-height: 1.5;
+            outline: none;
+            white-space: pre;
+            overflow-x: auto;
+            resize: vertical;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        @media (min-width: 768px) {
+            textarea {
+                height: 400px;
+                padding: 16px;
+                font-size: 13px;
+            }
+        }
+
+        textarea:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        button {
+            flex: 1;
+            min-width: 110px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 12px 18px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            transition: background 0.2s ease, transform 0.1s ease;
+        }
+
+        @media (min-width: 576px) {
+            button {
+                flex: unset;
+                font-size: 14px;
+                padding: 12px 24px;
+            }
+        }
+
+        button:hover {
+            background: var(--accent-hover);
+        }
+
+        button:active {
+            transform: scale(0.97);
+        }
+
+        button.btn-secondary {
+            background: #e2e8f0;
+            color: #475569;
+        }
+
+        button.btn-secondary:hover {
+            background: #cbd5e1;
+        }
+
+        .notification {
+            margin-top: 12px;
+            font-size: 13px;
+            color: #16a34a;
+            text-align: center;
+            min-height: 20px;
+            font-weight: 500;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Pemarap Kode JavaScript (JS Beautifier)</h1>
+            <p>Mendukung Arrow Functions, Regex, Block Comments, dan For-Loops.</p>
+        </header>
+
+        <div class="workspace">
+            <div class="pane">
+                <label for="inputCode">Kode Berantakan (Asli):</label>
+                <textarea id="inputCode" placeholder="Tempel kode JavaScript kompleks di sini..."></textarea>
+            </div>
+            <div class="pane">
+                <label for="outputCode">Hasil Rapih (Terformat):</label>
+                <textarea id="outputCode" readonly
+                    placeholder="Hasil kode yang sudah dirapikan akan muncul di sini..."></textarea>
+            </div>
+        </div>
+
+        <div class="actions">
+            <button class="btn-secondary" id="clearBtn">Bersihkan</button>
+            <button class="btn-secondary" id="copyBtn">Salin Hasil</button>
+            <button id="formatBtn">Rapikan Kode</button>
+        </div>
+
+        <div class="notification" id="notification"></div>
+    </div>
+
+    <script>
+        const inputCode = document.getElementById('inputCode');
+        const outputCode = document.getElementById('outputCode');
+        const notification = document.getElementById('notification');
+
+        let notifTimeout;
+
+        function showNotification(text, color) {
+            notification.textContent = text;
+            notification.style.color = color;
+            clearTimeout(notifTimeout);
+            if (!text.includes('Memproses')) {
+                notifTimeout = setTimeout(() => notification.textContent = '', 3000);
+            }
+        }
+
+        async function copyToClipboard(text) {
+            if (!text) return showNotification('Tidak ada hasil untuk disalin.', '#dc2626');
+            try {
+                if (navigator.clipboard && window.isSecureContext) {
+                    await navigator.clipboard.writeText(text);
+                } else {
+                    const textArea = document.createElement("textarea");
+                    textArea.value = text;
+                    textArea.style.position = "fixed";
+                    document.body.appendChild(textArea);
+                    textArea.focus();
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                }
+                showNotification('Hasil disalin ke clipboard! 📋', '#16a34a');
+            } catch (err) {
+                showNotification('Gagal menyalin.', '#dc2626');
+            }
+        }
+
+        // ALGORITMA PARSER LANJUTAN (Advanced)
+        function beautifyJS(code) {
+            let output = [];
+            let indentLevel = 0;
+            let inString = false, stringChar = '';
+            let inComment = false, inBlockComment = false;
+            let inRegex = false;
+            let parenLevel = 0; // Mendeteksi apakah di dalam kurung ( ) seperti for-loop
+            let len = code.length;
+
+            function addIndent() { return '    '.repeat(Math.max(0, indentLevel)); }
+
+            // Mengambil karakter bermakna terakhir (bukan spasi/enter) untuk analisis konteks Regex
+            function getLastSignificantChar() {
+                for (let j = output.length - 1; j >= 0; j--) {
+                    if (output[j] !== ' ' && output[j] !== '\n' && output[j] !== '\r' && output[j] !== '\t') {
+                        return output[j];
+                    }
+                }
+                return '';
+            }
+
+            for (let i = 0; i < len; i++) {
+                let char = code[i];
+                let nextChar = code[i + 1] || '';
+
+                // Kurung biasa (Untuk menangani semicolon dalam for-loop)
+                if (!inString && !inComment && !inBlockComment && !inRegex) {
+                    if (char === '(') parenLevel++;
+                    if (char === ')') parenLevel = Math.max(0, parenLevel - 1);
+                }
+
+                // 1. Block Comment (/* ... */)
+                if (!inString && !inRegex && !inComment && !inBlockComment && char === '/' && nextChar === '*') {
+                    inBlockComment = true;
+                    output.push('/*');
+                    i++;
+                    continue;
+                }
+                if (inBlockComment && char === '*' && nextChar === '/') {
+                    inBlockComment = false;
+                    output.push('*/');
+                    i++;
+                    continue;
+                }
+                if (inBlockComment) {
+                    output.push(char);
+                    continue;
+                }
+
+                // 2. Line Comment (//)
+                if (!inString && !inRegex && !inComment && char === '/' && nextChar === '/') {
+                    inComment = true;
+                    if (output.length > 0 && output[output.length - 1] !== '\n') output.push(' ');
+                    output.push('//');
+                    i++;
+                    continue;
+                }
+                if (inComment && (char === '\n' || char === '\r')) {
+                    inComment = false;
+                    output.push('\n' + addIndent());
+                    continue;
+                }
+                if (inComment) {
+                    output.push(char);
+                    continue;
+                }
+
+                // 3. Regex (/pattern/g)
+                if (!inString && !inComment && !inBlockComment && char === '/') {
+                    if (!inRegex) {
+                        let lastChar = getLastSignificantChar();
+                        // Jika "/" didahului oleh operator (seperti =, (, [, ,, dsb), maka ini Regex!
+                        const regexPreceders = ['=', '(', '[', ':', ',', '!', '?', '&', '|', '<', '>', '+', '-', '*', '/', '%', '}', '{', ';', ''];
+                        if (regexPreceders.includes(lastChar) || lastChar === 'n') { // 'n' dari kata 'return'
+                            inRegex = true;
+                            output.push(char);
+                            continue;
+                        }
+                    } else {
+                        // Cek apakah "/" di-escape atau merupakan penutup regex
+                        let backslashCount = 0;
+                        let checkIdx = i - 1;
+                        while (checkIdx >= 0 && code[checkIdx] === '\\') { backslashCount++; checkIdx--; }
+                        if (backslashCount % 2 === 0) inRegex = false; // Regex ditutup
+
+                        output.push(char);
+                        continue;
+                    }
+                }
+                if (inRegex) { output.push(char); continue; }
+
+                // 4. String (" ", ' ', ` `)
+                if ((char === '"' || char === "'" || char === '`')) {
+                    let backslashCount = 0;
+                    let checkIdx = i - 1;
+                    while (checkIdx >= 0 && code[checkIdx] === '\\') { backslashCount++; checkIdx--; }
+
+                    if (backslashCount % 2 === 0) {
+                        if (!inString) {
+                            inString = true;
+                            stringChar = char;
+                        } else if (stringChar === char) {
+                            inString = false;
+                        }
+                    }
+                    output.push(char);
+                    continue;
+                }
+                if (inString) { output.push(char); continue; }
+
+                // 5. Arrow Function ( => )
+                if (char === '=' && nextChar === '>') {
+                    if (output.length > 0 && output[output.length - 1] !== ' ') output.push(' ');
+                    output.push('=>');
+                    if (i + 2 < len && code[i + 2] !== ' ') output.push(' ');
+                    i++;
+                    continue;
+                }
+
+                // 6. Spasi untuk Koma
+                if (char === ',') {
+                    output.push(',');
+                    while (i + 1 < len && (code[i + 1] === ' ' || code[i + 1] === '\t')) i++;
+                    if (code[i + 1] !== '\n' && code[i + 1] !== '\r') output.push(' ');
+                    continue;
+                }
+
+                // 7. Kurung Kurawal Buka {
+                if (char === '{') {
+                    while (output.length > 0 && output[output.length - 1] === ' ') output.pop();
+                    let last = output.length > 0 ? output[output.length - 1] : '';
+                    if (last !== '\n' && last !== '(' && last !== '[' && last !== '') output.push(' ');
+                    output.push('{\n');
+                    indentLevel++;
+                    output.push(addIndent());
+                    continue;
+                }
+
+                // 8. Kurung Kurawal Tutup }
+                if (char === '}') {
+                    while (output.length > 0 && (output[output.length - 1] === ' ' || output[output.length - 1] === '\t')) output.pop();
+                    indentLevel = Math.max(0, indentLevel - 1);
+                    if (output.length > 0 && output[output.length - 1] !== '\n' && output[output.length - 1] !== '{') output.push('\n');
+                    output.push(addIndent() + '}');
+
+                    // Cegah enter ekstra jika } diikuti oleh ; atau , atau )
+                    if (nextChar !== ';' && nextChar !== ',' && nextChar !== ')' && nextChar !== '\n' && nextChar !== '\r' && nextChar !== '') {
+                        output.push('\n' + addIndent());
+                    }
+                    continue;
+                }
+
+                // 9. Titik Koma (Semicolon) & Penanganan For-Loop
+                if (char === ';') {
+                    output.push(';');
+                    // Jika di luar kurung biasa (bukan loop for), maka baris baru
+                    if (parenLevel === 0) {
+                        output.push('\n');
+                        output.push(addIndent());
+                        while (i + 1 < len && (code[i + 1] === ' ' || code[i + 1] === '\t' || code[i + 1] === '\r' || code[i + 1] === '\n')) i++;
+                    } else {
+                        // Jika dalam for-loop, cukup beri spasi setelah ;
+                        output.push(' ');
+                        while (i + 1 < len && (code[i + 1] === ' ' || code[i + 1] === '\t')) i++;
+                    }
+                    continue;
+                }
+
+                // Bersihkan baris baru asli agar tidak numpuk
+                if (char === '\n' || char === '\r') {
+                    if (output.length > 0 && output[output.length - 1] !== '\n' && !output[output.length - 1].endsWith(addIndent())) {
+                        output.push('\n' + addIndent());
+                    }
+                    continue;
+                }
+
+                // Hilangkan spasi berlebih
+                if (char === ' ' && nextChar === ' ') continue;
+
+                output.push(char);
+            }
+
+            // Pembersihan akhir (menghapus baris kosong yang berjejer)
+            return output.join('')
+                .split('\n')
+                .map(line => line.trimEnd())
+                .filter((line, index, arr) => line !== '' || (arr[index - 1] !== ''))
+                .join('\n');
+        }
+
+        document.getElementById('formatBtn').addEventListener('click', () => {
+            const rawCode = inputCode.value;
+            if (!rawCode.trim()) return showNotification('Masukkan kode JavaScript!', '#dc2626');
+
+            showNotification('Memproses kode...', '#2563eb');
+            setTimeout(() => {
+                try {
+                    outputCode.value = beautifyJS(rawCode);
+                    showNotification('Kode berhasil dirapikan! 🎉', '#16a34a');
+                } catch (error) {
+                    showNotification('Gagal memproses kode.', '#dc2626');
+                }
+            }, 10);
+        });
+
+        document.getElementById('clearBtn').addEventListener('click', () => {
+            inputCode.value = ''; outputCode.value = ''; showNotification('Dibersihkan.', '#64748b');
+        });
+        document.getElementById('copyBtn').addEventListener('click', () => copyToClipboard(outputCode.value));
+    </script>
+</body>
+
+</html>
