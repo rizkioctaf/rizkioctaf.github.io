@@ -2,331 +2,437 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>WEB Tools</title>
-    <link rel="icon" type="image/x-icon" href="icon.svg">
-    <link rel="manifest" href="manifest.json">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#ffffff">
+    <title>QR Scanner Minimalis</title>
+    
+    <!-- jsQR Library via CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+
     <style>
+        /* DESIGN: Monokrom, Light, Minimalis, Clean */
         :root {
-            --bg: #f5f5f7;
-            --surface: #ffffff;
-            --text-primary: #1d1d1f;
-            --text-secondary: #86868b;
-            --border: #e2e2e4;
-            --active-bg: #ececee;
-            --accent: #000000;
+            --bg-color: #ffffff;
+            --text-color: #000000;
+            --overlay-light: rgba(255, 255, 255, 0.85);
+            --border-radius: 16px;
         }
 
         * {
-            box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Icons", "Helvetica Neue", Helvetica, Arial, sans-serif;
-            -webkit-font-smoothing: antialiased;
+            box-sizing: border-box;
             -webkit-tap-highlight-color: transparent;
-            user-select: none;
         }
 
         body {
-            background-color: var(--bg);
-            color: var(--text-primary);
-            height: 100vh;
-            height: 100dvh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            height: 100dvh; 
+            width: 100vw;
             overflow: hidden;
-        }
-
-        .app-container {
-            width: 100%;
-            max-width: 960px;
-            height: 100%;
-            background-color: var(--bg);
             display: flex;
-            flex-direction: column;
-            box-shadow: 0 0 40px rgba(0, 0, 0, 0.04);
+            justify-content: center;
+            align-items: center;
             position: relative;
         }
 
-        header {
-            padding: 24px 20px 14px 20px;
-            background-color: var(--bg);
-            flex-shrink: 0;
-            display: flex;
-            flex-direction: column;
-            gap: 14px;
-        }
-
-        .search-wrapper {
-            position: relative;
-            width: 100%;
-        }
-
-        .search-input {
-            width: 100%;
-            padding: 11px 16px 11px 38px;
-            font-size: 0.95rem;
-            background-color: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            color: var(--text-primary);
-            outline: none;
-            transition: all 0.2s ease;
-            user-select: text;
-        }
-
-        .search-input:focus {
-            border-color: var(--accent);
-            box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.04);
-            border: none;
-        }
-
-        .search-icon {
+        /* Video Layer (Fullscreen) */
+        #kamera {
             position: absolute;
-            left: 13px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 16px;
-            height: 16px;
-            color: var(--text-secondary);
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 1;
+        }
+
+        /* Overlay Light Design */
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            background: radial-gradient(circle, transparent 200px, var(--overlay-light) 200px);
+            pointer-events: none; 
+        }
+
+        .scan-box {
+            width: 260px;
+            height: 260px;
+            border: 2px solid var(--text-color);
+            border-radius: 24px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
+        }
+
+        .scan-line {
+            width: 100%;
+            height: 2px;
+            background-color: var(--text-color);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            position: absolute;
+            top: 0;
+            left: 0;
+            animation: scan-anim 2s infinite cubic-bezier(0.4, 0, 0.2, 1) alternate;
+        }
+
+        @keyframes scan-anim {
+            0% { transform: translateY(0); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(256px); opacity: 0; }
+        }
+
+        .instruction {
+            margin-top: 40px;
+            font-size: 14px;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            background: var(--bg-color);
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: 1px solid #e0e0e0;
+        }
+
+        /* Tombol Galeri (Top Right) */
+        .btn-gallery {
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            z-index: 10;
+            background: var(--bg-color);
+            border: 1px solid #e0e0e0;
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            transition: all 0.2s ease;
+            pointer-events: auto;
+        }
+
+        .btn-gallery:active {
+            transform: scale(0.9);
+            background: #f5f5f5;
+        }
+
+        .btn-gallery svg {
+            width: 20px;
+            height: 20px;
+            fill: var(--text-color);
+        }
+
+        /* UI Modal Hasil Scan */
+        .modal {
+            position: absolute;
+            bottom: -100%;
+            left: 0;
+            width: 100%;
+            background: var(--bg-color);
+            border-top-left-radius: var(--border-radius);
+            border-top-right-radius: var(--border-radius);
+            padding: 32px 24px;
+            z-index: 20;
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 -10px 40px rgba(0,0,0,0.08);
+            pointer-events: auto;
+        }
+
+        .modal.active {
+            transform: translateY(-100%);
+        }
+
+        .modal-title {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #666;
+            margin-bottom: 12px;
+        }
+
+        .modal-result {
+            font-size: 18px;
+            font-weight: 600;
+            word-wrap: break-word;
+            margin-bottom: 24px;
+            line-height: 1.5;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 12px;
+        }
+
+        button.action-btn {
+            flex: 1;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background: var(--text-color);
+            color: var(--bg-color);
+        }
+
+        .btn-primary:active {
+            transform: scale(0.97);
+            background: #333;
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: var(--text-color);
+        }
+
+        .btn-secondary:active {
+            transform: scale(0.97);
+            background: #e0e0e0;
+        }
+
+        /* UI Toast Notification (Untuk Error / Info) */
+        .toast {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #333;
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-size: 14px;
+            font-weight: 500;
+            z-index: 30;
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
             pointer-events: none;
         }
 
-        main {
-            flex-grow: 1;
-            overflow-y: auto;
-            padding: 8px 20px 24px 20px;
-            -webkit-overflow-scrolling: touch;
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
         }
 
-        .section-label {
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: var(--text-secondary);
-            margin-bottom: 8px;
-            margin-top: 4px;
-            padding-left: 4px;
-        }
-
-        .archive-group {
-            background-color: var(--surface);
-            border-radius: 14px;
-            border: 1px solid var(--border);
-            overflow: hidden;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.01);
-        }
-
-        .archive-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 16px;
-            text-decoration: none;
-            color: var(--text-primary);
-            font-size: 0.95rem;
-            font-weight: 400;
-            transition: background-color 0.12s ease, transform 0.1s ease;
-            position: relative;
-            cursor: pointer;
-        }
-
-        .archive-item:not(:last-child):after {
-            content: '';
+        #loading {
             position: absolute;
-            bottom: 0;
-            right: 0;
-            left: 16px;
-            height: 1px;
-            background-color: var(--border);
-        }
-
-        .archive-item:hover {
-            background-color: var(--active-bg);
-        }
-
-        .archive-item:active {
-            transform: scale(0.99);
-        }
-
-        .item-label {
+            z-index: 5;
+            background: var(--bg-color);
+            width: 100%;
+            height: 100%;
             display: flex;
+            justify-content: center;
             align-items: center;
-            gap: 10px;
-        }
-
-        .item-arrow {
-            color: var(--text-secondary);
-            font-size: 1.1rem;
-            font-weight: 300;
-            line-height: 1;
-            transition: transform 0.2s ease;
-        }
-
-        .archive-item:hover .item-arrow {
-            transform: translateX(3px);
-            color: var(--text-primary);
-        }
-
-        .state-message {
-            text-align: center;
-            padding: 48px 20px;
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-        }
-
-        footer {
-            padding: 14px;
-            text-align: center;
-            font-size: 0.75rem; 
-            color: var(--text-secondary);
-            flex-shrink: 0;
-            background-color: var(--bg);
-            border-top: 1px solid rgba(0,0,0,0.03);
-        }
-
-        @media (min-width: 768px) {
-            body {
-                background-color: #e9e9eb;
-            }
-            .app-container {
-                border-left: 1px solid var(--border);
-                border-right: 1px solid var(--border);
-                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-            }
+            font-weight: 500;
+            transition: opacity 0.3s;
         }
     </style>
 </head>
 <body>
 
-    <div class="app-container">
-        <header>
-            <div class="search-wrapper">
-                <svg class="search-icon" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                </svg>
-                <input type="text" id="searchInput" class="search-input" placeholder="Cari program..." autocomplete="off">
-            </div>
-        </header>
+    <div id="loading">Mengakses Kamera...</div>
+    
+    <video id="kamera" playsinline></video>
 
-        <main>
-            <div class="section-label" id="sectionTitle">Semua Program</div>
-            <div class="archive-group" id="archiveContainer">
-                <div class="state-message">Memuat data...</div>
-            </div>
-            <div id="emptyState" class="state-message" style="display: none;">Program tidak ditemukan.</div>
-        </main>
-
-        <footer>
-            WEB Tools PWA &bull; 2026
-        </footer>
+    <div class="overlay">
+        <div class="scan-box">
+            <div class="scan-line" id="scan-line"></div>
+        </div>
+        <div class="instruction">Arahkan atau pilih gambar QR Code</div>
     </div>
 
+    <!-- Tombol Pilih Gambar dari Galeri -->
+    <!-- Input file disembunyikan, di-trigger via tombol di bawahnya -->
+    <input type="file" id="file-input" accept="image/*" style="display: none;">
+    <button class="btn-gallery" onclick="document.getElementById('file-input').click()" aria-label="Buka Galeri">
+        <!-- SVG Icon Gallery Minimalist -->
+        <svg viewBox="0 0 24 24">
+            <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
+        </svg>
+    </button>
+
+    <!-- Modal Hasil -->
+    <div class="modal" id="modal">
+        <div class="modal-title">Hasil Scan</div>
+        <div class="modal-result" id="result-text">-</div>
+        <div class="btn-group">
+            <button class="action-btn btn-secondary" onclick="salinTeks()">Salin</button>
+            <button class="action-btn btn-primary" onclick="scanLagi()">Tutup</button>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">QR Code tidak ditemukan</div>
+
     <script>
-        // Pendaftaran Service Worker untuk PWA
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js').catch(() => {});
-            });
-        }
+        const video = document.getElementById('kamera');
+        const loading = document.getElementById('loading');
+        const modal = document.getElementById('modal');
+        const resultText = document.getElementById('result-text');
+        const scanLine = document.getElementById('scan-line');
+        const fileInput = document.getElementById('file-input');
+        const toast = document.getElementById('toast');
 
-        let archives = [];
-        const container = document.getElementById('archiveContainer');
-        const emptyState = document.getElementById('emptyState');
-        const sectionTitle = document.getElementById('sectionTitle');
-        const searchInput = document.getElementById('searchInput');
+        // Setup Canvas Global
+        const canvasElement = document.createElement('canvas');
+        const canvas = canvasElement.getContext('2d', { willReadFrequently: true });
+        
+        let isScanning = true;
+        let toastTimeout;
 
-        function createSlug(name) {
-            return name
-                .toLowerCase()
-                .replace(/&/g, 'dan')
-                .replace(/[^a-z0-9\s-]/g, '')
-                .trim()
-                .replace(/\s+/g, '-');
-        }
-
-        function escapeHTML(str) {
-            return str.replace(/[&<>'"]/g, 
-                tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
-            );
-        }
-
-        async function loadDatabase() {
-            const paths = ['database.json', './database.json', '../database.json'];
-            let dataLoaded = false;
-
-            for (let path of paths) {
-                try {
-                    let response = await fetch(path);
-                    if (response.ok) {
-                        archives = await response.json();
-                        renderList(archives);
-                        dataLoaded = true;
-                        break;
-                    }
-                } catch (e) {}
-            }
-
-            if (!dataLoaded) {
-                container.innerHTML = `<div class="state-message" style="color: #dc2626;">Gagal memuat database.json.</div>`;
-                sectionTitle.style.display = 'none';
-            }
-        }
-
-        function renderList(data) {
-            container.innerHTML = "";
-            if (data.length === 0) {
-                emptyState.style.display = "block";
-                sectionTitle.style.display = "none";
-                container.style.display = "none";
-                return;
-            }
-            emptyState.style.display = "none";
-            sectionTitle.style.display = "block";
-            container.style.display = "block";
-
-            let htmlContent = "";
-            data.forEach(item => {
-                const name = item.name || "";
-                const slug = createSlug(name);
+        // --- Fitur 1: Kamera ---
+        async function startCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: "environment" } 
+                });
                 
-                const safeName = escapeHTML(name);
-                const safeSlug = encodeURIComponent(slug);
+                video.srcObject = stream;
+                video.setAttribute("playsinline", true); 
+                video.play();
                 
-                htmlContent += `
-                    <a href="tools/programtool/programtool.html?tool=${safeSlug}" class="archive-item">
-                        <span class="item-label">${safeName}</span>
-                        <span class="item-arrow">&rsaquo;</span>
-                    </a>
-                `;
-            });
-            container.innerHTML = htmlContent;
+                video.addEventListener("loadeddata", () => {
+                    loading.style.opacity = '0';
+                    setTimeout(() => loading.style.display = 'none', 300);
+                    requestAnimationFrame(tick);
+                });
+            } catch (err) {
+                loading.textContent = "Kamera tidak ditemukan.";
+                console.error("Error:", err);
+            }
         }
 
-        // Fungsi Debounce untuk mengoptimalkan performa pencarian (jeda 250ms)
-        function debounce(func, delay) {
-            let timeoutId;
-            return function(...args) {
-                clearTimeout(timeoutId);
-                timeoutId = setTimeout(() => {
-                    func.apply(this, args);
-                }, delay);
+        function tick() {
+            if (!isScanning) return; 
+
+            if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                canvasElement.height = video.videoHeight;
+                canvasElement.width = video.videoWidth;
+                
+                canvas.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
+                const imageData = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
+                
+                const code = jsQR(imageData.data, imageData.width, imageData.height, {
+                    inversionAttempts: "dontInvert", 
+                });
+
+                if (code) {
+                    tampilkanHasil(code.data);
+                }
+            }
+            requestAnimationFrame(tick);
+        }
+
+        // --- Fitur 2: Baca dari Berkas (Galeri) ---
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            // Pause kamera sebentar saat memproses gambar
+            isScanning = false;
+            
+            // Buat URL sementara untuk gambar lokal
+            const imageUrl = URL.createObjectURL(file);
+            const img = new Image();
+            
+            img.onload = () => {
+                // Optimasi Memory: Hapus URL setelah diload
+                URL.revokeObjectURL(imageUrl);
+                
+                // Sesuaikan ukuran canvas dengan gambar asli
+                canvasElement.width = img.width;
+                canvasElement.height = img.height;
+                
+                // Gambar ke canvas dan ekstrak datanya
+                canvas.drawImage(img, 0, 0, img.width, img.height);
+                const imageData = canvas.getImageData(0, 0, img.width, img.height);
+                
+                // Coba decode
+                const code = jsQR(imageData.data, imageData.width, imageData.height, {
+                    inversionAttempts: "attemptBoth", // Gunakan algoritma lebih dalam untuk foto diam
+                });
+
+                if (code) {
+                    tampilkanHasil(code.data);
+                } else {
+                    // Jika tidak ada QR di gambar
+                    tampilkanToast("Tidak ada QR Code di gambar ini");
+                    isScanning = true;
+                    requestAnimationFrame(tick); // Lanjut scan kamera
+                }
+                
+                // Reset input file agar bisa memilih gambar yang sama lagi jika perlu
+                fileInput.value = ""; 
             };
+            
+            img.src = imageUrl;
+        });
+
+        // --- UI & UX Handlers ---
+        function tampilkanHasil(data) {
+            isScanning = false;
+            scanLine.style.display = 'none';
+            
+            resultText.textContent = data;
+            
+            if (data.startsWith('http://') || data.startsWith('https://')) {
+                resultText.innerHTML = `<a href="${data}" target="_blank" style="color:var(--text-color); text-decoration:underline; word-break: break-all;">${data}</a>`;
+            }
+            
+            modal.classList.add('active');
+            
+            if (navigator.vibrate) navigator.vibrate(200);
         }
 
-        // Implementasi Debounce pada event input pencarian
-        const handleSearch = debounce((e) => {
-            const query = e.target.value.toLowerCase().trim();
-            const filtered = archives.filter(item => item.name.toLowerCase().includes(query));
-            renderList(filtered);
-        }, 250);
+        function scanLagi() {
+            modal.classList.remove('active');
+            scanLine.style.display = 'block';
+            resultText.textContent = '-';
+            
+            setTimeout(() => {
+                isScanning = true;
+                requestAnimationFrame(tick);
+            }, 400);
+        }
 
-        searchInput.addEventListener('input', handleSearch);
+        async function salinTeks() {
+            try {
+                await navigator.clipboard.writeText(resultText.textContent);
+                tampilkanToast("Teks berhasil disalin!");
+            } catch (err) {
+                tampilkanToast("Gagal menyalin teks.");
+            }
+        }
 
-        document.addEventListener('DOMContentLoaded', loadDatabase);
+        function tampilkanToast(pesan) {
+            toast.textContent = pesan;
+            toast.classList.add('show');
+            
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        startCamera();
     </script>
 </body>
 </html>
