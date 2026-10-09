@@ -2,625 +2,177 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
+    <!-- Optimasi Mobile: Mencegah zoom (pinch) agar terasa seperti aplikasi native -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#ffffff">
-    <title>QR Scanner Minimalis</title>
-    
-    <!-- jsQR Library via CDN sebagai fallback -->
-    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
-
+    <title>404 - Halaman Tidak Ditemukan</title>
     <style>
-        /* DESIGN: Monokrom, Light, Minimalis, Clean */
-        :root {
-            --bg-color: #ffffff;
-            --text-color: #000000;
-            --gray-light: #f7f7f7;
-            --border-color: #e0e0e0;
-            --overlay-light: rgba(255, 255, 255, 0.85);
-            --border-radius: 20px;
-        }
-
+        /* Reset & Native App Feel */
         * {
-            margin: 0;
-            padding: 0;
             box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
+            -webkit-tap-highlight-color: transparent; /* Hilangkan efek biru saat tap di mobile */
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            /* Gunakan dvh (dynamic viewport height) agar responsif dengan address bar mobile */
             height: 100dvh; 
             width: 100vw;
-            overflow: hidden;
             display: flex;
             justify-content: center;
             align-items: center;
-            position: relative;
+            background-color: #f8f9fa; /* Light & bersih */
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            overflow: hidden; /* Cegah scroll */
+            
+            /* Konfigurasi 3D & Anti-bug touch */
+            perspective: 1000px;
+            touch-action: none; /* Cegah pull-to-refresh & scroll bawaan browser */
+            user-select: none; /* Cegah teks ter-highlight tak sengaja */
         }
 
-        /* --- HOME SCREEN (Pilihan Menu Awal) --- */
-        #home-screen {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: var(--bg-color);
-            z-index: 50;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding: 32px;
-            transition: opacity 0.3s ease, transform 0.3s ease;
-        }
-
-        #home-screen.hidden {
-            opacity: 0;
-            pointer-events: none;
-            transform: scale(1.05);
-        }
-
-        .home-logo {
-            width: 64px;
-            height: 64px;
-            border: 2px solid var(--text-color);
-            border-radius: 18px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-bottom: 24px;
-        }
-
-        .home-logo svg {
-            width: 32px;
-            height: 32px;
-            fill: var(--text-color);
-        }
-
-        .home-title {
-            font-size: 24px;
-            font-weight: 700;
-            margin-bottom: 8px;
-            letter-spacing: -0.5px;
-        }
-
-        .home-subtitle {
-            font-size: 14px;
-            color: #666;
-            margin-bottom: 48px;
-            text-align: center;
-        }
-
-        .menu-options {
-            width: 100%;
-            max-width: 320px;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-
-        .btn-menu {
-            width: 100%;
-            padding: 18px 24px;
-            border: 1px solid var(--border-color);
-            border-radius: var(--border-radius);
-            background: var(--bg-color);
-            color: var(--text-color);
-            font-size: 16px;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.02);
-            text-decoration: none;
-            justify-content: center;
-        }
-
-        .btn-menu:active {
-            transform: scale(0.97);
-            background: var(--gray-light);
-        }
-
-        .btn-menu.primary {
-            background: var(--text-color);
-            color: var(--bg-color);
-            border-color: var(--text-color);
-        }
-
-        .btn-menu svg {
-            width: 22px;
-            height: 22px;
-            fill: currentColor;
-        }
-
-        /* --- SCANNER SCREEN --- */
-        #scanner-screen {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: none;
-            z-index: 1;
-        }
-
-        #scanner-screen.active {
-            display: block;
-        }
-
-        #kamera {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 2;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-            background: radial-gradient(circle, transparent 200px, var(--overlay-light) 200px);
-            pointer-events: none; 
-        }
-
-        .scan-box {
-            width: 260px;
-            height: 260px;
-            border: 2px solid var(--text-color);
+        /* Container 3D */
+        .card-container {
+            width: 85vw;
+            max-width: 380px;
+            padding: 50px 30px;
+            background: #ffffff;
             border-radius: 24px;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
-        }
-
-        .scan-line {
-            width: 100%;
-            height: 2px;
-            background-color: var(--text-color);
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-            position: absolute;
-            top: 0;
-            left: 0;
-            animation: scan-anim 2s infinite cubic-bezier(0.4, 0, 0.2, 1) alternate;
-        }
-
-        @keyframes scan-anim {
-            0% { transform: translateY(0); opacity: 0; }
-            10% { opacity: 1; }
-            90% { opacity: 1; }
-            100% { transform: translateY(256px); opacity: 0; }
-        }
-
-        .instruction {
-            margin-top: 40px;
-            font-size: 14px;
-            font-weight: 500;
-            letter-spacing: 0.5px;
-            background: var(--bg-color);
-            padding: 8px 16px;
-            border-radius: 20px;
-            border: 1px solid var(--border-color);
-        }
-
-        .top-bar {
-            position: absolute;
-            top: 24px;
-            left: 24px;
-            right: 24px;
-            z-index: 10;
+            box-shadow: 
+                0 10px 30px rgba(0, 0, 0, 0.05),
+                0 1px 3px rgba(0, 0, 0, 0.02);
+            transform-style: preserve-3d;
             display: flex;
-            justify-content: space-between;
-            pointer-events: none;
-        }
-
-        .btn-icon {
-            background: var(--bg-color);
-            border: 1px solid var(--border-color);
-            border-radius: 50%;
-            width: 48px;
-            height: 48px;
-            display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
-            cursor: pointer;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-            transition: all 0.2s ease;
-            pointer-events: auto;
+            text-align: center;
+            border: 1px solid rgba(0, 0, 0, 0.03);
+            /* Transisi untuk scale saat di-tap/klik */
+            transition: transform 0.1s; 
         }
 
-        .btn-icon:active {
-            transform: scale(0.9);
-            background: var(--gray-light);
+        /* Elemen di dalam card yang melayang (TranslateZ) */
+        .error-code {
+            font-size: 6rem;
+            font-weight: 900;
+            margin: 0;
+            color: #1a1a1a;
+            letter-spacing: -2px;
+            transform: translateZ(60px); /* Efek pop-up 3D paling tinggi */
+            text-shadow: 0 15px 20px rgba(0, 0, 0, 0.1);
         }
 
-        .btn-icon svg {
-            width: 20px;
-            height: 20px;
-            fill: var(--text-color);
-        }
-
-        /* --- MODAL HASIL --- */
-        .modal {
-            position: absolute;
-            bottom: -100%;
-            left: 0;
-            width: 100%;
-            background: var(--bg-color);
-            border-top-left-radius: var(--border-radius);
-            border-top-right-radius: var(--border-radius);
-            padding: 32px 24px;
-            z-index: 30;
-            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-            box-shadow: 0 -10px 40px rgba(0,0,0,0.08);
-            pointer-events: auto;
-        }
-
-        .modal.active {
-            transform: translateY(-100%);
-        }
-
-        .modal-title {
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            color: #666;
-            margin-bottom: 12px;
-        }
-
-        .modal-result {
-            font-size: 18px;
+        .error-text {
+            font-size: 1.25rem;
             font-weight: 600;
-            word-wrap: break-word;
-            margin-bottom: 24px;
+            margin: 15px 0 10px;
+            color: #333;
+            transform: translateZ(40px);
+        }
+
+        .error-desc {
+            font-size: 0.9rem;
+            color: #888;
+            margin-bottom: 35px;
             line-height: 1.5;
-            max-height: 150px;
-            overflow-y: auto;
+            transform: translateZ(30px);
         }
 
-        .btn-group {
-            display: flex;
-            gap: 12px;
-        }
-
-        button.action-btn {
-            flex: 1;
-            padding: 16px;
-            border: none;
-            border-radius: 12px;
-            font-size: 16px;
+        .btn-back {
+            padding: 14px 32px;
+            font-size: 1rem;
             font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .btn-primary {
-            background: var(--text-color);
-            color: var(--bg-color);
-        }
-
-        .btn-primary:active {
-            transform: scale(0.97);
-            background: #333;
-        }
-
-        .btn-secondary {
-            background: var(--gray-light);
-            color: var(--text-color);
-        }
-
-        .btn-secondary:active {
-            transform: scale(0.97);
-            background: #e0e0e0;
-        }
-
-        /* --- TOAST NOTIFICATION --- */
-        .toast {
-            position: absolute;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%) translateY(100px);
-            background: #333;
             color: #fff;
-            padding: 12px 24px;
-            border-radius: 30px;
-            font-size: 14px;
-            font-weight: 500;
-            z-index: 40;
-            opacity: 0;
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            pointer-events: none;
+            background-color: #1a1a1a;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transform: translateZ(45px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
+            transition: background 0.3s, transform 0.2s;
         }
 
-        .toast.show {
-            transform: translateX(-50%) translateY(0);
-            opacity: 1;
-        }
-
-        #loading {
-            position: absolute;
-            z-index: 20;
-            background: var(--bg-color);
-            width: 100%;
-            height: 100%;
-            display: none;
-            justify-content: center;
-            align-items: center;
-            font-weight: 500;
+        .btn-back:active {
+            background-color: #444;
+            transform: translateZ(45px) scale(0.95); /* Feedback sentuhan native */
         }
     </style>
 </head>
 <body>
 
-    <!-- Mengubah input file agar selalu berada di DOM dan terikat aman secara programatik -->
-    <input type="file" id="file-input" accept="image/*" style="display: none;">
-
-    <!-- Home Screen (Pilihan Awal) -->
-    <div id="home-screen">
-        <div class="home-logo">
-            <svg viewBox="0 0 24 24">
-                <path d="M4 4h6v6H4V4m10 0h6v6h-6V4M4 14h6v6H4v-6m10 3h3v3h-3v-3m3-3h3v3h-3v-3m-3 6h3v3h-3v-3m3-6h3v3h-3v-3z"/>
-            </svg>
-        </div>
-        <div class="home-title">QR Scanner</div>
-        <div class="home-subtitle">Pilih metode pemindaian untuk memulai</div>
-        
-        <div class="menu-options">
-            <button class="btn-menu primary" onclick="mulaiKamera()">
-                <svg viewBox="0 0 24 24"><path d="M12 9c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3m0-2c2.76 0 5 2.24 5 5s-2.24 5-5 5-5-2.24-5-5 2.24-5 5-5m0-2C6.48 5 2 9.48 2 15s4.48 10 10 10 10-4.48 10-10S17.52 5 12 5z"/></svg>
-                Buka Kamera
-            </button>
-            <!-- Tombol Upload langsung memicu input file yang aman -->
-            <button class="btn-menu" onclick="triggerUpload()">
-                <svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
-                Upload Gambar
-            </button>
-        </div>
+    <div class="card-container" id="card">
+        <h1 class="error-code">404</h1>
+        <div class="error-text">Halaman Tidak Ditemukan</div>
+        <div class="error-desc">Maaf, halaman yang Anda cari mungkin telah dipindahkan atau sudah tidak tersedia.</div>
+        <button class="btn-back" onclick="location.reload()">Kembali</button>
     </div>
-
-    <!-- Scanner Screen -->
-    <div id="scanner-screen">
-        <div id="loading">Memuat Kamera...</div>
-        <video id="kamera" playsinline></video>
-
-        <div class="top-bar">
-            <button class="btn-icon" onclick="tutupKamera()" aria-label="Kembali">
-                <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
-            </button>
-            <button class="btn-icon" onclick="triggerUpload()" aria-label="Upload">
-                <svg viewBox="0 0 24 24"><path d="M9 16h6v-6h4l-7-7-7 7h4v6m3-10.17L14.83 8H13v4h-2V8H9.17L12 5.83M5 18h14v2H5v-2z"/></svg>
-            </button>
-        </div>
-
-        <div class="overlay">
-            <div class="scan-box">
-                <div class="scan-line" id="scan-line"></div>
-            </div>
-            <div class="instruction">Arahkan QR Code ke dalam kotak</div>
-        </div>
-    </div>
-
-    <!-- Modal Hasil -->
-    <div class="modal" id="modal">
-        <div class="modal-title">Hasil Scan</div>
-        <div class="modal-result" id="result-text">-</div>
-        <div class="btn-group">
-            <button class="action-btn btn-secondary" onclick="salinTeks()">Salin</button>
-            <button class="action-btn btn-primary" onclick="tutupModal()">Tutup</button>
-        </div>
-    </div>
-
-    <!-- Toast Notification -->
-    <div class="toast" id="toast">QR Code tidak ditemukan</div>
 
     <script>
-        const homeScreen = document.getElementById('home-screen');
-        const scannerScreen = document.getElementById('scanner-screen');
-        const video = document.getElementById('kamera');
-        const loading = document.getElementById('loading');
-        const modal = document.getElementById('modal');
-        const resultText = document.getElementById('result-text');
-        const scanLine = document.getElementById('scan-line');
-        const fileInput = document.getElementById('file-input');
-        const toast = document.getElementById('toast');
-
-        const canvasElement = document.createElement('canvas');
-        const canvas = canvasElement.getContext('2d', { willReadFrequently: true });
+        const card = document.getElementById('card');
         
-        let isScanning = false;
-        let activeStream = null;
-        let toastTimeout;
+        // Target rotasi dari sentuhan/mouse
+        let targetX = 0;
+        let targetY = 0;
+        
+        // Posisi rotasi saat ini (untuk efek smooth/Lerp)
+        let currentX = 0;
+        let currentY = 0;
+        
+        // Sensitivitas pergerakan 3D
+        const maxRotation = 25; // Maksimal rotasi dalam derajat
 
-        const nativeDetector = ('BarcodeDetector' in window) 
-            ? new BarcodeDetector({ formats: ['qr_code'] }) 
-            : null;
+        // Fungsi membaca input mouse / layar sentuh
+        const handleMove = (e) => {
+            // Deteksi apakah ini event touch (mobile) atau mouse (desktop)
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
 
-        // Fungsi Aman untuk Membuka Dialog File
-        function triggerUpload() {
-            fileInput.click();
-        }
+            const centerX = window.innerWidth / 2;
+            const centerY = window.innerHeight / 2;
 
-        async function mulaiKamera() {
-            homeScreen.classList.add('hidden');
-            scannerScreen.classList.add('active');
-            loading.style.display = 'flex';
+            // Hitung persentase posisi kursor/jari dari tengah layar
+            const percentX = (clientX - centerX) / centerX;
+            const percentY = (clientY - centerY) / centerY;
 
-            try {
-                activeStream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { facingMode: "environment" } 
-                });
-                
-                video.srcObject = activeStream;
-                video.setAttribute("playsinline", true); 
-                video.play();
-                
-                video.addEventListener("loadeddata", () => {
-                    loading.style.display = 'none';
-                    isScanning = true;
-                    requestAnimationFrame(tick);
-                });
-            } catch (err) {
-                loading.style.display = 'none';
-                tampilkanToast("Kamera tidak dapat diakses.");
-                tutupKamera();
-                console.error("Error:", err);
-            }
-        }
+            // Tentukan target rotasi (Y dibalik agar pergerakan terasa natural)
+            targetY = percentX * maxRotation;
+            targetX = -(percentY * maxRotation);
+        };
 
-        function tutupKamera() {
-            isScanning = false;
-            if (activeStream) {
-                activeStream.getTracks().forEach(track => track.stop());
-                activeStream = null;
-            }
-            video.srcObject = null;
-            scannerScreen.classList.remove('active');
-            homeScreen.classList.remove('hidden');
-        }
-
-        async function tick() {
-            if (!isScanning) return; 
-
-            if (video.readyState === video.HAVE_ENOUGH_DATA) {
-                if (nativeDetector) {
-                    try {
-                        const barcodes = await nativeDetector.detect(video);
-                        if (barcodes.length > 0) {
-                            tampilkanHasil(barcodes[0].rawValue);
-                            return;
-                        }
-                    } catch (e) {}
-                }
-
-                canvasElement.height = video.videoHeight;
-                canvasElement.width = video.videoWidth;
-                canvas.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
-                const imageData = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
-                
-                const code = jsQR(imageData.data, imageData.width, imageData.height, {
-                    inversionAttempts: "dontInvert", 
-                });
-
-                if (code) {
-                    tampilkanHasil(code.data);
-                    return;
-                }
-            }
-            
-            if (isScanning) requestAnimationFrame(tick);
-        }
-
-        // Penanganan Berkas yang Diunggah
-        fileInput.addEventListener('change', async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            const wasScanning = isScanning;
-            isScanning = false;
-
-            const imageUrl = URL.createObjectURL(file);
-            const img = new Image();
-            
-            img.onload = async () => {
-                URL.revokeObjectURL(imageUrl);
-                let found = false;
-
-                if (nativeDetector) {
-                    try {
-                        const barcodes = await nativeDetector.detect(img);
-                        if (barcodes.length > 0) {
-                            tampilkanHasil(barcodes[0].rawValue);
-                            found = true;
-                        }
-                    } catch (e) {}
-                }
-
-                if (!found) {
-                    canvasElement.width = img.width;
-                    canvasElement.height = img.height;
-                    canvas.drawImage(img, 0, 0, img.width, img.height);
-                    const imageData = canvas.getImageData(0, 0, img.width, img.height);
-                    
-                    const code = jsQR(imageData.data, imageData.width, imageData.height, {
-                        inversionAttempts: "attemptBoth",
-                    });
-
-                    if (code) {
-                        tampilkanHasil(code.data);
-                        found = true;
-                    }
-                }
-
-                if (!found) {
-                    tampilkanToast("QR Code tidak ditemukan di gambar ini");
-                    if (wasScanning) {
-                        isScanning = true;
-                        requestAnimationFrame(tick);
-                    }
-                }
-                
-                fileInput.value = ""; 
-            };
-            
-            img.src = imageUrl;
+        // Event Listener Mouse
+        window.addEventListener('mousemove', handleMove);
+        window.addEventListener('mouseleave', () => {
+            targetX = 0; targetY = 0;
         });
 
-        function tampilkanHasil(data) {
-            isScanning = false;
-            scanLine.style.display = 'none';
-            resultText.textContent = data;
-            
-            if (data.startsWith('http://') || data.startsWith('https://')) {
-                resultText.innerHTML = `<a href="${data}" target="_blank" style="color:var(--text-color); text-decoration:underline; word-break: break-all;">${data}</a>`;
-            }
-            
-            modal.classList.add('active');
-            if (navigator.vibrate) navigator.vibrate(200);
-        }
+        // Event Listener Touch (Mobile)
+        window.addEventListener('touchmove', (e) => {
+            // e.preventDefault() memblokir fungsi scroll native iOS/Android
+            // sehingga aplikasi solid seperti app native
+            e.preventDefault(); 
+            handleMove(e);
+        }, { passive: false });
+        
+        window.addEventListener('touchend', () => {
+            // Kembalikan ke tengah saat jari dilepas
+            targetX = 0; targetY = 0;
+        });
 
-        function tutupModal() {
-            modal.classList.remove('active');
-            scanLine.style.display = 'block';
-            resultText.textContent = '-';
-            
-            if (scannerScreen.classList.contains('active')) {
-                setTimeout(() => {
-                    isScanning = true;
-                    requestAnimationFrame(tick);
-                }, 400);
-            }
-        }
+        // Loop Animasi 60FPS dengan Linear Interpolation (Lerp)
+        const animate = () => {
+            // Lerp logic: Memindahkan nilai saat ini mendekati target sebesar 10% setiap frame
+            // Menghasilkan pergerakan yang sangat mulus tanpa delay CSS
+            currentX += (targetX - currentX) * 0.1;
+            currentY += (targetY - currentY) * 0.1;
 
-        async function salinTeks() {
-            try {
-                await navigator.clipboard.writeText(resultText.textContent);
-                tampilkanToast("Teks berhasil disalin!");
-            } catch (err) {
-                tampilkanToast("Gagal menyalin teks.");
-            }
-        }
+            // Aplikasikan transformasi rotasi
+            card.style.transform = `rotateX(${currentX}deg) rotateY(${currentY}deg)`;
 
-        function tampilkanToast(pesan) {
-            toast.textContent = pesan;
-            toast.classList.add('show');
-            clearTimeout(toastTimeout);
-            toastTimeout = setTimeout(() => {
-                toast.classList.remove('show');
-            }, 3000);
-        }
+            requestAnimationFrame(animate);
+        };
+
+        // Jalankan animasi
+        animate();
     </script>
 </body>
 </html>
