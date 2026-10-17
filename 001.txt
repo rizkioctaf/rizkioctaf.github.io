@@ -23,4 +23,11 @@ Gambar: ![img](https://picsum.photos/600/300)
 
 Audio: ![aud](https://link-audio.mp3)
 
-Video: ![vid](https://link-video.mp4)
+Video: ![vid](https://www.w3schools.com/html/mov_bbb.mp4)
+ksksskks skksk
+
+```
+sudo apt update
+sudo apt install nginx
+systemctl status nginx
+```
