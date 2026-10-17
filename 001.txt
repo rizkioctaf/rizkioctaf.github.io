@@ -1,0 +1,26 @@
+Ini adalah paragraf biasa. Dengan parser buatan kita, penulisan artikel di blog statis ini jadi sangat gampang dan ~*super cepat*~.
+
+~# Fitur List & Tabel
+
+Di bawah ini adalah contoh penggunaan list:
+~> Persiapan awal
+~>> Buat folder artikel
+~>> Buat metadata.json
+~> Jalankan kode
+~> Selesai
+
+Dan ini adalah tabel perbandingan web dinamis vs statis:
+
+~| Fitur    | Dinamis (Nodejs) | Statis (HTML/JS) |
+| Database  | MySQL/Mongo | Teks murni |
+| Kecepatan | Butuh render | ~*Sangat Cepat*~ |
+| Hosting   | Mahal | Gratis (GitHub) |
+
+~# Penambahan Media
+Link / Tautan: [Dokumentasi MDN](https://developer.mozilla.org/) kskksks ksksk sksks ksks skks sksks ksksk 
+
+Gambar: ![img](https://picsum.photos/600/300)
+
+Audio: ![aud](https://link-audio.mp3)
+
+Video: ![vid](https://link-video.mp4)
