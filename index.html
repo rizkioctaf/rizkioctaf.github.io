@@ -3,133 +3,287 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Indeks Arsip</title>
+    <title>Pusat Arsip Digital</title>
     <style>
         :root {
-            --bg: #ffffff;
-            --text: #000000;
-            --border: #333333;
-            --hover: #f2f2f2;
+            --bg-primary: #f8fafc;
+            --bg-card: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --accent: #2563eb;
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+            --radius: 12px;
         }
+
+        *, *::before, *::after { box-sizing: border-box; }
+
         body {
-            font-family: 'Georgia', 'Times New Roman', serif;
-            background-color: var(--bg);
-            color: var(--text);
-            margin: 0; padding: 15px;
-            font-size: 14px;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            margin: 0; padding: 0;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
         }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-        }
-        
-        /* --- NAVBAR STICKY --- */
-        .nav {
+
+        /* --- STICKY NAVBAR --- */
+        .navbar {
             position: sticky;
             top: 0;
-            background-color: var(--bg);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-color);
             z-index: 100;
-            margin: -15px -15px 15px -15px;
-            padding: 12px 15px;
-            border-bottom: 2px solid var(--border);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+            padding: 12px 20px;
+            display: flex;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        }
+        .nav-content {
+            width: 100%;
+            max-width: 720px;
             display: flex;
             align-items: center;
             justify-content: space-between;
+            position: relative;
+            min-height: 38px;
         }
         .nav-title {
-            font-size: 1rem;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-main);
             margin: 0;
-            font-weight: bold;
+            transition: opacity 0.2s ease, visibility 0.2s ease;
         }
 
-        /* --- INPUT PENCARIAN --- */
+        /* --- INTERACTIVE SEARCH CONTAINER --- */
+        .search-container {
+            display: flex;
+            align-items: center;
+        }
+        
+        /* Tombol Ikon Search */
+        .search-toggle-btn {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            outline: none;
+            flex-shrink: 0;
+        }
+        .search-toggle-btn:hover {
+            background: #e2e8f0;
+            color: var(--accent);
+        }
+
+        /* Kotak Input Search yang Animatif (Collapsible Desktop) */
+        .search-wrapper {
+            position: absolute;
+            right: 0;
+            width: 0;
+            opacity: 0;
+            visibility: hidden;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .search-container.active .search-wrapper {
+            width: 280px;
+            opacity: 1;
+            visibility: visible;
+        }
+
         .search-box {
             width: 100%;
-            box-sizing: border-box;
-            padding: 7px 10px;
+            padding: 7px 12px 7px 34px;
             font-family: inherit;
-            font-size: 14px;
-            border: 1px solid var(--border);
-            border-radius: 0; /* Sudut tajam klasik */
-            margin-bottom: 15px;
+            font-size: 0.9rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
             outline: none;
-            background: var(--bg);
-            color: var(--text);
+            color: var(--text-main);
+            box-shadow: var(--shadow-sm);
         }
         .search-box:focus {
-            border-width: 2px;
-            padding: 6px 9px; /* Kompensasi ketebalan border */
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+        .search-inner-icon {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            pointer-events: none;
+            width: 15px;
+            height: 15px;
         }
 
-        /* --- DAFTAR ARSIP (COMPACT) --- */
+        /* --- LAYOUT KHUSUS MOBILE RESPONSIVE --- */
+        @media (max-width: 480px) {
+            .container { padding: 16px 12px; }
+            
+            /* Sembunyikan judul secara total saat mode cari aktif di HP */
+            .navbar.search-active .nav-title {
+                opacity: 0;
+                visibility: hidden;
+            }
+            
+            /* Buat kotak pencarian memenuhi navbar saat aktif di HP */
+            .search-container.active {
+                position: absolute;
+                left: 12px;
+                right: 12px;
+                width: calc(100% - 24px);
+            }
+            .search-container.active .search-wrapper {
+                width: 100%;
+                position: relative;
+                right: auto;
+                opacity: 1;
+                visibility: visible;
+            }
+            /* Tombol close/search di ujung kanan saat aktif */
+            .search-container.active .search-toggle-btn {
+                position: absolute;
+                right: 0;
+                z-index: 10;
+                background: transparent;
+                border: none;
+            }
+        }
+
+        /* --- CONTAINER UTAMA --- */
+        .container {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 24px 20px;
+        }
+
+        /* --- CARDS ARSIP --- */
         .archive-list {
             display: flex;
             flex-direction: column;
-            border-top: 1px solid var(--border);
+            gap: 12px;
         }
         .archive-item {
-            display: flex;
+            display: block;
             text-decoration: none;
             color: inherit;
-            padding: 9px 5px;
-            border-bottom: 1px dotted #999;
-            transition: background 0.1s;
-            align-items: baseline;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 18px 20px;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        .archive-item::before {
+            content: '';
+            position: absolute;
+            left: 0; top: 0; bottom: 0;
+            width: 4px;
+            background: var(--accent);
+            opacity: 0;
+            transition: opacity 0.25s ease;
         }
         .archive-item:hover {
-            background-color: var(--hover);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            border-color: #cbd5e1;
         }
+        .archive-item:hover::before { opacity: 1; }
         .archive-date {
-            min-width: 140px;
-            font-size: 0.85rem;
-            font-style: italic;
-            color: #555;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--accent);
+            margin-bottom: 6px;
         }
         .archive-title {
-            font-weight: bold;
-            flex-grow: 1;
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: var(--text-main);
+            line-height: 1.4;
         }
-        
-        #msg { padding: 10px 5px; font-style: italic; color: #555; text-align: center; }
-        
-        /* Responsif untuk layar HP: Tumpuk tanggal & judul agar muat */
-        @media (max-width: 480px) {
-            .archive-item { flex-direction: column; }
-            .archive-date { font-size: 0.8rem; margin-bottom: 3px; }
-        }
+
+        .msg { text-align: center; padding: 40px 0; color: var(--text-muted); font-size: 0.95rem; }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <!-- Navbar Sticky -->
-        <div class="nav">
-            <h2 class="nav-title">Indeks Arsip</h2>
+    <header class="navbar" id="navbarHeader">
+        <div class="nav-content">
+            <h1 class="nav-title">Arsip Digital</h1>
+            
+            <!-- Fitur Pencarian Interaktif -->
+            <div class="search-container" id="searchContainer">
+                <button class="search-toggle-btn" id="searchToggleBtn" onclick="toggleSearch()" title="Cari Arsip">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                </button>
+                <div class="search-wrapper">
+                    <svg class="search-inner-icon" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    <input type="text" id="searchInput" class="search-box" placeholder="Cari judul arsip..." autocomplete="off">
+                </div>
+            </div>
         </div>
+    </header>
 
-        <!-- Kolom Pencarian dengan Debounce -->
-        <input type="text" id="searchInput" class="search-box" placeholder="Cari judul arsip..." autocomplete="off">
-        
-        <div id="msg">Memuat data...</div>
+    <main class="container">
+        <div id="msg" class="msg">Memuat daftar arsip...</div>
         <div class="archive-list" id="archive-container"></div>
-    </div>
+    </main>
 
     <script>
-        let allArchives = []; // Menyimpan data asli agar pencarian instan dan efisien
+        let allArchives = [];
+
+        function toggleSearch() {
+            const container = document.getElementById('searchContainer');
+            const navbar = document.getElementById('navbarHeader');
+            const input = document.getElementById('searchInput');
+            
+            container.classList.toggle('active');
+            navbar.classList.toggle('search-active');
+            
+            if (container.classList.contains('active')) {
+                input.focus();
+            } else {
+                input.value = '';
+                renderArchives(allArchives); // Reset pencarian saat ditutup
+            }
+        }
+
+        // Tutup kotak pencarian jika pengguna mengklik di luar area search container
+        window.addEventListener('click', function(e) {
+            const container = document.getElementById('searchContainer');
+            if (!container.contains(e.target) && container.classList.contains('active')) {
+                if (document.getElementById('searchInput').value.trim() === '') {
+                    toggleSearch();
+                }
+            }
+        });
 
         async function init() {
             const msgEl = document.getElementById('msg');
             try {
                 const response = await fetch('./data/main.txt');
-                if (!response.ok) throw new Error('Gagal memuat arsip. Pastikan Anda menggunakan Local Server.');
+                if (!response.ok) throw new Error('Gagal memuat data arsip. Pastikan menggunakan Local Server.');
                 
                 const text = await response.text();
                 const lines = text.split('\n').filter(line => line.trim() !== '');
                 
-                // Parsing data txt (id | tanggal | judul)
                 allArchives = lines.map(line => {
                     const [id, tanggal, judul] = line.split('|').map(item => item.trim());
                     return { id, tanggal, judul };
@@ -148,7 +302,7 @@
 
             if (data.length === 0) {
                 msgEl.style.display = 'block';
-                msgEl.innerText = 'Tidak ada arsip yang cocok dengan pencarian.';
+                msgEl.innerText = 'Tidak ada arsip yang cocok dengan pencarian Anda.';
                 return;
             }
 
@@ -165,7 +319,6 @@
             });
         }
 
-        // Fungsi Debounce untuk menunda eksekusi pencarian (300ms)
         function debounce(func, delay) {
             let timeoutId;
             return function (...args) {
@@ -174,7 +327,6 @@
             };
         }
 
-        // Logika Filter Pencarian
         const handleSearch = debounce((e) => {
             const keyword = e.target.value.toLowerCase();
             const filteredData = allArchives.filter(item => 
@@ -183,7 +335,6 @@
             renderArchives(filteredData);
         }, 300);
 
-        // Event Listeners
         document.addEventListener('DOMContentLoaded', init);
         document.getElementById('searchInput').addEventListener('input', handleSearch);
     </script>

@@ -23,7 +23,7 @@ Berikut adalah visualisasi dengan desain *Monokrom Klasik* yang dibuat murni men
 
 ### 1. Grafik Batang (Komparasi Jumlah)
 
-[grafik:batang: Leica,150; Hasselblad,90; Rolleiflex,120; Nikon,200]
+[grafik:batang: Leica,150; Hasselblad,90; Rolleiflex,120; Nikon,1200]
 
 ### 2. Grafik Garis (Tren Tahun ke Tahun)
 
@@ -31,8 +31,9 @@ Berikut adalah visualisasi dengan desain *Monokrom Klasik* yang dibuat murni men
 
 ### 3. Grafik Lingkaran (Proporsi Pangsa Pasar)
 
-[grafik:pie: Leica,150; Hasselblad,90; Rolleiflex,120; Nikon,200]
+[grafik:pie: Leica,150; Hasselblad,90; Rolleiflex,120; Nikon,200; Hasselblad,90; Rolleiflex,120; Nikon,200; Hasselblad,90; Rolleiflex,120; Nikon,200; Hasselblad,90; Rolleiflex,120; Nikon,200; Hasselblad,90; Rolleiflex,120; Nikon,200; Hasselblad,90; Rolleiflex,120; Nikon,200; Hasselblad,90; Rolleiflex,120; Nikon,200; Hasselblad,90; Rolleiflex,120; Nikon,200; Hasselblad,90; Rolleiflex,120; Nikon,200]
 
+## Judul Sedang H2
 ### Contoh Media Pendukung
 Gambar:
 ![Keterangan Gambar](https://picsum.photos/600/300)
