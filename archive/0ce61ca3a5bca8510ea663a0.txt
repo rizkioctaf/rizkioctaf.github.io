@@ -1,0 +1,44 @@
+# Judul Besar H1
+## Judul Sedang H2
+### Judul Kecil H3
+
+Berikut adalah teks dengan format **Cetak Tebal** dan *Cetak Miring*.
+Desain tetap mengikuti gaya klasik monokromatik.
+
+### Contoh List (Daftar)
+- Item Utama 1
+  - Sub-item A (Gunakan 2 spasi sebelum tanda min)
+  - Sub-item B
+- Item Utama 2
+
+### Contoh Tabel
+| No | Nama Item | Status |
+| --- | --- | --- |
+| 1 | Mesin Tulis | Berfungsi |
+| 2 | Kamera Analog | Rusak |
+
+# Laporan Penjualan Kamera Klasik 2026
+
+Berikut adalah visualisasi dengan desain *Monokrom Klasik* yang dibuat murni menggunakan teks:
+
+### 1. Grafik Batang (Komparasi Jumlah)
+
+[grafik:batang: Leica,150; Hasselblad,90; Rolleiflex,120; Nikon,200]
+
+### 2. Grafik Garis (Tren Tahun ke Tahun)
+
+[grafik:line: 2022,40; 2023,65; 2024,120; 2025,90; 2026,180; 2022,40; 2023,65; 2024,120; 2025,90; 2026,180; 2022,40; 2023,65; 2024,120; 2025,90; 2026,180; 2022,40; 2023,65; 2024,120; 2025,90; 2026,180; 2022,40; 2023,65; 2024,120; 2025,90; 2026,180; 2022,40; 2023,65; 2024,120; 2025,90; 2026,180]
+
+### 3. Grafik Lingkaran (Proporsi Pangsa Pasar)
+
+[grafik:pie: Leica,150; Hasselblad,90; Rolleiflex,120; Nikon,200]
+
+### Contoh Media Pendukung
+Gambar:
+![Keterangan Gambar](https://picsum.photos/600/300)
+
+Audio Sederhana:
+[audio:https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3]
+
+Video Bukti:
+[video:https://www.w3schools.com/html/mov_bbb.mp4]

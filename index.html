@@ -2,663 +2,190 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>WebCLI</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Indeks Arsip</title>
     <style>
-        /* ========================================================
-           1. VARIABEL WARNA PURE MONOCHROME
-           ======================================================== */
         :root {
-            --bg-color: #f7f7f7;      /* Abu-abu sangat terang (latar utama) */
-            --bg-card: #ffffff;       /* Putih murni (latar kartu) */
-            --text-color: #1a1a1a;    /* Hitam keabu-abuan (teks utama) */
-            --text-muted: #666666;    /* Abu-abu medium (teks info/tanggal) */
-            --border-color: #e0e0e0;  /* Abu-abu terang (garis batas) */
-            --accent-color: #000000;  /* Hitam pekat (judul, perintah, error) */
-            --hover-bg: #f0f0f0;      /* Abu-abu terang untuk efek hover */
+            --bg: #ffffff;
+            --text: #000000;
+            --border: #333333;
+            --hover: #f2f2f2;
         }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-
         body {
-            background-color: var(--bg-color); color: var(--text-color);
-            font-family: cursive;
-            font-size: 15px; line-height: 1.6; height: 100dvh; 
-            display: flex; flex-direction: column; overflow: hidden;
-            -webkit-font-smoothing: antialiased; 
+            font-family: 'Georgia', 'Times New Roman', serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0; padding: 15px;
+            font-size: 14px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        /* --- NAVBAR STICKY --- */
+        .nav {
+            position: sticky;
+            top: 0;
+            background-color: var(--bg);
+            z-index: 100;
+            margin: -15px -15px 15px -15px;
+            padding: 12px 15px;
+            border-bottom: 2px solid var(--border);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .nav-title {
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin: 0;
+            font-weight: bold;
         }
 
-        #output-container {
-            flex-grow: 1; overflow-y: auto; padding: 20px 24px; scroll-behavior: smooth;
-            display: flex; flex-direction: column; align-items: flex-start;
+        /* --- INPUT PENCARIAN --- */
+        .search-box {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 7px 10px;
+            font-family: inherit;
+            font-size: 14px;
+            border: 1px solid var(--border);
+            border-radius: 0; /* Sudut tajam klasik */
+            margin-bottom: 15px;
+            outline: none;
+            background: var(--bg);
+            color: var(--text);
+        }
+        .search-box:focus {
+            border-width: 2px;
+            padding: 6px 9px; /* Kompensasi ketebalan border */
         }
 
-        .line {
-            opacity: 0; transform: translateY(5px); animation: slideUp 0.15s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-            margin-bottom: 6px; width: 100%; word-wrap: break-word;
+        /* --- DAFTAR ARSIP (COMPACT) --- */
+        .archive-list {
+            display: flex;
+            flex-direction: column;
+            border-top: 1px solid var(--border);
         }
-        
-        .line.command-echo { color: var(--text-muted); margin-top: 18px; border-left: 2px solid var(--border-color); padding-left: 12px; }
-        
-        /* Kartu Error Monokrom (Elegan & Tegas) */
-        .line.error { 
-            background: var(--bg-card); color: var(--accent-color); 
-            border: 1px solid var(--border-color);
-            padding: 10px 16px; border-radius: 8px; width: 100%; max-width: 650px; 
-            font-weight: 500; margin-bottom: 8px;
-        }
-        
         .archive-item {
-            display: flex; flex-direction: column; gap: 6px; padding: 12px 16px; background: var(--bg-card); 
-            border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 8px; 
-            width: 100%; transition: transform 0.1s;
+            display: flex;
+            text-decoration: none;
+            color: inherit;
+            padding: 9px 5px;
+            border-bottom: 1px dotted #999;
+            transition: background 0.1s;
+            align-items: baseline;
         }
-        .archive-item:active { transform: scale(0.99); } 
-        
-        .archive-header-row { display: flex; align-items: baseline; gap: 12px; }
-        .archive-id { font-weight: 600; min-width: 50px; color: var(--accent-color); }
-        .archive-title { flex-grow: 1; font-weight: 600; }
-        .archive-date { color: var(--text-muted); font-size: 0.9em; white-space: nowrap; }
-
-        .archive-tags { display: flex; gap: 6px; flex-wrap: wrap; }
-        .tag-badge { 
-            background: var(--bg-color); color: var(--text-muted); font-size: 0.8em; 
-            padding: 2px 8px; border-radius: 4px; font-weight: 600; 
-            border: 1px solid var(--border-color); letter-spacing: 0.5px;
+        .archive-item:hover {
+            background-color: var(--hover);
         }
-
-        .archive-content {
-            background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; 
-            padding: 20px; margin-top: 5px; width: 100%; overflow-x: hidden;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02); 
+        .archive-date {
+            min-width: 140px;
+            font-size: 0.85rem;
+            font-style: italic;
+            color: #555;
+        }
+        .archive-title {
+            font-weight: bold;
+            flex-grow: 1;
         }
         
-        .archive-content h3 { margin: 1.2em 0 0.5em; padding-bottom: 6px; border-bottom: 1px solid var(--border-color); font-size: 1.15em; color: var(--accent-color); font-weight: 600; }
-        .archive-content p { margin-bottom: 6px; } 
-        .archive-content ul { margin: 0 0 10px 24px; padding: 0; }
-        .archive-content ul ul { margin-bottom: 0; list-style-type: circle; }
-        .archive-content li { margin-bottom: 4px; padding-left: 4px; }
+        #msg { padding: 10px 5px; font-style: italic; color: #555; text-align: center; }
         
-        /* Blok Kode Hitam-Putih */
-        .code-block-container { position: relative; margin: 12px 0; background: #000000; border-radius: 8px; overflow: hidden; }
-        .code-block-container pre { margin: 0; padding: 16px; overflow-x: auto; color: #f0f0f0; font-size: 0.9em; font-family: inherit; line-height: 1.5; }
-        .copy-btn {
-            position: absolute; top: 8px; right: 8px; background: #333333; border: 1px solid #555555;
-            color: #ffffff; padding: 4px 10px; border-radius: 4px; font-size: 0.75em; cursor: pointer; transition: 0.2s; font-family: inherit;
-        }
-        .copy-btn:hover { background: #555555; }
-        .copy-btn.copied { background: #ffffff; border-color: #ffffff; color: #000000; font-weight: bold; }
-
-        .archive-content .table-responsive { width: 100%; overflow-x: auto; margin: 12px 0; border-radius: 8px; border: 1px solid var(--border-color); }
-        .archive-content table { width: 100%; min-width: 500px; border-collapse: collapse; font-size: 0.95em; }
-        .archive-content th, .archive-content td { border: 1px solid var(--border-color); padding: 10px 12px; text-align: left; }
-        .archive-content th { background-color: var(--bg-color); font-weight: 600; color: var(--accent-color); }
-        .archive-content table tr th:first-child, .archive-content table tr td:first-child { border-left: none; }
-        .archive-content table tr th:last-child, .archive-content table tr td:last-child { border-right: none; }
-        .archive-content table tr:first-child th { border-top: none; }
-        .archive-content table tr:last-child td { border-bottom: none; }
-        
-        .archive-content img { max-width: 100%; border-radius: 8px; border: 1px solid var(--border-color); margin: 12px 0; display: block; filter: grayscale(100%); transition: filter 0.3s; }
-        .archive-content img:hover { filter: grayscale(0%); } /* Gambar berwarna hanya saat dihover (opsional untuk kesan monokrom murni) */
-        
-        .archive-content audio, .archive-content video { width: 100%; max-width: 600px; border-radius: 8px; border: 1px solid var(--border-color); margin: 12px 0; display: block; outline: none; }
-        .archive-content video { background: #000000; }
-
-        .archive-content a { color: var(--accent-color); text-decoration: underline; text-decoration-color: var(--border-color); transition: 0.2s; font-weight: 600; padding: 2px 0; }
-        .archive-content a:hover { text-decoration-color: var(--accent-color); }
-        .archive-content strong { color: var(--accent-color); font-weight: 700; }
-        .archive-content strong em { font-style: italic; background: var(--bg-color); padding: 2px 6px; border-radius: 4px; border: 1px solid var(--border-color);}
-
-        .scroll-top-btn {
-            display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-            margin-top: 15px; padding: 10px 16px; 
-            background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px;
-            color: var(--text-color); font-family: inherit; font-size: 0.95em; font-weight: 600;
-            cursor: pointer; transition: all 0.2s ease;
-        }
-        .scroll-top-btn:hover { background: var(--accent-color); color: var(--bg-card); border-color: var(--accent-color); }
-        .scroll-top-btn:active { transform: scale(0.95); } 
-
-        @keyframes slideUp { to { opacity: 1; transform: translateY(0); } }
-
-        #input-container {
-            background-color: var(--bg-color); padding: 14px 24px; border-top: 1px solid var(--border-color);
-            display: flex; align-items: center; gap: 12px; flex-shrink: 0; padding-bottom: calc(14px + env(safe-area-inset-bottom)); 
-        }
-
-        .prompt { color: var(--accent-color); font-weight: 700; user-select: none; display: flex; align-items: center; gap: 8px; }
-
-        input { 
-            flex-grow: 1; background: transparent; border: none; color: var(--text-color); 
-            font-family: inherit; font-size: 16px !important; outline: none; 
-            caret-color: var(--accent-color); caret-shape: block;
-        }
-        input::placeholder { color: var(--text-muted); font-weight: 400; }
-        
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #cccccc; border-radius: 10px; }
-        .code-block-container pre::-webkit-scrollbar-thumb { background: #555555; } 
-
-        @media (max-width: 600px) {
-            #output-container { padding: 16px; }
-            #input-container { padding: 12px 16px; padding-bottom: calc(12px + env(safe-area-inset-bottom)); }
-            .archive-header-row { flex-wrap: wrap; gap: 6px; }
-            .archive-date { width: 100%; order: 3; }
-            .archive-content { padding: 16px; border-radius: 8px; }
-            .scroll-top-btn { width: 100%; }
-            .help-row { flex-direction: column; gap: 2px !important; margin-bottom: 12px; }
-            .help-cmd { width: 100% !important; }
-        }
-
-        #print-area { display: none; }
-        @media print {
-            body { background: #ffffff; color: #000000; height: auto !important; overflow: visible !important; font-size: 12pt; }
-            #output-container, #input-container { display: none !important; }
-            #print-area { display: block !important; width: 100%; padding: 0; margin: 0; }
-            .archive-content { border: none !important; background: transparent !important; padding: 0 !important; max-width: 100% !important; box-shadow: none !important; }
-            .code-block-container { background: transparent !important; color: #000 !important; border: 1px solid #000; }
-            .code-block-container pre { color: #000 !important; }
-            .copy-btn { display: none !important; }
+        /* Responsif untuk layar HP: Tumpuk tanggal & judul agar muat */
+        @media (max-width: 480px) {
+            .archive-item { flex-direction: column; }
+            .archive-date { font-size: 0.8rem; margin-bottom: 3px; }
         }
     </style>
 </head>
 <body>
 
-    <div id="print-area"></div>
+    <div class="container">
+        <!-- Navbar Sticky -->
+        <div class="nav">
+            <h2 class="nav-title">Indeks Arsip</h2>
+        </div>
 
-    <div id="output-container">
-        <div class="line" style="font-weight: 700; font-size: 1.3em; margin-bottom: 6px; color: var(--accent-color);">
-            WebCLI Arsip <span style="font-size: 0.7em; color: var(--text-muted); font-weight: 400; border: 1px solid var(--border-color); padding: 2px 6px; border-radius: 4px; margin-left: 6px;">v15.2 Pure Mono</span>
-        </div>
-        <div class="line" style="color: var(--text-muted); margin-bottom: 16px; font-size: 0.95em;">
-            Sistem Arsip Statis Extreme-Grade. Kebal injeksi, memory leak, dan anomali browser.
-        </div>
-        <div class="line">
-            <span style="font-weight: bold; color: var(--accent-color);">[?]</span> 
-            Ketik <b style="color: var(--accent-color);">help</b> lalu tekan Enter untuk melihat perintah.
-        </div>
-        <div class="line" style="border-bottom: 1px dashed var(--border-color); width: 100%; margin: 20px 0 10px 0;"></div>
-    </div>
-    
-    <div id="input-container">
-        <span class="prompt">webCLI ~ $</span>
-        <input type="text" id="commandInput" autofocus autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="none" placeholder="Ketik perintah... (Gunakan tombol TAB)">
+        <!-- Kolom Pencarian dengan Debounce -->
+        <input type="text" id="searchInput" class="search-box" placeholder="Cari judul arsip..." autocomplete="off">
+        
+        <div id="msg">Memuat data...</div>
+        <div class="archive-list" id="archive-container"></div>
     </div>
 
     <script>
-        const outputContainer = document.getElementById('output-container');
-        const input = document.getElementById('commandInput');
-        const printArea = document.getElementById('print-area');
-        const commandsList = ['help', 'list', 'search', 'read', 'print', 'tag', 'clear'];
-        
-        let isPrinting = false;
+        let allArchives = []; // Menyimpan data asli agar pencarian instan dan efisien
 
-        function escapeHTML(str) {
-            return str.replace(/[&<>"']/g, function(match) {
-                const escape = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
-                return escape[match];
-            });
-        }
-
-        let commandHistory = [];
-        try {
-            const parsed = JSON.parse(localStorage.getItem('cli_history'));
-            if (Array.isArray(parsed)) commandHistory = parsed;
-        } catch (e) { console.warn('History storage corrupted, resetting.'); }
-        let historyIndex = commandHistory.length;
-
-        function saveHistory(cmd) {
-            if (commandHistory[commandHistory.length - 1] !== cmd) {
-                commandHistory.push(cmd);
-                if (commandHistory.length > 50) commandHistory.shift(); 
-                try { localStorage.setItem('cli_history', JSON.stringify(commandHistory)); } catch (e) {}
-            }
-            historyIndex = commandHistory.length;
-        }
-
-        window.copyCode = function(btn) {
-            const pre = btn.nextElementSibling;
-            const code = pre.textContent || pre.innerText;
-            function showCopied() {
-                const originalText = btn.innerText;
-                btn.innerText = 'COPIED';
-                btn.classList.add('copied');
-                setTimeout(() => { btn.innerText = originalText; btn.classList.remove('copied'); }, 2000);
-            }
-            if (navigator.clipboard && window.isSecureContext) {
-                navigator.clipboard.writeText(code).then(showCopied).catch(fallbackCopy);
-            } else { fallbackCopy(); }
-            function fallbackCopy() {
-                const textArea = document.createElement("textarea");
-                textArea.value = code;
-                textArea.style.position = "fixed"; textArea.style.left = "-9999px";
-                document.body.appendChild(textArea);
-                textArea.focus(); textArea.select();
-                try { document.execCommand('copy'); showCopied(); } catch (err) {}
-                document.body.removeChild(textArea);
-            }
-        };
-
-        function parseArsipText(text) {
-            if (typeof text !== 'string') return '';
-            text = text.replace(/\r\n/g, '\n');
-            const lines = text.split('\n');
-            let html = '';
-            let inList = false, inSubList = false, inTable = false, inCodeBlock = false;
-            let codeContent = '';
-
-            for (let i = 0; i < lines.length; i++) {
-                let rawLine = lines[i]; 
-                let line = rawLine.trim();
-
-                if (line.startsWith('```')) {
-                    if (inCodeBlock) {
-                        const escapedCode = escapeHTML(codeContent);
-                        html += `<div class="code-block-container"><button class="copy-btn" onclick="copyCode(this)">COPY</button><pre><code>${escapedCode}</code></pre></div>`;
-                        inCodeBlock = false; codeContent = '';
-                    } else { inCodeBlock = true; }
-                    continue;
-                }
-                if (inCodeBlock) { codeContent += rawLine + '\n'; continue; }
-
-                if (line === '') { 
-                    if (inSubList) { html += '</ul>\n'; inSubList = false; }
-                    if (inList) { html += '</ul>\n'; inList = false; }
-                    if (inTable) { html += '</tbody></table></div>\n'; inTable = false; }
-                    html += '<div style="height: 8px;"></div>'; 
-                    continue; 
-                }
-
-                line = line.replace(/~\*(.*?)\*~/g, '<strong><em>$1</em></strong>'); 
-                line = line.replace(/!\[(.*?)\]\((.*?)\)/g, function(match, alt, url) {
-                    url = url.trim(); let typeId = alt.toLowerCase().trim();
-                    if (typeId === 'aud' || typeId === 'audio' || /\.(mp3|wav|ogg)(\?.*)?$/i.test(url)) { return `<audio controls src="${escapeHTML(url)}"></audio>`; } 
-                    else if (typeId === 'vid' || typeId === 'video' || /\.(mp4|webm)(\?.*)?$/i.test(url)) { return `<video controls src="${escapeHTML(url)}"></video>`; } 
-                    else { return `<img src="${escapeHTML(url)}" alt="${escapeHTML(alt)}" loading="lazy">`; }
-                });
-                line = line.replace(/~M\[\s*(.*?)\s*\Vert{}\s*(.*?)\s*\]/gi, function(match, type, url) {
-                    type = type.toLowerCase().trim(); url = url.trim();
-                    if (type.includes('aud')) return `<audio controls src="${escapeHTML(url)}"></audio>`;
-                    if (type.includes('vid')) return `<video controls src="${escapeHTML(url)}"></video>`;
-                    return `<img src="${escapeHTML(url)}" alt="Media" loading="lazy">`;
-                });
-                line = line.replace(/\[([^\]]+)\]\((.*?)\)/g, function(match, label, url) {
-                    return `<a href="${escapeHTML(url.trim())}" target="_blank" rel="noopener noreferrer">${escapeHTML(label.trim())}</a>`;
-                });
-
-                if (line.startsWith('~|')) {
-                    if (!inTable) { html += '<div class="table-responsive"><table><thead><tr>'; inTable = true; }
-                    let headers = line.substring(2).replace(/^\||\|$/g, '').split('|'); 
-                    headers.forEach(h => html += `<th>${h.trim()}</th>`);
-                    html += '</tr></thead><tbody>\n'; continue;
-                } else if (inTable && line.startsWith('|')) {
-                    html += '<tr>';
-                    let cells = line.substring(1).replace(/\|$/g, '').split('|'); 
-                    cells.forEach(c => html += `<td>${c.trim()}</td>`);
-                    html += '</tr>\n'; continue;
-                } else if (inTable) { html += '</tbody></table></div>\n'; inTable = false; }
-
-                if (line.startsWith('~>>')) {
-                    if (!inList) { html += '<ul>\n'; inList = true; }
-                    if (!inSubList) { html += '<ul>\n'; inSubList = true; }
-                    html += `<li>${line.substring(3).trim()}</li>\n`; continue;
-                } else if (line.startsWith('~>')) {
-                    if (inSubList) { html += '</ul>\n'; inSubList = false; }
-                    if (!inList) { html += '<ul>\n'; inList = true; }
-                    html += `<li>${line.substring(2).trim()}</li>\n`; continue;
-                } else {
-                    if (inSubList) { html += '</ul>\n'; inSubList = false; }
-                    if (inList) { html += '</ul>\n'; inList = false; }
-                }
-                if (line.startsWith('~#')) { html += `<h3>${line.substring(2).trim()}</h3>\n`; continue; }
-                if (/^(<img|<audio|<video)/i.test(line)) { html += line + '\n'; } else { html += `<p>${line}</p>\n`; }
-            }
-
-            if (inCodeBlock) { html += `<div class="code-block-container"><button class="copy-btn" onclick="copyCode(this)">COPY</button><pre><code>${escapeHTML(codeContent)}</code></pre></div>`; }
-            if (inSubList) html += '</ul>\n'; if (inList) html += '</ul>\n'; if (inTable) html += '</tbody></table></div>\n';
-            return html;
-        }
-
-        function getLevenshteinDistance(a, b) {
-            if (a.length === 0) return b.length; 
-            if (b.length === 0) return a.length;
-            if (a.length > 50 || b.length > 50) return 999; 
-
-            const matrix = [];
-            for (let i = 0; i <= b.length; i++) { matrix[i] = [i]; }
-            for (let j = 0; j <= a.length; j++) { matrix[0][j] = j; }
-            for (let i = 1; i <= b.length; i++) {
-                for (let j = 1; j <= a.length; j++) {
-                    if (b.charAt(i - 1) === a.charAt(j - 1)) { matrix[i][j] = matrix[i - 1][j - 1]; } 
-                    else { matrix[i][j] = Math.min(matrix[i - 1][j - 1] + 1, Math.min(matrix[i][j - 1] + 1, matrix[i - 1][j] + 1)); }
-                }
-            }
-            return matrix[b.length][a.length];
-        }
-
-        function scrollToBottom() { setTimeout(() => { outputContainer.scrollTop = outputContainer.scrollHeight; }, 10); }
-        function scrollToElement(element) { setTimeout(() => { element.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 50); }
-
-        function enforceDOMLimit() {
-            const MAX_LINES = 100;
-            while (outputContainer.children.length > MAX_LINES) {
-                outputContainer.removeChild(outputContainer.firstElementChild);
-            }
-        }
-
-        function printLine(htmlContent, type = 'normal', autoScroll = true) {
-            enforceDOMLimit();
-            const line = document.createElement('div');
-            line.className = `line ${type}`;
-            line.innerHTML = htmlContent;
-            outputContainer.appendChild(line);
-            if (autoScroll) scrollToBottom(); 
-            return line; 
-        }
-
-        function sortByNewestDate(dataArray) {
-            if (!Array.isArray(dataArray)) return [];
-            return dataArray.sort((a, b) => {
-                const dateA = new Date(a.tanggal || 0).getTime();
-                const dateB = new Date(b.tanggal || 0).getTime();
-                return dateB - dateA; 
-            });
-        }
-
-        function generateArchiveItemsHTML(dataArray) {
-            let html = '';
-            dataArray.forEach(item => {
-                let tagsHtml = '';
-                if (item.tags && Array.isArray(item.tags) && item.tags.length > 0) {
-                    tagsHtml = `<div class="archive-tags">` + item.tags.map(t => `<span class="tag-badge">#${escapeHTML(t)}</span>`).join('') + `</div>`;
-                }
-                html += `
-                    <div class="archive-item">
-                        <div class="archive-header-row">
-                            <div class="archive-id">#${escapeHTML(String(item.id))}</div>
-                            <div class="archive-title">${escapeHTML(item.judul)}</div>
-                            <div class="archive-date">${escapeHTML(item.tanggal)}</div>
-                        </div>
-                        ${tagsHtml}
-                    </div>
-                `;
-            });
-            return html;
-        }
-
-        async function processCommand(cmd) {
-            const safeCmdEcho = escapeHTML(cmd.trim()); 
-            const args = cmd.trim().split(/\s+/);
-            const command = args[0].toLowerCase();
-
-            printLine(`${safeCmdEcho}`, 'command-echo');
-            if (!command) return;
-
-            if (window.innerWidth <= 768 && ['read', 'list', 'search', 'tag', 'help'].includes(command)) { input.blur(); }
-
-            let limit = null;
-            const limitIndex = args.indexOf('-n');
-            if (limitIndex !== -1 && args[limitIndex + 1]) {
-                limit = parseInt(args[limitIndex + 1], 10);
-                if (!isNaN(limit)) args.splice(limitIndex, 2); 
-            }
-
+        async function init() {
+            const msgEl = document.getElementById('msg');
             try {
-                switch (command) {
-                    case 'help':
-                        const helpHTML = `
-                            <div class="archive-content" style="padding: 15px 20px;">
-                                <div style="font-weight: 600; font-size: 1em; color: var(--accent-color); margin-bottom: 12px; padding-bottom: 8px;">
-                                    [HELP] Panduan Perintah
-                                </div>
-                                <div style="display: flex; flex-direction: column; gap: 8px;">
-                                    <div class="help-row" style="display: flex; gap: 12px; border-bottom: 1px dashed var(--border-color); padding-bottom: 6px;">
-                                        <div class="help-cmd" style="width: 140px; color: var(--accent-color);">list [-n limit]</div>
-                                        <div style="color: var(--text-muted); flex: 1;">Menampilkan daftar arsip (Cth: list -n 5)</div>
-                                    </div>
-                                    <div class="help-row" style="display: flex; gap: 12px; border-bottom: 1px dashed var(--border-color); padding-bottom: 6px;">
-                                        <div class="help-cmd" style="width: 140px; color: var(--accent-color);">search [kata]</div>
-                                        <div style="color: var(--text-muted); flex: 1;">Mencari arsip berdasarkan judul</div>
-                                    </div>
-                                    <div class="help-row" style="display: flex; gap: 12px; border-bottom: 1px dashed var(--border-color); padding-bottom: 6px;">
-                                        <div class="help-cmd" style="width: 140px; color: var(--accent-color);">tag [nama] [-n]</div>
-                                        <div style="color: var(--text-muted); flex: 1;">Mencari arsip berdasarkan tag / kategori</div>
-                                    </div>
-                                    <div class="help-row" style="display: flex; gap: 12px; border-bottom: 1px dashed var(--border-color); padding-bottom: 6px;">
-                                        <div class="help-cmd" style="width: 140px; color: var(--accent-color);">read [id]</div>
-                                        <div style="color: var(--text-muted); flex: 1;">Membaca isi arsip secara penuh</div>
-                                    </div>
-                                    <div class="help-row" style="display: flex; gap: 12px; border-bottom: 1px dashed var(--border-color); padding-bottom: 6px;">
-                                        <div class="help-cmd" style="width: 140px; color: var(--accent-color);">print [id]</div>
-                                        <div style="color: var(--text-muted); flex: 1;">Mencetak dokumen arsip ke format PDF</div>
-                                    </div>
-                                    <div class="help-row" style="display: flex; gap: 12px;">
-                                        <div class="help-cmd" style="width: 140px; color: var(--accent-color);">clear</div>
-                                        <div style="color: var(--text-muted); flex: 1;">Membersihkan layar terminal</div>
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-                        const printedHelp = printLine(helpHTML, 'normal', false);
-                        scrollToElement(printedHelp);
-                        break;
+                const response = await fetch('./data/main.txt');
+                if (!response.ok) throw new Error('Gagal memuat arsip. Pastikan Anda menggunakan Local Server.');
+                
+                const text = await response.text();
+                const lines = text.split('\n').filter(line => line.trim() !== '');
+                
+                // Parsing data txt (id | tanggal | judul)
+                allArchives = lines.map(line => {
+                    const [id, tanggal, judul] = line.split('|').map(item => item.trim());
+                    return { id, tanggal, judul };
+                }).filter(item => item.id && item.tanggal && item.judul);
 
-                    case 'list':
-                        const resList = await fetch('metadata.json');
-                        if (!resList.ok) throw new Error('Gagal memuat metadata.json');
-                        let dataList = await resList.json();
-                        
-                        dataList = sortByNewestDate(dataList);
-                        if (limit && limit > 0) dataList = dataList.slice(0, limit); 
-
-                        if (dataList.length === 0) { printLine('Tidak ada arsip yang ditemukan.'); break; }
-
-                        const printedList = printLine(generateArchiveItemsHTML(dataList), 'normal', false);
-                        scrollToElement(printedList);
-                        break;
-
-                    case 'tag':
-                        const tagKeyword = args[1]?.toLowerCase();
-                        if (!tagKeyword) { printLine("[!] Gunakan format: tag [kategori] (Cth: tag laporan)", 'error'); break; }
-
-                        const resTag = await fetch('metadata.json');
-                        if (!resTag.ok) throw new Error('Gagal memuat metadata.json');
-                        let dataTag = await resTag.json();
-                        
-                        let resultsTag = dataTag.filter(item => {
-                            if (!item.tags || !Array.isArray(item.tags)) return false;
-                            return item.tags.some(t => t.toLowerCase() === tagKeyword);
-                        });
-
-                        resultsTag = sortByNewestDate(resultsTag);
-                        if (limit && limit > 0) resultsTag = resultsTag.slice(0, limit); 
-
-                        if (resultsTag.length === 0) { printLine(`[!] Tidak ada arsip dengan tag #${escapeHTML(tagKeyword)}.`, 'error'); break; }
-
-                        let htmlTag = `<div style="margin-bottom: 8px; color: var(--text-muted); font-weight: bold;">HASIL UNTUK: #${escapeHTML(tagKeyword).toUpperCase()}</div>`;
-                        htmlTag += generateArchiveItemsHTML(resultsTag);
-                        
-                        const printedTag = printLine(htmlTag, 'normal', false);
-                        scrollToElement(printedTag);
-                        break;
-
-                    case 'search':
-                        const keywordArgs = args.slice(1);
-                        if (keywordArgs.length === 0) { printLine("[!] Gunakan format: search [kata kunci]", 'error'); break; }
-                        const keywordFull = keywordArgs.join(" ").toLowerCase();
-
-                        const resSearch = await fetch('metadata.json');
-                        if (!resSearch.ok) throw new Error('Gagal memuat metadata.json');
-                        let dataSearch = await resSearch.json();
-                        
-                        let resultsSearch = dataSearch.filter(item => {
-                            if(!item.judul) return false;
-                            const titleLower = item.judul.toLowerCase();
-                            if (titleLower.includes(keywordFull)) return true;
-                            const titleWords = titleLower.split(/\s+/);
-                            for (const tWord of titleWords) {
-                                for (const kWord of keywordArgs) {
-                                    if (kWord.length > 3 && getLevenshteinDistance(tWord, kWord.toLowerCase()) <= 2) return true;
-                                }
-                            }
-                            return false;
-                        });
-
-                        resultsSearch = sortByNewestDate(resultsSearch);
-                        if (limit && limit > 0) resultsSearch = resultsSearch.slice(0, limit); 
-
-                        if (resultsSearch.length === 0) { printLine(`[!] Tidak ada arsip cocok dengan '${escapeHTML(keywordFull)}'.`, 'error'); break; }
-
-                        let htmlSearch = `<div style="margin-bottom: 8px; color: var(--text-muted); font-weight: bold;">MENEMUKAN ${resultsSearch.length} HASIL:</div>`;
-                        htmlSearch += generateArchiveItemsHTML(resultsSearch);
-                        
-                        const printedSearch = printLine(htmlSearch, 'normal', false);
-                        scrollToElement(printedSearch);
-                        break;
-
-                    case 'read':
-                        const id = args[1];
-                        if (!id) { printLine("[!] Gunakan format: read [id]", 'error'); break; }
-
-                        const resRead = await fetch(`${id}.txt`);
-                        if (!resRead.ok) throw new Error(`File arsip ${escapeHTML(id)}.txt tidak ditemukan.`);
-                        
-                        const contentRead = await resRead.text();
-                        const parsedHTML = parseArsipText(contentRead);
-                        
-                        const printedRead = printLine(`
-                            <div style="font-size: 0.85em; color: var(--text-muted); margin-bottom: 6px; letter-spacing: 0.5px; text-transform: uppercase; font-weight: bold;">
-                                MEMBACA ARSIP #${escapeHTML(id)}
-                            </div>
-                            <div class="archive-content">
-                                ${parsedHTML}
-                                <div style="text-align: right; border-top: 2px solid var(--accent-color); margin-top: 20px; padding-top: 15px;">
-                                    <button class="scroll-top-btn" onclick="scrollToElement(this.closest('.line').previousElementSibling || this.closest('.line'))">
-                                        ^ KEMBALI KE ATAS
-                                    </button>
-                                </div>
-                            </div>
-                        `, 'normal', false);
-                        scrollToElement(printedRead);
-                        break;
-
-                    case 'print':
-                        const printId = args[1];
-                        if (!printId) { printLine("[!] Gunakan format: print [id]", 'error'); break; }
-                        if (isPrinting) { printLine("[!] Tunggu proses cetak sebelumnya selesai.", 'error'); break; }
-
-                        isPrinting = true;
-                        try {
-                            const resPrintMeta = await fetch('metadata.json');
-                            const metaData = await resPrintMeta.json();
-                            const archiveMeta = metaData.find(item => String(item.id) === String(printId));
-                            if (!archiveMeta) throw new Error(`Data arsip #${printId} tidak ditemukan.`);
-
-                            const resPrintTxt = await fetch(`${printId}.txt`);
-                            if (!resPrintTxt.ok) throw new Error(`File arsip ${printId}.txt tidak ditemukan.`);
-                            
-                            const contentPrint = await resPrintTxt.text();
-                            const parsedPrintHTML = parseArsipText(contentPrint);
-                            
-                            printArea.innerHTML = `
-                                <div style="margin-bottom: 25px; border-bottom: 2px solid #000; padding-bottom: 12px;">
-                                    <h1 style="margin: 0 0 5px 0; font-size: 1.8em; font-family: sans-serif;">${escapeHTML(archiveMeta.judul)}</h1>
-                                    <div style="color: #444; font-size: 0.9em;">
-                                        <b>ID Arsip:</b> #${escapeHTML(String(archiveMeta.id))} &nbsp;|&nbsp; <b>Tanggal:</b> ${escapeHTML(archiveMeta.tanggal)}
-                                    </div>
-                                </div>
-                                <div class="archive-content">${parsedPrintHTML}</div>
-                            `;
-
-                            printLine(`
-                                <div class="archive-item">
-                                    <div class="archive-title" style="color: var(--accent-color); font-weight: 600;">
-                                        [PRINT] Menyiapkan dokumen #${escapeHTML(printId)}...
-                                    </div>
-                                </div>
-                            `);
-                            
-                            setTimeout(() => { 
-                                window.print(); 
-                                setTimeout(() => { isPrinting = false; }, 1000); 
-                            }, 400);
-                        } catch (err) {
-                            isPrinting = false;
-                            throw err;
-                        }
-                        break;
-
-                    case 'clear':
-                        outputContainer.innerHTML = '';
-                        printLine(`
-                            <div style="font-weight: 700; font-size: 1.3em; margin-bottom: 6px; color: var(--accent-color);">
-                                WebCLI Arsip <span style="font-size: 0.7em; color: var(--text-muted); font-weight: 400; border: 1px solid var(--border-color); padding: 2px 6px; border-radius: 4px; margin-left: 6px;">v15.2</span>
-                            </div>
-                            <div style="color: var(--text-muted); margin-bottom: 16px; font-size: 0.95em;">
-                                Ketik <b style="color: var(--accent-color);">help</b> lalu tekan Enter untuk melihat perintah.
-                            </div>
-                        `);
-                        break;
-
-                    default:
-                        printLine(`[!] Perintah tidak dikenali: '${escapeHTML(command)}'. Ketik 'help' untuk panduan.`, 'error');
-                        break;
-                }
-            } catch (err) {
-                printLine(`[!] Error: ${escapeHTML(err.message)}`, 'error');
+                renderArchives(allArchives);
+            } catch (error) {
+                msgEl.innerText = error.message;
             }
         }
 
-        input.addEventListener('keydown', function (e) {
-            if (e.key === 'Tab') {
-                e.preventDefault(); 
-                const currentVal = input.value.toLowerCase();
-                const words = currentVal.split(/\s+/);
-                
-                if (words.length === 1 && words[0].length > 0) {
-                    const matches = commandsList.filter(c => c.startsWith(words[0]));
-                    if (matches.length === 1) { input.value = matches[0] + ' '; }
-                }
+        function renderArchives(data) {
+            const container = document.getElementById('archive-container');
+            const msgEl = document.getElementById('msg');
+            container.innerHTML = '';
+
+            if (data.length === 0) {
+                msgEl.style.display = 'block';
+                msgEl.innerText = 'Tidak ada arsip yang cocok dengan pencarian.';
                 return;
             }
 
-            if (e.key === 'Enter') {
-                const cmd = input.value;
-                if (cmd.trim() !== '') {
-                    saveHistory(cmd.trim());
-                    input.value = '';
-                    processCommand(cmd);
-                }
-            } 
-            else if (e.key === 'ArrowUp') {
-                e.preventDefault();
-                if (historyIndex > 0) {
-                    historyIndex--;
-                    input.value = commandHistory[historyIndex] || '';
-                    setTimeout(() => { input.selectionStart = input.selectionEnd = input.value.length; }, 0);
-                }
-            } 
-            else if (e.key === 'ArrowDown') {
-                e.preventDefault();
-                if (historyIndex < commandHistory.length - 1) {
-                    historyIndex++;
-                    input.value = commandHistory[historyIndex] || '';
-                    setTimeout(() => { input.selectionStart = input.selectionEnd = input.value.length; }, 0);
-                } else {
-                    historyIndex = commandHistory.length;
-                    input.value = '';
-                }
-            }
-        });
+            msgEl.style.display = 'none';
+            data.forEach(item => {
+                const a = document.createElement('a');
+                a.href = `./view.html?id=${item.id}`;
+                a.className = 'archive-item';
+                a.innerHTML = `
+                    <div class="archive-date">${item.tanggal}</div>
+                    <div class="archive-title">${item.judul}</div>
+                `;
+                container.appendChild(a);
+            });
+        }
 
-        outputContainer.addEventListener('click', (e) => {
-            if (e.target.tagName !== 'BUTTON' && e.target.tagName !== 'A' && window.getSelection().toString() === '') {
-                if (window.innerWidth > 768) { input.focus(); }
-            }
-        });
-        
-        window.addEventListener('resize', () => {});
+        // Fungsi Debounce untuk menunda eksekusi pencarian (300ms)
+        function debounce(func, delay) {
+            let timeoutId;
+            return function (...args) {
+                clearTimeout(timeoutId);
+                timeoutId = setTimeout(() => func.apply(this, args), delay);
+            };
+        }
+
+        // Logika Filter Pencarian
+        const handleSearch = debounce((e) => {
+            const keyword = e.target.value.toLowerCase();
+            const filteredData = allArchives.filter(item => 
+                item.judul.toLowerCase().includes(keyword)
+            );
+            renderArchives(filteredData);
+        }, 300);
+
+        // Event Listeners
+        document.addEventListener('DOMContentLoaded', init);
+        document.getElementById('searchInput').addEventListener('input', handleSearch);
     </script>
 </body>
 </html>

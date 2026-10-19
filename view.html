@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Isi Arsip</title>
+    <style>
+        :root {
+            --bg: #ffffff;
+            --text: #000000;
+            --border: #333333;
+            --gray: #e0e0e0;
+        }
+        body {
+            font-family: 'Georgia', 'Times New Roman', serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0; padding: 15px;
+            font-size: 14px;
+            line-height: 1.4; 
+        }
+        .container { max-width: 800px; margin: 0 auto; }
+        
+        /* --- NAVBAR STICKY --- */
+        .nav {
+            position: sticky;
+            top: 0;
+            background-color: var(--bg);
+            z-index: 100; /* Memastikan navbar berada di atas elemen lain saat digulir */
+            margin: -15px -15px 15px -15px; /* Menjangkau tepi layar secara penuh */
+            padding: 12px 15px;
+            border-bottom: 2px solid var(--border);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03); /* Efek kedalaman tipis */
+        }
+        .back-btn {
+            text-decoration: none;
+            color: var(--text);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+        .back-btn:hover { text-decoration: underline; }
+        
+        .msg { font-style: italic; color: #555; }
+
+        /* --- STYLING PARSER --- */
+        #archive-content { text-align: justify; }
+        
+        h1, h2, h3 { font-family: inherit; margin: 12px 0 4px 0; color: var(--text); }
+        h1 { font-size: 1.3rem; border-bottom: 2px solid var(--border); padding-bottom: 2px;}
+        h2 { font-size: 1.15rem; border-bottom: 1px dashed var(--border); padding-bottom: 2px;}
+        h3 { font-size: 1rem; font-style: italic; }
+        
+        strong { font-weight: bold; }
+        em { font-style: italic; }
+        .parsed { margin: 0 0 6px 0; }
+
+        .spacer { height: 10px; }
+
+        .parsed-list { margin: 4px 0 6px 0; padding-left: 20px; list-style-type: square; }
+        .parsed-list ul { margin-bottom: 0; list-style-type: circle; }
+        li { margin-bottom: 2px; }
+
+        /* --- TABEL DENGAN DINAMIC SCROLL --- */
+        .table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            margin: 10px 0;
+            -webkit-overflow-scrolling: touch;
+        }
+        .parsed-table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            font-size: 13px; 
+            border: 1px solid var(--border);
+        }
+        .parsed-table th, .parsed-table td { 
+            border: 1px solid var(--border); padding: 5px 8px; text-align: left; 
+            white-space: nowrap; 
+        }
+        .parsed-table th { background-color: var(--border); color: var(--bg); font-weight: normal;}
+
+        .parsed-img, .parsed-video { max-width: 100%; border: 1px solid var(--border); display: block; margin: 8px 0; filter: grayscale(100%); }
+        .parsed-audio { width: 100%; margin: 8px 0; filter: grayscale(100%); outline: 1px solid var(--border); }
+
+        /* --- STYLING GRAFIK DENGAN DINAMIC SCROLL --- */
+        .chart-box { border: 1px solid var(--border); padding: 12px; margin: 12px 0; background: #fdfdfd; }
+        .chart-title { font-weight: bold; text-transform: uppercase; font-size: 11.5px; margin-bottom: 10px; border-bottom: 1px dotted #ccc; padding-bottom: 4px;}
+        
+        .chart-scroll-container {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Bar Chart */
+        .chart-row { display: flex; align-items: center; margin-bottom: 5px; }
+        .chart-label { width: 130px; font-size: 11.5px; flex-shrink: 0; padding-right: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .chart-bar-wrap { flex-grow: 1; border-left: 1px solid var(--border); background: var(--gray); height: 18px; position: relative; }
+        .chart-bar { height: 100%; font-size: 10.5px; display: flex; align-items: center; padding-left: 6px; white-space: nowrap; overflow: hidden;}
+        
+        /* Pie / Lingkaran Chart */
+        .pie-container { display: flex; align-items: center; gap: 20px; flex-wrap: nowrap; }
+        .pie-chart { width: 120px; height: 120px; border-radius: 50%; border: 1px solid var(--border); flex-shrink: 0; }
+        .pie-legends { font-size: 12px; }
+        .pie-legend-item { display: flex; align-items: center; margin-bottom: 4px; white-space: nowrap; }
+        .color-box { width: 12px; height: 12px; display: inline-block; margin-right: 6px; border: 1px solid var(--border); flex-shrink: 0; }
+        
+        /* Line Chart SVG */
+        .line-svg { height: 160px; display: block; font-family: inherit; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- Navbar Sticky -->
+        <div class="nav">
+            <a href="index.html" class="back-btn">← Kembali</a>
+        </div>
+        
+        <div id="content-container">
+            <div class="msg">Membaca arsip...</div>
+        </div>
+    </div>
+
+    <script>
+        function parseToHTML(text) {
+            const lines = text.split('\n');
+            let html = '<div id="archive-content">';
+            let inList = false; let listLevel = 0;
+            let inTable = false; let tableRow = 0;
+            let emptyLinesCount = 0;
+
+            for (let i = 0; i < lines.length; i++) {
+                let line = lines[i].replace(/\r/g, '').trim(); 
+
+                // 1. CEK GRAFIK
+                if (line.startsWith('[grafik:') && line.endsWith(']')) {
+                    if (inList) { while (listLevel >= 0) { html += '</ul>'; listLevel--; } inList = false; }
+                    if (inTable) { html += '</tbody></table></div>'; inTable = false; }
+                    emptyLinesCount = 0;
+
+                    const inner = line.substring(8, line.length - 1);
+                    const colonIndex = inner.indexOf(':');
+                    
+                    if (colonIndex !== -1) {
+                        const chartType = inner.substring(0, colonIndex).trim().toLowerCase();
+                        const chartData = inner.substring(colonIndex + 1).trim();
+                        html += buildChart(chartType, chartData);
+                        continue;
+                    }
+                }
+
+                let rawLine = lines[i].replace(/\r/g, '');
+
+                if (rawLine.trim() === '') {
+                    emptyLinesCount++;
+                    if (emptyLinesCount > 1) {
+                        html += '<div class="spacer"></div>';
+                    }
+                    continue;
+                } else {
+                    emptyLinesCount = 0;
+                }
+
+                // 2. Format Inline
+                rawLine = rawLine.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                rawLine = rawLine.replace(/\*(.*?)\*/g, '<em>$1</em>');
+                rawLine = rawLine.replace(/!\[(.*?)\]\((.*?)\)/g, '<img src="$2" alt="$1" class="parsed-img">');
+                rawLine = rawLine.replace(/\[audio:(.*?)\]/g, '<audio controls src="$1" class="parsed-audio"></audio>');
+                rawLine = rawLine.replace(/\[video:(.*?)\]/g, '<video controls src="$1" class="parsed-video"></video>');
+
+                // 3. Heading
+                if (rawLine.match(/^### (.*)/)) { 
+                    if (inList) { while (listLevel >= 0) { html += '</ul>'; listLevel--; } inList = false; }
+                    if (inTable) { html += '</tbody></table></div>'; inTable = false; }
+                    html += `<h3>${rawLine.substring(4)}</h3>`; continue; 
+                }
+                if (rawLine.match(/^## (.*)/)) { 
+                    if (inList) { while (listLevel >= 0) { html += '</ul>'; listLevel--; } inList = false; }
+                    if (inTable) { html += '</tbody></table></div>'; inTable = false; }
+                    html += `<h2>${rawLine.substring(3)}</h2>`; continue; 
+                }
+                if (rawLine.match(/^# (.*)/)) { 
+                    if (inList) { while (listLevel >= 0) { html += '</ul>'; listLevel--; } inList = false; }
+                    if (inTable) { html += '</tbody></table></div>'; inTable = false; }
+                    html += `<h1>${rawLine.substring(2)}</h1>`; continue; 
+                }
+
+                // 4. Tabel dengan Wrapper Scroll Horizontal Dinamis
+                if (rawLine.trim().startsWith('|') && rawLine.trim().endsWith('|')) {
+                    if (!inTable) {
+                        html += '<div class="table-wrapper"><table class="parsed-table"><tbody>';
+                        inTable = true; tableRow = 0;
+                    }
+                    if (rawLine.includes('---')) continue; 
+                    
+                    const cells = rawLine.split('|').slice(1, -1).map(c => c.trim());
+                    html += '<tr>' + cells.map(c => tableRow === 0 ? `<th>${c}</th>` : `<td>${c}</td>`).join('') + '</tr>';
+                    tableRow++; continue;
+                } else if (inTable) {
+                    html += '</tbody></table></div>'; inTable = false;
+                }
+
+                // 5. List
+                const listMatch = rawLine.match(/^(\s*)-\s+(.*)/);
+                if (listMatch) {
+                    const spaces = listMatch[1].length;
+                    const content = listMatch[2];
+                    const currentLevel = Math.floor(spaces / 2);
+
+                    if (!inList) { html += '<ul class="parsed-list">'; inList = true; listLevel = 0; }
+                    
+                    while (currentLevel > listLevel) { html += '<ul>'; listLevel++; }
+                    while (currentLevel < listLevel) { html += '</ul>'; listLevel--; }
+                    
+                    html += `<li>${content}</li>`;
+                    continue;
+                } else if (inList) {
+                    while (listLevel >= 0) { html += '</ul>'; listLevel--; }
+                    inList = false;
+                }
+
+                // 6. Paragraf Biasa
+                html += `<p class="parsed">${rawLine}</p>`;
+            }
+
+            if (inTable) html += '</tbody></table></div>';
+            while (listLevel >= 0) { html += '</ul>'; listLevel--; }
+
+            html += '</div>';
+            return html;
+        }
+
+        // --- ENGINE PEMBUAT GRAFIK ---
+        function buildChart(type, dataStr) {
+            const items = dataStr.split(';').map(i => i.trim()).filter(i => i !== '');
+            if (items.length === 0) return '';
+            
+            let maxVal = 0; let totalVal = 0;
+            const parsedItems = items.map(item => {
+                const parts = item.split(',');
+                const label = parts[0] ? parts[0].trim() : 'Label';
+                const val = parts[1] ? parseFloat(parts[1].trim()) : 0;
+                if(val > maxVal) maxVal = val;
+                totalVal += val;
+                return { label, val };
+            });
+
+            const colors = ['#111111', '#555555', '#888888', '#aaaaaa', '#cccccc'];
+            let html = `<div class="chart-box"><div class="chart-title">Visualisasi Data (${type})</div><div class="chart-scroll-container">`;
+
+            const dynamicMinWidth = Math.max(400, parsedItems.length * 55);
+
+            if (type === 'batang') {
+                html += `<div style="min-width: ${dynamicMinWidth}px;">`;
+                parsedItems.forEach((item, idx) => {
+                    const width = maxVal > 0 ? (item.val / maxVal * 100) : 0;
+                    const bg = colors[idx % colors.length];
+                    const textCol = (idx % colors.length) < 2 ? '#ffffff' : '#000000';
+                    
+                    html += `
+                        <div class="chart-row">
+                            <div class="chart-label" title="${item.label}">${item.label}</div>
+                            <div class="chart-bar-wrap">
+                                <div class="chart-bar" style="width: ${width}%; background: ${bg}; color: ${textCol}">${item.val}</div>
+                            </div>
+                        </div>`;
+                });
+                html += `</div>`;
+            } else if (type === 'lingkaran' || type === 'pie') {
+                const pieMinWidth = Math.max(350, parsedItems.length * 45);
+                html += `<div class="pie-container" style="min-width: ${pieMinWidth}px;">`;
+                
+                let conicData = [];
+                let currentPerc = 0;
+                let legends = '';
+                
+                parsedItems.forEach((item, idx) => {
+                    const perc = totalVal > 0 ? (item.val / totalVal * 100) : 0;
+                    const end = currentPerc + perc;
+                    const color = colors[idx % colors.length];
+                    
+                    conicData.push(`${color} ${currentPerc}% ${end}%`);
+                    currentPerc = end;
+                    legends += `<div class="pie-legend-item"><span class="color-box" style="background:${color}"></span> ${item.label} (${item.val})</div>`;
+                });
+
+                html += `
+                        <div class="pie-chart" style="background: conic-gradient(${conicData.join(', ')})"></div>
+                        <div class="pie-legends">${legends}</div>
+                    </div>`;
+            } else if (type === 'line') {
+                const svgWidth = Math.max(500, parsedItems.length * 75);
+                const h = 160;
+                const padY = 25; const padX = 40;
+                const graphW = svgWidth - (padX * 2);
+                const graphH = h - (padY * 2);
+                
+                let points = [];
+                let circlesHtml = '';
+                let labelsHtml = '';
+                
+                const stepX = parsedItems.length > 1 ? (graphW / (parsedItems.length - 1)) : (graphW / 2);
+
+                parsedItems.forEach((item, idx) => {
+                    const x = padX + (idx * stepX);
+                    const y = padY + graphH - (maxVal > 0 ? (item.val / maxVal * graphH) : 0);
+                    points.push(`${x},${y}`);
+                    
+                    circlesHtml += `<circle cx="${x}" cy="${y}" r="3.5" fill="#111" />`;
+                    circlesHtml += `<text x="${x}" y="${y - 8}" font-size="11" font-weight="bold" text-anchor="middle" fill="#111">${item.val}</text>`;
+                    labelsHtml += `<text x="${x}" y="${h - 5}" font-size="10.5" text-anchor="middle" fill="#555">${item.label}</text>`;
+                });
+
+                html += `
+                    <svg viewBox="0 0 ${svgWidth} ${h}" class="line-svg" style="width: ${svgWidth}px;">
+                        <polyline points="${points.join(' ')}" fill="none" stroke="#111" stroke-width="1.5"/>
+                        ${circlesHtml}
+                        ${labelsHtml}
+                    </svg>`;
+            }
+
+            html += `</div></div>`;
+            return html;
+        }
+
+        async function loadArchiveContent() {
+            const container = document.getElementById('content-container');
+            const urlParams = new URLSearchParams(window.location.search);
+            const id = urlParams.get('id');
+
+            if (!id) {
+                container.innerHTML = '<div class="msg">Galat: ID tidak ditemukan.</div>';
+                return;
+            }
+
+            try {
+                const response = await fetch(`./archive/${id}.txt`);
+                if (!response.ok) throw new Error('Arsip tidak ditemukan.');
+                
+                const text = await response.text();
+                container.innerHTML = parseToHTML(text);
+            } catch (error) {
+                container.innerHTML = `<div class="msg">${error.message}</div>`;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadArchiveContent);
+    </script>
+</body>
+</html>
