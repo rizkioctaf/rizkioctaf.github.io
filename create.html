@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Creator - SecureReader</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body id="page-create">
+
+    <header>
+        <div class="nav-container">
+            <a href="index.html" class="logo">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                SecureReader Creator
+            </a>
+        </div>
+    </header>
+
+    <div class="create-container">
+        <!-- Editor -->
+        <div class="panel">
+            <h2>Penulis & Enkripsi</h2>
+            <div class="form-group">
+                <label>ID Artikel</label>
+                <input type="text" id="articleId" placeholder="contoh: belajar-javascript-2023" required>
+            </div>
+            <div class="form-group">
+                <label>Judul Artikel</label>
+                <input type="text" id="articleTitle" placeholder="Masukkan judul..." required>
+            </div>
+            <div class="form-group">
+                <label>Kata Sandi</label>
+                <input type="password" id="articlePassword" placeholder="Kata sandi kuat..." required>
+            </div>
+            <div class="form-group" style="flex-grow: 1;">
+                <label>Isi Konten (Markdown Kustom)</label>
+                <textarea id="articleContent" placeholder="Tulis isi rahasia..."></textarea>
+            </div>
+            
+            <button onclick="encryptAndGenerate()" class="btn-unlock">Enkripsi & Unduh .json</button>
+            <div id="metadataResult" class="metadata-box"></div>
+        </div>
+
+        <!-- Preview -->
+        <div class="panel">
+            <h2>Pratinjau Hasil</h2>
+            <div class="preview-content" id="previewContainer">
+                <div style="text-align: center; color: var(--text-muted); margin-top: 100px;">
+                    <p>Mulai mengetik di kolom kiri untuk melihat pratinjau...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panggil File JS Utama -->
+    <script src="script.js"></script>
+</body>
+</html>
