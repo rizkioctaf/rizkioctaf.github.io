@@ -129,19 +129,24 @@ header {
 /* Wadah Input animasi yang melebar/menciut */
 .search-input-group { 
     display: flex; align-items: center; width: 0; opacity: 0; overflow: hidden; 
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); position: relative; 
+    /* PERBAIKAN: Jangan gunakan transition 'all'. Spesifikkan properti agar tidak patah */
+    transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease; 
+    position: relative; 
 }
-.search-input-group.active { width: 320px; opacity: 1; overflow: visible; }
+
+/* PERBAIKAN: overflow: visible dihapus agar efek menghilang saat ditutup tidak terpotong kasar */
+.search-input-group.active { width: 320px; opacity: 1; }
 
 /* Kolom Teks Pencarian */
 .search-input { 
-    width: 100%; padding: 10px 40px 10px 42px; border: 1px solid var(--border); 
+    /* PERBAIKAN: Tambahkan min-width: 0 agar input tidak menolak saat dikecilkan oleh animasi */
+    width: 100%; min-width: 0; 
+    padding: 10px 40px 10px 42px; border: 1px solid var(--border); 
     border-radius: 20px; outline: none; background: var(--bg-body); 
-    transition: 0.2s; font-family: inherit; font-size: 1rem;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s; 
+    font-family: inherit; font-size: 1rem;
 }
-/* Fokus cincin abu-abu (Bukan Biru) */
 .search-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1); background: var(--bg-surface); }
-
 /* Posisi Ikon Pencarian kecil di dalam input text */
 .search-icon-inside { position: absolute; left: 14px; width: 18px; height: 18px; color: var(--text-muted); }
 .close-btn { position: absolute; right: 2px; } 
@@ -291,7 +296,8 @@ header {
    ========================================================================== */
 @media (max-width: 600px) {
     /* Menyembunyikan Logo jika kolom pencarian diaktifkan agar input text lebih panjang */
-    .nav-container.search-active .logo { width: 0; opacity: 0; margin: 0; }
+    /* Menyembunyikan Logo secara mulus tanpa merusak layout */
+    .nav-container.search-active .logo { width: 0; opacity: 0; margin: 0; overflow: hidden; }
     .nav-container.search-active .search-wrapper { width: 100%; }
     .search-input-group.active { width: 100%; }
     
