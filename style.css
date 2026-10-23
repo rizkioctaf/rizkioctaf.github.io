@@ -144,7 +144,7 @@ header {
 
 /* Posisi Ikon Pencarian kecil di dalam input text */
 .search-icon-inside { position: absolute; left: 14px; width: 18px; height: 18px; color: var(--text-muted); }
-.close-btn { position: absolute; right: 4px; } 
+.close-btn { position: absolute; } 
 
 
 /* ==========================================================================
