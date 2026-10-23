@@ -1,144 +1,313 @@
 /* ==========================================================================
-   1. VARIABEL & RESET DASAR
+   1. PENGATURAN WARNA MONOKROM MURNI (PURE GRAYSCALE)
+   100% bebas dari rona warna biru/merah, sangat rileks untuk mata.
    ========================================================================== */
 :root { 
-    --primary: #4F46E5; --primary-hover: #4338CA; 
-    --bg-body: #F3F4F6; --bg-surface: #FFFFFF; 
-    --text-main: #111827; --text-muted: #6B7280; 
-    --border: #E5E7EB; --danger: #EF4444; --success: #10B981;
+    --primary: #000000;        /* Hitam Pekat Murni (Logo, Tombol Utama, Ikon, Teks Seleksi) */
+    --primary-hover: #333333;  /* Abu-abu Sangat Gelap (Efek saat tombol ditunjuk mouse) */
+    --bg-body: #F5F5F5;        /* Abu-abu Terang Netral (Latar luar halaman, anti-silau) */
+    --bg-surface: #FFFFFF;     /* Putih Bersih (Latar utama kotak/kertas artikel) */
+    --text-main: #111111;      /* Hitam Nyaman (Teks artikel utama, mencegah mata lelah) */
+    --text-muted: #777777;     /* Abu-abu Netral (Tanggal, instruksi, dan hint) */
+    --border: #E0E0E0;         /* Garis batas abu-abu lembut (Pemisah dan Border form) */
+    --toast-success: #000000;  /* Notifikasi Berhasil = Garis Hitam */
+    --toast-error: #666666;    /* Notifikasi Error = Garis Abu-abu Gelap */
 }
 
+/* ==========================================================================
+   2. RESET DASAR & SELEKSI TEKS
+   ========================================================================== */
+/* Menghilangkan margin bawaan dan mengamankan ukuran elemen (box-sizing) */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* Mengatur agar klik link menu navigasi (Daftar Isi) meluncur mulus */
 html { scroll-behavior: smooth; scroll-padding-top: 90px; }
 
+/* Gaya huruf dan warna latar utama layar */
 body { 
     font-family: 'Inter', sans-serif; background-color: var(--bg-body); 
     color: var(--text-main); line-height: 1.6; -webkit-font-smoothing: antialiased; 
 }
 
-/* ANTI-SELECT KHUSUS HALAMAN BACA (VIEW) */
-body#page-view {
-    -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; 
-}
-body#page-view input, body#page-view textarea {
-    -webkit-user-select: auto; -moz-user-select: auto; -ms-user-select: auto; user-select: auto;
-}
+/* Mengubah warna saat pengguna memblok (seleksi) teks menjadi Hitam Putih (Monokrom) */
+::selection { background-color: var(--primary); color: var(--bg-surface); }
+::-moz-selection { background-color: var(--primary); color: var(--bg-surface); }
 
-/* Custom Scrollbar */
-::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
+/* Anti-copy (Mencegah teks diseleksi) khusus untuk layar pembaca dokumen rahasia */
+body#page-view { user-select: none; -webkit-user-select: none; }
+/* Namun form kata sandi tetap boleh diklik/diblok teksnya */
+body#page-view input, body#page-view textarea { user-select: auto; -webkit-user-select: auto; }
+
 
 /* ==========================================================================
-   2. HEADER & NAVBAR (Global)
+   3. BATANG GULIR (SCROLLBAR) MONOKROM MINIMALIS
+   ========================================================================== */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #CCCCCC; border-radius: 4px; } 
+::-webkit-scrollbar-thumb:hover { background: #999999; } 
+
+
+/* ==========================================================================
+   4. NOTIFIKASI TOAST (POP-UP INFO)
+   ========================================================================== */
+/* Wadah penampung notifikasi di pojok kanan bawah */
+#toast-container { 
+    position: fixed; bottom: 20px; right: 20px; z-index: 9999; 
+    display: flex; flex-direction: column; gap: 10px; pointer-events: none; 
+}
+/* Bentuk desain notifikasi */
+.toast { 
+    background: var(--bg-surface); color: var(--text-main); 
+    padding: 16px 20px; border-radius: 8px; 
+    box-shadow: 0 10px 25px -5px rgba(0,0,0,0.15); /* Bayangan jatuh dramatis */
+    display: flex; align-items: center; gap: 12px; font-size: 0.95rem; font-weight: 600; 
+    min-width: 250px; 
+    transform: translateX(120%); /* Disembunyikan di luar layar kanan */
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); pointer-events: auto; 
+    border-left: 4px solid var(--primary); 
+}
+.toast.show { transform: translateX(0); } /* Masuk ke layar */
+.toast.success { border-left-color: var(--toast-success); } 
+.toast.error { border-left-color: var(--toast-error); }     
+
+
+/* ==========================================================================
+   5. LAYAR LOADING PENUH (ANTI-FOUC)
+   ========================================================================== */
+/* Layar yang menutupi sejenak agar perubahan form tidak terlihat berkedip */
+.fullscreen-loader { 
+    display: flex; flex-direction: column; align-items: center; justify-content: center; 
+    padding: 60px 20px; color: var(--text-muted); gap: 15px; 
+}
+.spinner { 
+    width: 40px; height: 40px; border: 4px solid var(--border); 
+    border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; 
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Awal mula form dan artikel disembunyikan sampai izin keamanan JavaScript lolos */
+#passwordPrompt, #decryptedContent, .toc-wrapper { display: none; }
+
+
+/* ==========================================================================
+   6. HEADER & LOGO APLIKASI
    ========================================================================== */
 header { 
-    background: var(--bg-surface); box-shadow: 0 1px 3px rgba(0,0,0,0.05); 
-    position: sticky; top: 0; z-index: 50; height: 70px;
+    background: var(--bg-surface); border-bottom: 1px solid var(--border); 
+    position: sticky; top: 0; z-index: 50; height: 70px; 
 }
 .nav-container { 
     max-width: 800px; margin: 0 auto; padding: 0 20px; 
-    display: flex; align-items: center; justify-content: space-between; height: 100%; transition: all 0.3s ease;
+    display: flex; align-items: center; justify-content: space-between; height: 100%; 
 }
-.logo { font-size: 1.25rem; font-weight: 700; color: var(--primary); text-decoration: none; display: flex; align-items: center; gap: 8px; transition: all 0.3s ease; white-space: nowrap; overflow: hidden; }
+/* Menyatukan ikon buku dan teks SecureReader */
+.logo { 
+    font-size: 1.25rem; font-weight: 800; color: var(--primary); text-decoration: none; 
+    display: flex; align-items: center; gap: 8px; letter-spacing: -0.5px; 
+    transition: 0.3s; white-space: nowrap; overflow: hidden;
+}
+
 
 /* ==========================================================================
-   3. KOMPONEN INDEX.HTML (Pencarian & Daftar Artikel)
+   7. FORM PENCARIAN & IKON (BERANDA)
    ========================================================================== */
 .search-wrapper { display: flex; align-items: center; justify-content: flex-end; }
-.toggle-btn { background: transparent; border: none; cursor: pointer; color: var(--text-muted); display: flex; align-items: center; justify-content: center; padding: 10px; border-radius: 50%; transition: 0.2s; }
-.toggle-btn:hover { background: var(--bg-body); color: var(--primary); }
+/* Tombol bulat transparan untuk ikon pencarian dan tombol tutup */
+.toggle-btn { 
+    background: transparent; border: none; cursor: pointer; color: var(--text-muted); 
+    display: flex; align-items: center; justify-content: center; 
+    padding: 10px; border-radius: 50%; transition: 0.2s; 
+    min-width: 44px; min-height: 44px; /* Standar UX area sentuh mobile agar mudah ditekan */
+}
+.toggle-btn:hover { background: var(--border); color: var(--primary); }
 .toggle-btn.hide { display: none !important; }
+
+/* Ukuran Ikon Pembesar (KODE YANG HILANG KINI PERMANEN DI SINI) */
 .search-icon { width: 22px; height: 22px; }
 
-.search-input-group { display: flex; align-items: center; width: 0; opacity: 0; overflow: hidden; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); position: relative; }
-.search-input-group.active { width: 320px; opacity: 1; }
-.search-input { width: 100%; padding: 10px 40px 10px 42px; border: 1px solid var(--border); border-radius: 20px; font-size: 0.95rem; outline: none; background: var(--bg-body); transition: all 0.2s; font-family: inherit; }
-.search-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,70,229,0.1); background: white; }
+/* Wadah Input animasi yang melebar/menciut */
+.search-input-group { 
+    display: flex; align-items: center; width: 0; opacity: 0; overflow: hidden; 
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); position: relative; 
+}
+.search-input-group.active { width: 320px; opacity: 1; overflow: visible; }
+
+/* Kolom Teks Pencarian */
+.search-input { 
+    width: 100%; padding: 10px 40px 10px 42px; border: 1px solid var(--border); 
+    border-radius: 20px; outline: none; background: var(--bg-body); 
+    transition: 0.2s; font-family: inherit; font-size: 1rem;
+}
+/* Fokus cincin abu-abu (Bukan Biru) */
+.search-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1); background: var(--bg-surface); }
+
+/* Posisi Ikon Pencarian kecil di dalam input text */
 .search-icon-inside { position: absolute; left: 14px; width: 18px; height: 18px; color: var(--text-muted); }
-.close-btn { position: absolute; right: 4px; padding: 6px; color: var(--text-muted); }
+.close-btn { position: absolute; right: 4px; } 
 
+
+/* ==========================================================================
+   8. DAFTAR KOTAK ARTIKEL (BERANDA)
+   ========================================================================== */
 .article-list { display: flex; flex-direction: column; gap: 16px; position: relative; z-index: 10; }
-.article-card { background: var(--bg-surface); border: 1px solid var(--border); padding: 20px; border-radius: 12px; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s; display: flex; justify-content: space-between; align-items: center; text-decoration: none; color: inherit; animation: fadeIn 0.4s ease forwards; }
-.article-card:hover { transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); border-color: var(--primary); }
-.article-info h3 { font-size: 1.125rem; margin-bottom: 6px; color: var(--text-main); }
+.article-card { 
+    background: var(--bg-surface); border: 1px solid var(--border); padding: 20px; border-radius: 12px; 
+    display: flex; justify-content: space-between; align-items: center; text-decoration: none; color: inherit; 
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s; 
+    animation: fadeIn 0.4s ease forwards; outline: none;
+}
+/* Efek saat card di-hover oleh mouse */
+.article-card:hover { transform: translateY(-3px); box-shadow: 0 10px 20px -5px rgba(0,0,0,0.1); border-color: var(--primary); }
+/* UX Aksesibilitas: Outline hitam jika diseleksi lewat keyboard (Tab) */
+.article-card:focus-visible { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1); }
+
+.article-info h3 { font-size: 1.125rem; margin-bottom: 6px; color: var(--text-main); font-weight: 700; }
 .article-info p { font-size: 0.875rem; color: var(--text-muted); display: flex; align-items: center; gap: 6px; }
-.lock-icon { color: var(--text-muted); transition: color 0.2s; }
-.article-card:hover .lock-icon { color: var(--primary); }
-.loading-state, .empty-state { text-align: center; color: var(--text-muted); padding: 40px; background: var(--bg-surface); border-radius: 12px; border: 1px dashed var(--border); }
+
+.empty-state { text-align: center; color: var(--text-muted); padding: 40px; background: var(--bg-surface); border-radius: 12px; border: 1px dashed var(--text-muted); }
+.load-more-trigger { height: 20px; margin-top: 10px; }
+
 
 /* ==========================================================================
-   4. KOMPONEN VIEW.HTML (Daftar Isi & Password Prompt)
+   9. DROPDOWN MENU DAFTAR ISI (VIEW.HTML)
    ========================================================================== */
+/* Desain dan Wadah tombol Daftar Isi */
 .toc-wrapper { position: relative; display: none; }
-.toc-btn { background: transparent; border: none; cursor: pointer; color: var(--text-muted); display: flex; align-items: center; justify-content: center; padding: 10px; border-radius: 8px; transition: 0.2s; }
-.toc-btn:hover, .toc-btn.active { background: var(--bg-body); color: var(--primary); }
-.toc-dropdown { position: absolute; top: 110%; right: 0; width: 280px; background: var(--bg-surface); border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); opacity: 0; visibility: hidden; transform: translateY(-10px); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 100; overflow: hidden; display: flex; flex-direction: column; max-height: 60vh; }
+.toc-btn { 
+    background: transparent; border: none; cursor: pointer; color: var(--text-muted); 
+    display: flex; align-items: center; justify-content: center; 
+    padding: 10px; border-radius: 8px; transition: 0.2s; min-width: 44px; min-height: 44px;
+}
+.toc-btn:hover, .toc-btn.active { background: var(--border); color: var(--primary); }
+.toc-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+/* Menu Melayang Daftar Isi (TOC) */
+.toc-dropdown { 
+    position: absolute; top: 110%; right: 0; width: 280px; background: var(--bg-surface); 
+    border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 10px 25px -5px rgba(0,0,0,0.15); 
+    opacity: 0; visibility: hidden; transform: translateY(-10px); transition: all 0.3s ease; 
+    z-index: 100; max-height: 60vh; display: flex; flex-direction: column; overflow: hidden; 
+}
 .toc-dropdown.show { opacity: 1; visibility: visible; transform: translateY(0); }
-.toc-header { padding: 15px 20px; font-weight: 600; font-size: 0.95rem; border-bottom: 1px solid var(--border); background: #F9FAFB; display: flex; align-items: center; gap: 8px; }
+
+/* Header menu daftar isi */
+.toc-header { padding: 15px 20px; font-weight: 700; font-size: 0.95rem; border-bottom: 1px solid var(--border); background: var(--bg-body); display: flex; align-items: center; gap: 8px; }
 .toc-list { overflow-y: auto; padding: 10px 0; }
-.toc-item { display: block; padding: 10px 20px; color: var(--text-muted); text-decoration: none; font-size: 0.9rem; transition: 0.2s; border-left: 3px solid transparent; line-height: 1.4; }
-.toc-item:hover { background: var(--bg-body); color: var(--primary); border-left-color: var(--primary); }
+/* Desain Link Sub-Judul */
+.toc-item { display: block; padding: 10px 20px; color: var(--text-muted); text-decoration: none; font-size: 0.9rem; transition: 0.2s; border-left: 3px solid transparent; }
+.toc-item:hover, .toc-item:focus-visible { background: var(--bg-body); color: var(--primary); border-left-color: var(--primary); font-weight: 500; outline: none;}
 
-#passwordPrompt { background: var(--bg-surface); padding: 40px 30px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); text-align: center; max-width: 400px; margin: 20px auto; animation: fadeIn 0.4s ease; }
-#passwordPrompt h2 { margin-bottom: 10px; color: var(--text-main); font-size: 1.5rem; }
-#passwordPrompt p { color: var(--text-muted); margin-bottom: 25px; font-size: 0.95rem; }
-.pw-input { width: 100%; padding: 14px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 15px; font-size: 1rem; text-align: center; transition: all 0.2s; outline: none; box-shadow: inset 0 2px 4px rgba(0,0,0,0.03);}
-.pw-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
-.btn-unlock { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 1rem; cursor: pointer; transition: 0.2s; display: flex; justify-content: center; align-items: center; gap: 8px; }
-.btn-unlock:hover { background: var(--primary-hover); transform: translateY(-1px); }
-.btn-unlock:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
-#errorMsg { color: var(--danger); font-size: 0.875rem; margin-top: 15px; display: none; font-weight: 500; }
-
-#decryptedContent { display: none; background: var(--bg-surface); padding: 50px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); animation: fadeIn 0.5s ease; }
 
 /* ==========================================================================
-   5. KOMPONEN CREATE.HTML (Editor Layout)
+   10. KOTAK FORM KATA SANDI (VIEW.HTML)
    ========================================================================== */
-.create-container { max-width: 1400px; margin: 20px auto; padding: 0 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; height: calc(100vh - 100px); }
-.panel { background: var(--bg-surface); border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); display: flex; flex-direction: column; overflow-y: auto; border: 1px solid var(--border); }
-.panel h2 { font-size: 1.25rem; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid var(--border); color: #1F2937; display: flex; justify-content: space-between; align-items: center;}
-.form-group { margin-bottom: 16px; display: flex; flex-direction: column; }
-.form-group label { font-size: 0.875rem; font-weight: 600; margin-bottom: 6px; color: #374151; }
-.form-group input, .form-group textarea { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 0.95rem; transition: all 0.2s; outline: none; background: #F9FAFB; }
-.form-group input:focus, .form-group textarea:focus { background: white; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
-.form-group textarea { flex-grow: 1; resize: none; min-height: 250px; line-height: 1.5; }
-.metadata-box { background: #1F2937; color: var(--success); padding: 16px; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 0.85rem; margin-top: 20px; display: none; overflow-x: auto; box-shadow: inset 0 2px 4px rgba(0,0,0,0.2); }
-.metadata-box p { color: #E5E7EB; margin-bottom: 10px; font-family: 'Inter', sans-serif;}
+#passwordPrompt { background: var(--bg-surface); padding: 40px 30px; border-radius: 12px; border: 1px solid var(--border); text-align: center; max-width: 400px; margin: 20px auto; animation: fadeIn 0.4s ease; }
+#passwordPrompt h2 { margin-bottom: 10px; font-size: 1.5rem; }
+#passwordPrompt p { margin-bottom: 25px; color: var(--text-muted); font-size: 0.95rem; }
+
+.pw-input { width: 100%; padding: 14px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 20px; font-size: 1rem; text-align: center; outline: none; transition: 0.2s;}
+.pw-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0,0,0,0.1); }
+
+.btn-unlock { width: 100%; padding: 14px; background: var(--primary); color: var(--bg-surface); border: none; border-radius: 8px; font-weight: 600; font-size: 1rem; cursor: pointer; transition: 0.2s; }
+.btn-unlock:hover { background: var(--primary-hover); }
+.btn-unlock:disabled { opacity: 0.7; cursor: not-allowed; }
+.btn-unlock:focus-visible { outline: 2px solid var(--primary); outline-offset: 4px; }
+
 
 /* ==========================================================================
-   6. CUSTOM PARSER (Digunakan di View & Create)
+   11. DESAIN ARTIKEL HASIL DEKRIPSI
+   Berlaku untuk Pratinjau (Create.html) dan Layar Baca (View.html)
    ========================================================================== */
-.article-body h1, .preview-content h1 { font-size: 2.25rem; font-weight: 800; margin-bottom: 16px; color: #111827; line-height: 1.2; }
-.article-body h2, .preview-content h2 { font-size: 1.75rem; font-weight: 700; margin-top: 32px; margin-bottom: 12px; border-bottom: 1px solid var(--border); padding-bottom: 8px; color: #1F2937; position: relative; }
-.article-body h3, .preview-content h3 { font-size: 1.25rem; font-weight: 600; margin-top: 24px; margin-bottom: 10px; color: #374151; }
-.article-body p, .preview-content p { margin-bottom: 16px; font-size: 1.05rem; color: #374151; }
-.article-body img, .article-body video, .preview-content img, .preview-content video { max-width: 100%; border-radius: 8px; margin: 20px 0; pointer-events: none; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+.article-body, .preview-content { 
+    background: var(--bg-surface); padding: 50px; border-radius: 12px; 
+    border: 1px solid var(--border); animation: fadeIn 0.5s ease; width: 100%;
+}
+/* Menghapus padding besar pada Pratinjau agar layout grid tidak rusak */
+.preview-content { padding: 0; border: none; background: transparent; }
+
+/* Tag Heading (Judul 1, 2, 3) */
+.article-body h1, .preview-content h1 { font-size: 2.25rem; font-weight: 800; margin-bottom: 16px; line-height: 1.2; letter-spacing: -0.5px;}
+.article-body h2, .preview-content h2 { font-size: 1.75rem; margin-top: 32px; margin-bottom: 12px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+.article-body h3, .preview-content h3 { font-size: 1.25rem; margin-top: 24px; margin-bottom: 10px; }
+.article-body p, .preview-content p { margin-bottom: 16px; font-size: 1.05rem; }
+
+/* Link tautan dalam artikel */
+.article-body a, .preview-content a { color: var(--primary); text-decoration: underline; text-underline-offset: 4px; font-weight: 500; }
+.article-body a:hover, .preview-content a:hover { color: var(--text-muted); }
+
+/* Gambar dan Media */
+.article-body img, .preview-content img { max-width: 100%; border-radius: 8px; margin: 20px 0; border: 1px solid var(--border); pointer-events: none; }
 .article-body audio, .preview-content audio { width: 100%; margin: 15px 0; outline: none; }
 
-.table-responsive { width: 100%; overflow-x: auto; margin: 24px 0; border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-.article-body table, .preview-content table { width: 100%; min-width: 600px; border-collapse: collapse; background: white; }
-.article-body th, .preview-content th { background-color: #F9FAFB; font-weight: 600; color: var(--text-main); }
-.article-body th, .article-body td, .preview-content th, .preview-content td { border: 1px solid var(--border); padding: 12px 16px; text-align: left; }
+/* Desain Tabel HTML Kustom */
+.table-responsive { width: 100%; overflow-x: auto; margin: 24px 0; border: 1px solid var(--border); border-radius: 8px; }
+.article-body table, .preview-content table { width: 100%; min-width: 600px; border-collapse: collapse; }
+.article-body th, .preview-content th { background: var(--bg-body); padding: 12px; border: 1px solid var(--border); text-align: left; font-weight: 700;}
+.article-body td, .preview-content td { padding: 12px; border: 1px solid var(--border); text-align: left; }
 
-.chart-wrapper { width: 100%; overflow-x: auto; margin: 30px 0; border: 1px solid var(--border); border-radius: 8px; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-.chart-container { position: relative; height: 350px; width: 100%; min-width: 650px; padding: 15px; }
+/* Wadah Grafik Chart.js */
+.chart-wrapper { width: 100%; overflow-x: auto; margin: 30px 0; border: 1px solid var(--border); border-radius: 8px; }
+.chart-container { position: relative; height: 350px; min-width: 650px; padding: 15px; }
 
-/* Animasi */
-@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-/* Responsif Mobile */
+/* ==========================================================================
+   12. STUDIO EDITOR (CREATE.HTML)
+   ========================================================================== */
+.create-container { 
+    max-width: 1400px; margin: 20px auto; padding: 0 20px; 
+    display: grid; grid-template-columns: 1fr 1fr; gap: 20px; height: calc(100vh - 100px); 
+}
+.panel { background: var(--bg-surface); border-radius: 12px; padding: 25px; border: 1px solid var(--border); display: flex; flex-direction: column; overflow-y: auto; }
+
+.form-group { margin-bottom: 16px; display: flex; flex-direction: column; }
+.form-group label { font-weight: 700; margin-bottom: 6px; font-size: 0.875rem;}
+.form-group input, .form-group textarea { 
+    padding: 12px; border: 1px solid var(--border); border-radius: 8px; 
+    outline: none; font-family: inherit; transition: 0.2s; font-size: 0.95rem;
+}
+.form-group input:focus, .form-group textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0,0,0,0.1); }
+.form-group textarea { flex-grow: 1; resize: none; min-height: 250px; }
+
+/* Kotak Teks Metadata JSON (Dibuat Monokrom dengan border Putus-Putus) */
+.metadata-box { 
+    background: var(--bg-body); color: var(--primary); padding: 16px; 
+    border-radius: 8px; font-family: monospace; display: none; margin-top: 20px; 
+    white-space: pre-wrap; border: 1px dashed var(--text-muted); font-size: 0.85rem;
+}
+
+
+/* ==========================================================================
+   13. ANIMASI FADE IN (Transisi Lembut)
+   ========================================================================== */
+@keyframes fadeIn { 
+    from { opacity: 0; transform: translateY(10px); } 
+    to { opacity: 1; transform: translateY(0); } 
+}
+
+
+/* ==========================================================================
+   14. MODE RESPONSIP (MOBILE / LAYAR KECIL)
+   ========================================================================== */
 @media (max-width: 600px) {
+    /* Menyembunyikan Logo jika kolom pencarian diaktifkan agar input text lebih panjang */
     .nav-container.search-active .logo { width: 0; opacity: 0; margin: 0; }
     .nav-container.search-active .search-wrapper { width: 100%; }
     .search-input-group.active { width: 100%; }
     
-    main { padding-bottom: 40px; }
-    #decryptedContent { padding: 30px 20px; }
-    .article-body h1 { font-size: 1.75rem; }
-    .toc-dropdown { width: 250px; }
+    /* Ruang tepi artikel dikurangi agar muat di layar HP */
+    .article-body { padding: 30px 20px; }
     
+    /* Layout Create dari 2 Kolom (Samping) diubah jadi 1 Kolom (Bawah) */
     .create-container { grid-template-columns: 1fr; height: auto; }
+}
+
+/* ==========================================================================
+   15. MODE CETAK (PRINT FRIENDLY UX) - (Fitur Tambahan Anti Bug)
+   Jika pengguna menekan Ctrl+P untuk nge-print layar, elemen UI tidak ikut tercetak!
+   ========================================================================== */
+@media print {
+    header, #toast-container, .toc-wrapper, #passwordPrompt, .fullscreen-loader, .create-container { display: none !important; }
+    body { background: white !important; color: black !important; }
+    .article-body { border: none !important; padding: 0 !important; box-shadow: none !important; }
 }

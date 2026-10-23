@@ -2,52 +2,111 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Membaca Artikel Rahasia</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Optimasi Mobile: Mencegah layar ter-zoom saat mengetik kata sandi -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <title>Membaca Artikel Rahasia - SecureReader</title>
+    
+    <!-- === KONFIGURASI PWA & TEMA === -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#000000"> <!-- Monokrom: Hitam -->
+    <link rel="apple-touch-icon" href="icon-192.png">
+
+    <!-- === OPTIMASI FONT (PRECONNECT) === -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Memanggil CSS -->
     <link rel="stylesheet" href="style.css">
     
-    <!-- Dependencies HANYA dipanggil di mana dibutuhkan -->
+    <!-- === LIBRARY EKSTERNAL (WAJIB ADA UNTUK VIEW.HTML) === -->
+    <!-- CryptoJS: Alat berat untuk melakukan proses bongkar sandi (Dekripsi AES) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <!-- Chart.js: Alat untuk menggambar grafik visual secara otomatis -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
+
+<!-- PENTING: ID page-view memicu script.js untuk menjalankan fungsi Keamanan & Dekripsi -->
 <body id="page-view">
 
+    <!-- Fallback Anti-Bug jika JavaScript di browser pengguna mati -->
+    <noscript>
+        <div style="background: #111; color: #fff; padding: 20px; text-align: center; font-family: sans-serif; z-index: 9999; position: relative;">
+            <strong>Peringatan Keamanan:</strong> Dekripsi file rahasia membutuhkan JavaScript. Harap aktifkan JavaScript Anda.
+        </div>
+    </noscript>
+
+    <!-- Wadah Notifikasi Pop-up -->
+    <div id="toast-container" aria-live="polite"></div>
+
+    <!-- Bagian Atas Halaman -->
     <header>
         <div class="nav-container">
-            <a href="index.html" class="logo" title="Kembali ke Beranda">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+            
+            <!-- Logo (Kembali ke Index) -->
+            <a href="index.html" class="logo" aria-label="Kembali ke Beranda" title="Kembali ke Beranda">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
                 SecureReader
             </a>
-
-            <!-- Dropdown Daftar Isi -->
+            
+            <!-- Wadah Menu Daftar Isi (TOC) -->
+            <!-- Secara default disembunyikan oleh CSS. Hanya muncul jika dekripsi sukses dan artikel punya Sub-Judul -->
             <div class="toc-wrapper" id="tocWrapper">
-                <button class="toc-btn" id="tocBtn" title="Daftar Isi">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+                
+                <!-- Tombol Buka Menu Daftar Isi -->
+                <button class="toc-btn" id="tocBtn" aria-label="Buka Daftar Isi" aria-expanded="false" aria-controls="tocDropdown" title="Daftar Isi">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
                 </button>
-                <div class="toc-dropdown" id="tocDropdown">
+                
+                <!-- Kotak Dropdown (Melayang) -->
+                <div class="toc-dropdown" id="tocDropdown" role="menu">
                     <div class="toc-header">Daftar Isi</div>
+                    <!-- Link daftar isi akan dibuat otomatis oleh JavaScript di sini -->
                     <div class="toc-list" id="tocList"></div>
                 </div>
+                
             </div>
         </div>
     </header>
 
-    <main style="max-width: 800px; margin: 40px auto; padding: 0 20px;">
-        <div id="passwordPrompt">
-            <h2>Buka Artikel</h2>
-            <p id="articleTargetName">Masukkan kata sandi rahasia.</p>
-            <form id="decryptForm">
-                <input type="password" id="readPassword" class="pw-input" placeholder="Kata sandi..." required autofocus>
-                <button type="submit" class="btn-unlock" id="btnUnlock">Buka Gembok</button>
-                <div id="errorMsg">Kata sandi salah atau file tidak ditemukan!</div>
-            </form>
+    <!-- Area Utama Artikel -->
+    <main style="max-width: 800px; margin: 40px auto; padding: 0 20px; min-height: 80vh;">
+        
+        <!-- 1. LAYAR LOADING -->
+        <!-- Menutupi layar beberapa milidetik untuk mengecek apakah pengguna punya auto-login -->
+        <div class="fullscreen-loader" id="mainLoader" role="status">
+            <div class="spinner" aria-hidden="true"></div>
+            <p>Memverifikasi akses keamanan...</p>
         </div>
 
-        <div id="decryptedContent" class="article-body"></div>
+        <!-- 2. FORM KATA SANDI -->
+        <!-- Muncul jika pengguna belum memasukkan kata sandi / masa aktif sandinya habis -->
+        <section id="passwordPrompt" aria-labelledby="promptTitle">
+            <h2 id="promptTitle">Buka Dokumen Rahasia</h2>
+            
+            <!-- JavaScript akan mengubah teks ini menjadi "ID: nama-file" -->
+            <p id="articleTargetName">Memuat ID...</p>
+            
+            <form id="decryptForm">
+                <!-- 
+                     Optimasi Form: 
+                     - autocomplete="off": Agar browser tidak mencoba menyimpan kata sandi artikel ini sebagai sandi login akun.
+                     - spellcheck="false": Mencegah HP memperbaiki otomatis kata sandi pengguna yang aneh/unik. 
+                -->
+                <input type="password" id="readPassword" class="pw-input" placeholder="Masukkan kata sandi..." required autofocus autocomplete="off" spellcheck="false" aria-label="Kata Sandi Artikel">
+                
+                <button type="submit" class="btn-unlock" id="btnUnlock">Buka Gembok</button>
+            </form>
+        </section>
+
+        <!-- 3. HASIL ARTIKEL (TERDEKRIPSI) -->
+        <!-- Area tempat artikel yang sudah dibongkar akan dimunculkan oleh JS -->
+        <article id="decryptedContent" class="article-body"></article>
+        
     </main>
 
-    <!-- Panggil File JS Utama -->
+    <!-- Memanggil Script JS -->
     <script src="script.js"></script>
 </body>
 </html>

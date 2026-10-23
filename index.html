@@ -2,42 +2,83 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Beranda - Secure Articles</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Optimasi UX Mobile: Mencegah layar ter-zoom otomatis saat mengetik di kolom pencarian -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <title>Beranda - SecureReader</title>
+    <!-- Deskripsi untuk keperluan SEO dan cuplikan link -->
+    <meta name="description" content="Aplikasi pembaca artikel terenkripsi secara luring (offline).">
+
+    <!-- === KONFIGURASI PWA & TEMA === -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#000000"> <!-- Monokrom: Hitam -->
+    <link rel="apple-touch-icon" href="icon-192.png">
+
+    <!-- === OPTIMASI KECEPATAN (PRECONNECT) === -->
+    <!-- Membuka jalur koneksi ke server font lebih awal untuk mencegah teks berkedip -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Memanggil CSS -->
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body id="page-index">
+
+    <!-- Fallback jika pengguna mematikan JavaScript di browser mereka -->
+    <noscript>
+        <div style="background: #111; color: #fff; padding: 20px; text-align: center; font-family: sans-serif; z-index: 9999; position: relative;">
+            <strong>Peringatan Sistem:</strong> Aplikasi ini membutuhkan JavaScript untuk fitur enkripsi keamanan. Harap aktifkan JavaScript di browser Anda.
+        </div>
+    </noscript>
+
+    <!-- Wadah Notifikasi Pop-up. aria-live="polite" agar dibacakan oleh fitur tunanetra -->
+    <div id="toast-container" aria-live="polite"></div>
 
     <header>
         <div class="nav-container" id="navContainer">
-            <a href="index.html" class="logo">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+            
+            <!-- Logo Utama -->
+            <a href="index.html" class="logo" aria-label="Beranda SecureReader">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
                 SecureReader
             </a>
             
+            <!-- Area Fitur Pencarian -->
             <div class="search-wrapper">
-                <button class="toggle-btn" id="searchOpenBtn">
-                    <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <!-- Tombol Buka Pencarian (Ditambah aria-label untuk aksesibilitas) -->
+                <button class="toggle-btn" id="searchOpenBtn" aria-label="Buka kolom pencarian">
+                    <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                 </button>
+                
+                <!-- Grup Input Pencarian -->
                 <div class="search-input-group" id="searchInputGroup">
-                    <svg class="search-icon-inside" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                    <input type="text" id="searchInput" class="search-input" placeholder="Cari judul artikel..." autocomplete="off">
-                    <button class="toggle-btn close-btn" id="searchCloseBtn">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    <svg class="search-icon-inside" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    
+                    <input type="text" id="searchInput" class="search-input" placeholder="Cari judul artikel..." autocomplete="off" aria-label="Cari judul artikel">
+                    
+                    <!-- Tombol Tutup Pencarian -->
+                    <button class="toggle-btn close-btn" id="searchCloseBtn" aria-label="Tutup kolom pencarian">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                     </button>
                 </div>
             </div>
+            
         </div>
     </header>
 
-    <main style="max-width: 800px; margin: 30px auto; padding: 0 20px;">
-        <div class="article-list" id="articleList">
-            <div class="loading-state">Memuat data artikel...</div>
-        </div>
+    <main style="max-width: 800px; margin: 30px auto; padding: 0 20px; min-height: 80vh;">
+        
+        <!-- Wadah Daftar Artikel -->
+        <div class="article-list" id="articleList" role="list"></div>
+        
+        <!-- Pemicu Infinite Scroll (Transparan) -->
+        <div id="loadMoreTrigger" class="load-more-trigger" aria-hidden="true"></div> 
+        
     </main>
 
-    <!-- Panggil File JS -->
+    <!-- Memanggil Script JS -->
     <script src="script.js"></script>
 </body>
 </html>

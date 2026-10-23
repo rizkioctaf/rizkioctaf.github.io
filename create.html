@@ -1,63 +1,122 @@
 <!DOCTYPE html>
+<!-- Mendeklarasikan bahasa utama halaman ini adalah bahasa Indonesia -->
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Creator - SecureReader</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Mencegah layar HP melakukan zoom otomatis saat mengetik di dalam kolom input/textarea -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <title>Creator Studio - SecureReader</title>
+    <!-- Penjelasan halaman untuk mesin pencari -->
+    <meta name="description" content="Alat pembuat dan pengenkripsi artikel rahasia SecureReader.">
+
+    <!-- === KONFIGURASI PWA & TEMA === -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#000000"> <!-- Monokrom: Hitam -->
+    <link rel="apple-touch-icon" href="icon-192.png">
+
+    <!-- === OPTIMASI FONT (PRECONNECT) === -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Memanggil file CSS utama -->
     <link rel="stylesheet" href="style.css">
     
+    <!-- === LIBRARY EKSTERNAL === -->
+    <!-- Wajib ada di halaman ini karena kita butuh mesin kriptografi untuk MENG-ENKRIPSI artikel baru -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <!-- Wajib ada agar grafik Chart.js bisa tertampil di layar Live Preview -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
+
+<!-- PENTING: ID page-create akan memberi tahu script.js untuk menjalankan fungsi Live Preview dan Tombol Unduh -->
 <body id="page-create">
 
+    <!-- Fallback Anti-Bug: Peringatan jika JS dimatikan (Tanpa JS, sistem enkripsi tidak akan jalan) -->
+    <noscript>
+        <div style="background: #111; color: #fff; padding: 20px; text-align: center; font-family: sans-serif; z-index: 9999; position: relative;">
+            <strong>Peringatan Keamanan:</strong> Studio Editor ini membutuhkan JavaScript untuk melakukan enkripsi data. Harap aktifkan JavaScript Anda.
+        </div>
+    </noscript>
+
+    <!-- Wadah Notifikasi Pop-up (Aksesibel untuk Screen Reader) -->
+    <div id="toast-container" aria-live="polite"></div>
+
+    <!-- Bagian Atas Halaman -->
     <header>
         <div class="nav-container">
-            <a href="index.html" class="logo">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+            <!-- Logo Aplikasi (Berfungsi sebagai tombol kembali ke Beranda) -->
+            <a href="index.html" class="logo" aria-label="Kembali ke Beranda" title="Kembali ke Beranda">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
                 SecureReader Creator
             </a>
         </div>
     </header>
 
-    <div class="create-container">
-        <!-- Editor -->
-        <div class="panel">
-            <h2>Penulis & Enkripsi</h2>
+    <!-- Area Utama Studio Editor (Dibagi menjadi 2 Kolom Grid oleh CSS) -->
+    <main class="create-container">
+        
+        <!-- KOLOM 1 (KIRI): Panel Formulir Input -->
+        <section class="panel" aria-labelledby="editorTitle">
+            <h2 id="editorTitle">Penulis & Mesin Enkripsi</h2>
+            
+            <!-- Grup ID Artikel -->
             <div class="form-group">
-                <label>ID Artikel</label>
-                <input type="text" id="articleId" placeholder="contoh: belajar-javascript-2023" required>
-            </div>
-            <div class="form-group">
-                <label>Judul Artikel</label>
-                <input type="text" id="articleTitle" placeholder="Masukkan judul..." required>
-            </div>
-            <div class="form-group">
-                <label>Kata Sandi</label>
-                <input type="password" id="articlePassword" placeholder="Kata sandi kuat..." required>
-            </div>
-            <div class="form-group" style="flex-grow: 1;">
-                <label>Isi Konten (Markdown Kustom)</label>
-                <textarea id="articleContent" placeholder="Tulis isi rahasia..."></textarea>
+                <label for="articleId">ID Artikel (Nama File)</label>
+                <!-- spellcheck="false" Mencegah HP mengkoreksi ID (contoh: 'javascript-1' malah diubah jadi 'JavaScript 1') -->
+                <input type="text" id="articleId" placeholder="contoh: rahasia-123" required autocomplete="off" spellcheck="false">
             </div>
             
-            <button onclick="encryptAndGenerate()" class="btn-unlock">Enkripsi & Unduh .json</button>
-            <div id="metadataResult" class="metadata-box"></div>
-        </div>
+            <!-- Grup Judul Artikel -->
+            <div class="form-group">
+                <label for="articleTitle">Judul Artikel (Tampil di Beranda)</label>
+                <input type="text" id="articleTitle" placeholder="Ketik judul artikel..." required>
+            </div>
+            
+            <!-- Grup Kata Sandi -->
+            <div class="form-group">
+                <label for="articlePassword">Kata Sandi (Kunci Pembuka)</label>
+                <input type="password" id="articlePassword" placeholder="Buat sandi yang kuat..." required autocomplete="off" spellcheck="false">
+            </div>
+            
+            <!-- Grup Konten Artikel (Area Teks Besar) -->
+            <!-- flex-grow: 1 di CSS membuat kotak tulisan ini memanjang ke bawah mengisi ruang kosong -->
+            <div class="form-group" style="flex-grow: 1;">
+                <label for="articleContent">Isi Konten (Format Markdown Kustom)</label>
+                <!-- Area pengetikan teks utama -->
+                <textarea id="articleContent" placeholder="Gunakan # untuk judul besar, **teks** untuk tebal, atau @grafik[bar](A:10, B:20)..."></textarea>
+            </div>
+            
+            <!-- Tombol Pemicu Enkripsi. onclick="encryptAndGenerate()" memanggil fungsi JS secara langsung -->
+            <button onclick="encryptAndGenerate()" id="btnEncrypt" class="btn-unlock" aria-label="Mulai Enkripsi dan Unduh">
+                Enkripsi & Unduh .json
+            </button>
+            
+            <!-- Kotak Kode Teks Metadata (Awalnya tersembunyi, muncul setelah unduhan selesai) -->
+            <div id="metadataResult" class="metadata-box" aria-live="polite"></div>
+            
+        </section>
 
-        <!-- Preview -->
-        <div class="panel">
-            <h2>Pratinjau Hasil</h2>
-            <div class="preview-content" id="previewContainer">
+        <!-- KOLOM 2 (KANAN): Panel Pratinjau Langsung (Live Preview) -->
+        <section class="panel" aria-labelledby="previewTitle">
+            <h2 id="previewTitle">Pratinjau Layar</h2>
+            
+            <!-- Wadah hasil HTML yang di-render oleh JS (Fungsi parseContent) -->
+            <!-- aria-live="polite" memberitahu pembaca layar bahwa kotak ini isinya bisa berubah-ubah -->
+            <div class="preview-content" id="previewContainer" aria-live="polite">
+                <!-- Teks pesan instruksi awal -->
                 <div style="text-align: center; color: var(--text-muted); margin-top: 100px;">
-                    <p>Mulai mengetik di kolom kiri untuk melihat pratinjau...</p>
+                    Mulai mengetik di kolom sebelah kiri untuk melihat hasil desain secara langsung...
                 </div>
             </div>
-        </div>
-    </div>
+            
+        </section>
+        
+    </main>
 
-    <!-- Panggil File JS Utama -->
+    <!-- Memanggil Script JS -->
     <script src="script.js"></script>
 </body>
 </html>
