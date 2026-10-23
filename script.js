@@ -189,7 +189,10 @@ function initIndex() {
         document.getElementById('searchInputGroup').classList.add('active'); 
         document.getElementById('searchOpenBtn').classList.add('hide'); 
         document.getElementById('navContainer').classList.add('search-active');
-        setTimeout(() => document.getElementById('searchInput').focus(), 100);
+        
+        // PERBAIKAN: Ubah angka 100 menjadi 400. 
+        // Ini memastikan kursor baru berkedip (focus) SETELAH animasi CSS selesai sepenuhnya (400ms).
+        setTimeout(() => document.getElementById('searchInput').focus(), 400);
     });
     
     document.getElementById('searchCloseBtn').addEventListener('click', () => {
