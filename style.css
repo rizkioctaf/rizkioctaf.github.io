@@ -118,7 +118,7 @@ header {
     background: transparent; border: none; cursor: pointer; color: var(--text-muted); 
     display: flex; align-items: center; justify-content: center; 
     padding: 10px; border-radius: 50%; transition: 0.2s; 
-    min-width: 44px; min-height: 44px; /* Standar UX area sentuh mobile agar mudah ditekan */
+    min-width: 38px; min-height: 38px; /* Standar UX area sentuh mobile agar mudah ditekan */
 }
 .toggle-btn:hover { background: var(--border); color: var(--primary); }
 .toggle-btn.hide { display: none !important; }
@@ -135,16 +135,16 @@ header {
 
 /* Kolom Teks Pencarian */
 .search-input { 
-    width: 100%; padding: 10px 40px 10px 42px; 
+    width: 100%; padding: 10px 40px 10px 42px; border: 1px solid var(--border);
     border-radius: 20px; outline: none; background: var(--bg-body); 
     transition: 0.2s; font-family: inherit; font-size: 1rem;
 }
 /* Fokus cincin abu-abu (Bukan Biru) */
-.search-input:focus { border: none; box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1); background: var(--bg-surface); }
+.search-input:focus { border: var(--primary); box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1); background: var(--bg-surface); }
 
 /* Posisi Ikon Pencarian kecil di dalam input text */
 .search-icon-inside { position: absolute; left: 14px; width: 18px; height: 18px; color: var(--text-muted); }
-.close-btn { position: absolute; } 
+.close-btn { position: absolute; right: 2px;} 
 
 
 /* ==========================================================================
