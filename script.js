@@ -46,13 +46,12 @@ const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 /* ==========================================================================
    B. MESIN PARSER (PENGUBAH TEKS JADI TAMPILAN WEB)
-   ========================================================================== */
-/**
+   ========================================================================== *//**
  * Fungsi ini membaca tulisan rahasia Anda dan mengubah simbol khusus (##, **, dll) 
- * menjadi tag desain HTML yang sesungguhnya. Termasuk fitur List!
+ * menjadi tag desain HTML. Telah dioptimalkan untuk List Bersarang (Nested List).
  */
 function parseContent(text) {
-    // 1. Mengubah pola Markdown dasar (Judul, Tebal, Miring, Media, dan Grafik)
+    // 1. Mengubah pola Markdown dasar (Judul, Tebal, Miring, Media, Grafik)
     let html = text
         .replace(/^### (.*$)/gim, '<h3>$1</h3>')
         .replace(/^## (.*$)/gim, '<h2>$1</h2>')
@@ -64,56 +63,85 @@ function parseContent(text) {
         .replace(/@video\[(.*?)\]\((.*?)\)/gim, '<video controls><source src="$2"></video>')
         .replace(/@grafik\[(.*?)\]\((.*?)\)/gim, '<div class="chart-wrapper"><div class="chart-container"><canvas class="custom-chart" data-type="$1" data-data="$2"></canvas></div></div>');
 
-    // ==========================================
-    // 2. PARSER LIST & SUB-LIST (PERBAIKAN ANTI-BUG)
-    // ==========================================
-    // A. Sub-List (Gunakan 2 atau 4 spasi sebelum tanda strip/bintang)
-    // Diberi penanda sementara '_sub' agar tidak tercampur dengan list utama
-    html = html.replace(/^ {2,4}[-*] (.*$)/gim, '<ul class="sub-list"><li>$1</li></ul>_sub');
-    html = html.replace(/<\/ul>_sub\n*<ul class="sub-list">/g, ''); // Gabungkan HANYA sesama sub-list
-    html = html.replace(/<\/ul>_sub/g, '</ul>'); // Bersihkan penanda sementara
-
-    // B. List Utama Bullet Point (Gunakan awalan - atau *)
-    // Diberi penanda sementara '_main'
-    html = html.replace(/^[-*] (.*$)/gim, '<ul><li>$1</li></ul>_main');
-    html = html.replace(/<\/ul>_main\n*<ul>/g, ''); // Gabungkan HANYA sesama list bullet
-    html = html.replace(/<\/ul>_main/g, '</ul>');
-
-    // C. List Utama Angka (Gunakan awalan angka dan titik, misal 1. )
-    // Diberi penanda sementara '_num'
-    html = html.replace(/^\d+\. (.*$)/gim, '<ol><li>$1</li></ol>_num');
-    html = html.replace(/<\/ol>_num\n*<ol>/g, ''); // Gabungkan HANYA sesama list angka
-    html = html.replace(/<\/ol>_num/g, '</ol>');
-
-
-    // ==========================================
-    // 3. PARSER TABEL
-    // ==========================================
-    let inTable = false;
-    let tableRows = html.split('\n'); 
+    // 2. PARSER BLOK: Tabel & List (Line-by-Line System Anti-Bug)
+    let lines = html.split('\n');
+    let result = [];
     
-    for (let i = 0; i < tableRows.length; i++) {
-        if (tableRows[i].trim().startsWith('|')) {
-            let cells = tableRows[i].split('|').filter(c => c.trim() !== '');
+    let inTable = false;
+    let inUl = false;
+    let inOl = false;
+    let inSubUl = false;
+
+    // Fungsi otomatis untuk menutup list jika pengguna beralih ke paragraf biasa
+    const closeLists = () => {
+        if (inSubUl) { result.push('</ul>'); inSubUl = false; }
+        if (inUl) { result.push('</ul>'); inUl = false; }
+        if (inOl) { result.push('</ol>'); inOl = false; }
+    };
+
+    for (let i = 0; i < lines.length; i++) {
+        let line = lines[i];
+        let trimmed = line.trim();
+        
+        // A. CEK TABEL
+        if (trimmed.startsWith('|')) {
+            closeLists(); // Jika ketemu tabel, list sebelumnya ditutup
+            let cells = trimmed.split('|').filter(c => c.trim() !== '');
             let rowHtml = cells.map(c => `<td>${c.trim()}</td>`).join('');
             
             if (!inTable) { 
-                tableRows[i] = `<div class="table-responsive"><table><tbody><tr>${rowHtml}</tr>`; 
+                result.push(`<div class="table-responsive"><table><tbody><tr>${rowHtml}</tr>`); 
                 inTable = true; 
             } else { 
-                tableRows[i] = `<tr>${rowHtml}</tr>`; 
+                result.push(`<tr>${rowHtml}</tr>`); 
             }
-        } else if (inTable) { 
-            tableRows[i-1] += '</tbody></table></div>'; 
-            inTable = false; 
+        } 
+        else {
+            if (inTable) { result.push('</tbody></table></div>'); inTable = false; } // Tutup tabel
+            
+            // B. CEK SUB-LIST (Mendeteksi tombol Tab atau Spasi di awal kalimat)
+            if (line.match(/^[ \t]+[-*] /)) {
+                let content = line.replace(/^[ \t]+[-*] /, '');
+                
+                // Pastikan list induk sudah ada agar HTML tidak error
+                if (!inUl) { result.push('<ul>'); inUl = true; }
+                if (!inSubUl) { result.push('<ul class="sub-list">'); inSubUl = true; }
+                
+                result.push(`<li>${content}</li>`);
+            }
+            // C. CEK LIST UTAMA (Bullet)
+            else if (line.match(/^[-*] /)) {
+                let content = line.replace(/^[-*] /, '');
+                if (inSubUl) { result.push('</ul>'); inSubUl = false; } // Tutup sub-listnya saja
+                if (inOl) { result.push('</ol>'); inOl = false; } // Ganti mode dari angka ke bullet
+                
+                if (!inUl) { result.push('<ul>'); inUl = true; }
+                result.push(`<li>${content}</li>`);
+            }
+            // D. CEK LIST UTAMA (Angka)
+            else if (line.match(/^\d+\. /)) {
+                let content = line.replace(/^\d+\. /, '');
+                if (inSubUl) { result.push('</ul>'); inSubUl = false; } 
+                if (inUl) { result.push('</ul>'); inUl = false; }
+                
+                if (!inOl) { result.push('<ol>'); inOl = true; }
+                result.push(`<li>${content}</li>`);
+            }
+            // E. TEKS PARAGRAF BIASA
+            else {
+                // Abaikan enter/spasi kosong agar list tidak terputus di tengah jalan
+                if (trimmed !== '') closeLists(); 
+                result.push(line);
+            }
         }
     }
-    if (inTable) tableRows[tableRows.length - 1] += '</tbody></table></div>';
-    html = tableRows.join('\n');
+    
+    if (inTable) result.push('</tbody></table></div>');
+    closeLists(); // Bersihkan sisa tag penutup
+    
+    html = result.join('\n');
 
-    // ==========================================
-    // 4. PEMBERSIHAN ENTER (SPASI KOSONG)
-    // ==========================================
+    // 3. Merapikan Enter yang berlebihan
     html = html.replace(/\n*(<\/?(h1|h2|h3|table|tbody|tr|td|div|audio|video|img|ul|ol|li)[^>]*>)\n*/gi, '$1');
     html = html.replace(/\n{3,}/g, '\n\n'); 
     return html.replace(/\n(?![^<]*>)/g, '<br>');
