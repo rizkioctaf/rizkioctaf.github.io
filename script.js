@@ -48,7 +48,7 @@ const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
    B. MESIN PARSER (PENGUBAH TEKS JADI TAMPILAN WEB)
    ========================================================================== */
 /**
- * Fungsi pembaca Markdown Kustom SecureReader
+ * Fungsi Pembaca Markdown Kustom SecureReader
  */
 function parseContent(text) {
     // 1. Parser Dasar & Media
@@ -64,27 +64,23 @@ function parseContent(text) {
         .replace(/@grafik\[(.*?)\]\((.*?)\)/gim, '<div class="chart-wrapper"><div class="chart-container"><canvas class="custom-chart" data-type="$1" data-data="$2"></canvas></div></div>');
 
     // ==========================================
-    // 2. PARSER LIST & SUB-LIST (ANTI AUTO-CORRECT)
+    // 2. PARSER LIST & SUB-LIST (REGEX ORIGINAL)
     // ==========================================
-    // A. Sub-List: Toleransi Spasi Awal dan Tangkap wujud asli "--", atau wujud auto-correct "—" / "–"
-    html = html.replace(/^[ \t]*(?:--|—|–)\s+([^\r\n]+)/gim, '<ul class="sub-list"><li>$1</li></ul>_sub');
+    // A. Sub-List (Logika "-- ")
+    // Menggunakan (.*) alih-alih (.*$) untuk kebal terhadap \r\n di textarea
+    html = html.replace(/^[ \t]*--[ \t]+(.*)/gim, '<ul class="sub-list"><li>$1</li></ul>_sub');
     
-    // B. List Bullet: Toleransi Spasi Awal dan Tangkap wujud "-", "*", atau "•"
-    html = html.replace(/^[ \t]*[-*•]\s+([^\r\n]+)/gim, '<ul><li>$1</li></ul>_main');
-    
-    // C. List Angka: Toleransi Spasi Awal
-    html = html.replace(/^[ \t]*\d+\.\s+([^\r\n]+)/gim, '<ol><li>$1</li></ol>_num');
+    // B. List Utama Bullet (Logika "- ")
+    html = html.replace(/^[ \t]*-[ \t]+(.*)/gim, '<ul><li>$1</li></ul>_main');
 
-    // D. Penggabungan List: Menggunakan \s* agar aman melibas spasi & enter jenis apapun
-    html = html.replace(/<\/ul>_sub\s*<ul class="sub-list">/gi, ''); 
-    html = html.replace(/<\/ul>_main\s*<ul>/gi, ''); 
-    html = html.replace(/<\/ol>_num\s*<ol>/gi, ''); 
+    // C. Penggabungan (Grouping)
+    // Menggunakan [\r\n\s]* agar enter tipe apapun dijamin tembus dan list tergabung
+    html = html.replace(/<\/ul>_sub[\r\n\s]*<ul class="sub-list">/gim, '');
+    html = html.replace(/<\/ul>_main[\r\n\s]*<ul>/gim, '');
 
-    // E. Hapus Penanda
+    // D. Hapus penanda sementara
     html = html.replace(/_sub/g, '');
     html = html.replace(/_main/g, '');
-    html = html.replace(/_num/g, '');
-
 
     // ==========================================
     // 3. PARSER TABEL
