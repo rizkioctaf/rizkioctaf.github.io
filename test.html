@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pemindai QR & Barcode Optimal</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!-- HTML5 QRCode Library -->
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <style>
+        #reader {
+            width: 100% !important;
+            border: none !important;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            background-color: #0f172a;
+        }
+        #reader video {
+            object-fit: cover;
+            border-radius: 0.75rem;
+            width: 100% !important;
+            height: 100% !important;
+        }
+        /* Sembunyikan elemen bawaan pustaka yang mengganggu */
+        #reader__dashboard_section_csr span, 
+        #reader__dashboard_section_swaplink,
+        #reader__header_message {
+            display: none !important;
+        }
+        #reader__scan_region {
+            background: transparent !important;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col items-center py-6 px-4">
+
+    <div class="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-5 text-center shadow-md">
+            <h1 class="text-xl font-bold flex items-center justify-center gap-2">
+                <i class="ph ph-scan text-2xl"></i>
+                Pemindai QR & Barcode
+            </h1>
+            <p class="text-xs text-blue-100 mt-1">Arahkan kamera ke kode QR atau Barcode</p>
+        </div>
+
+        <div class="p-5 flex-1 flex flex-col gap-4">
+            
+            <!-- Pesan Error / Status Kamera -->
+            <div id="error-alert" class="hidden bg-red-50 border-l-4 border-red-500 p-3 rounded-lg text-sm text-red-700 flex items-start gap-2">
+                <i class="ph ph-warning-circle text-lg shrink-0 mt-0.5"></i>
+                <div id="error-message" class="flex-1">Terjadi kesalahan kamera.</div>
+            </div>
+
+            <!-- Area Kamera -->
+            <div class="relative w-full aspect-square rounded-xl border-2 border-dashed border-slate-300 flex items-center justify-center bg-slate-900 overflow-hidden shadow-inner">
+                <div id="reader"></div>
+                
+                <!-- Placeholder sebelum kamera aktif -->
+                <div id="placeholder-container" class="absolute inset-0 flex flex-col items-center justify-center text-slate-400 bg-slate-900 z-10 p-6 text-center">
+                    <div class="w-16 h-16 rounded-full bg-slate-800 flex items-center justify-center mb-3 shadow">
+                        <i class="ph ph-camera text-3xl text-blue-400"></i>
+                    </div>
+                    <p class="text-sm font-medium text-slate-300">Kamera Belum Aktif</p>
+                    <p class="text-xs text-slate-500 mt-1">Tekan tombol di bawah untuk mulai memindai</p>
+                </div>
+            </div>
+
+            <!-- Pilihan Kamera (Jika ada banyak kamera) -->
+            <div id="camera-selection-wrapper" class="hidden flex flex-col gap-1">
+                <label for="camera-select" class="text-xs font-semibold text-slate-600">Pilih Kamera:</label>
+                <select id="camera-select" class="bg-slate-50 border border-slate-300 text-slate-700 text-sm rounded-lg p-2.5 focus:ring-blue-500 focus:border-blue-500">
+                </select>
+            </div>
+
+            <!-- Kontrol Kamera -->
+            <div class="flex gap-2">
+                <button id="start-btn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-xl transition-all shadow-md shadow-blue-200 flex items-center justify-center gap-2">
+                    <i class="ph ph-play-circle text-xl"></i> Mulai Kamera
+                </button>
+                <button id="stop-btn" class="flex-1 bg-red-500 hover:bg-red-600 text-white font-semibold py-3 px-4 rounded-xl transition-all hidden shadow-md shadow-red-200 items-center justify-center gap-2">
+                    <i class="ph ph-stop-circle text-xl"></i> Matikan
+                </button>
+            </div>
+
+            <hr class="border-slate-200 my-1">
+
+            <!-- Daftar Hasil Scan -->
+            <div class="flex-1 flex flex-col">
+                <div class="flex justify-between items-center mb-2">
+                    <h2 class="text-md font-bold text-slate-700 flex items-center gap-2">
+                        <i class="ph ph-list-bullets text-lg text-blue-600"></i>
+                        Riwayat Pindai
+                        <span id="badge-count" class="bg-blue-100 text-blue-700 text-xs font-bold px-2 py-0.5 rounded-full hidden">0</span>
+                    </h2>
+                    <button id="clear-all-btn" class="hidden text-xs text-red-600 hover:text-red-800 font-medium flex items-center gap-1 transition-colors">
+                        <i class="ph ph-trash text-sm"></i> Hapus Semua
+                    </button>
+                </div>
+                
+                <div class="bg-slate-50 rounded-xl p-2.5 border border-slate-200 overflow-y-auto max-h-[45vh] min-h-[120px] flex flex-col">
+                    <ul id="results-list" class="flex flex-col gap-2">
+                        <!-- Pesan Kosong -->
+                        <div id="empty-state" class="my-auto py-8 text-center text-slate-400 text-sm flex flex-col items-center">
+                            <i class="ph ph-barcode text-3xl mb-1 text-slate-300"></i>
+                            Belum ada kode yang dipindai
+                        </div>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifikasi -->
+    <div id="toast" class="fixed bottom-5 left-1/2 transform -translate-x-1/2 bg-slate-900 text-white px-4 py-2.5 rounded-xl shadow-2xl transition-all duration-300 opacity-0 pointer-events-none z-50 flex items-center gap-2.5 text-sm">
+        <i class="ph ph-check-circle text-emerald-400 text-xl"></i>
+        <span id="toast-message">Disalin ke clipboard!</span>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const html5QrCode = new Html5Qrcode("reader");
+            const startBtn = document.getElementById('start-btn');
+            const stopBtn = document.getElementById('stop-btn');
+            const resultsList = document.getElementById('results-list');
+            const emptyState = document.getElementById('empty-state');
+            const placeholderContainer = document.getElementById('placeholder-container');
+            const badgeCount = document.getElementById('badge-count');
+            const clearAllBtn = document.getElementById('clear-all-btn');
+            const errorAlert = document.getElementById('error-alert');
+            const errorMessage = document.getElementById('error-message');
+            const cameraSelectionWrapper = document.getElementById('camera-selection-wrapper');
+            const cameraSelect = document.getElementById('camera-select');
+            
+            let isScanning = false;
+            let scannedItems = []; // Array untuk menyimpan riwayat dan mendeteksi duplikat
+            let lastScannedText = "";
+            let lastScannedTime = 0;
+
+            // Fungsi Tampilkan Pesan Error
+            function showError(msg) {
+                errorMessage.textContent = msg;
+                errorAlert.classList.remove('hidden');
+            }
+
+            function hideError() {
+                errorAlert.classList.add('hidden');
+            }
+
+            // Memuat daftar kamera yang tersedia di perangkat
+            async function getCameras() {
+                try {
+                    const devices = await Html5Qrcode.getCameras();
+                    if (devices && devices.length > 0) {
+                        cameraSelect.innerHTML = '';
+                        devices.forEach(device => {
+                            const option = document.createElement('option');
+                            option.value = device.id;
+                            option.textContent = device.label || `Kamera (${device.id.substr(0, 5)}...)`;
+                            cameraSelect.appendChild(option);
+                        });
+                        cameraSelectionWrapper.classList.remove('hidden');
+                    }
+                } catch (err) {
+                    console.warn("Tidak dapat mendeteksi daftar kamera spesifik:", err);
+                }
+            }
+
+            // Inisialisasi daftar kamera saat halaman dimuat
+            getCameras();
+
+            // Callback ketika berhasil memindai kode
+            const onScanSuccess = (decodedText, decodedResult) => {
+                const currentTime = new Date().getTime();
+                
+                // Mencegah pembacaan beruntun dalam jeda 2.5 detik untuk kode yang sama persis
+                if (decodedText === lastScannedText && (currentTime - lastScannedTime) < 2500) {
+                    return;
+                }
+
+                lastScannedText = decodedText;
+                lastScannedTime = currentTime;
+
+                // Umpan balik getar jika didukung browser HP
+                if (navigator.vibrate) {
+                    try { navigator.vibrate(100); } catch(e){}
+                }
+
+                addResult(decodedText);
+            };
+
+            const onScanFailure = (error) => {
+                // Error diabaikan karena terjadi terus menerus saat kamera mencari pola barcode/QR di setiap frame
+            };
+
+            // Mulai Kamera dengan Constraints Optimal
+            startBtn.addEventListener('click', async () => {
+                hideError();
+                placeholderContainer.classList.add('hidden');
+
+                // Tentukan konfigurasi kamera optimal (Prioritas kamera belakang/environment + autofocus)
+                const cameraConfig = cameraSelect.value ? 
+                    { deviceId: { exact: cameraSelect.value } } : 
+                    { 
+                        facingMode: "environment",
+                        advanced: [{ focusMode: "continuous" }] 
+                    };
+
+                const qrboxSetting = (window.innerWidth < 400) ? 220 : 250;
+
+                const config = {
+                    fps: 15,
+                    qrbox: { width: qrboxSetting, height: qrboxSetting },
+                    aspectRatio: 1.0,
+                    formatsToSupport: [
+                        Html5QrcodeSupportedFormats.QR_CODE,
+                        Html5QrcodeSupportedFormats.UPC_A,
+                        Html5QrcodeSupportedFormats.UPC_E,
+                        Html5QrcodeSupportedFormats.EAN_13,
+                        Html5QrcodeSupportedFormats.EAN_8,
+                        Html5QrcodeSupportedFormats.CODE_39,
+                        Html5QrcodeSupportedFormats.CODE_128,
+                        Html5QrcodeSupportedFormats.ITF
+                    ]
+                };
+
+                try {
+                    await html5QrCode.start(
+                        cameraConfig,
+                        config,
+                        onScanSuccess,
+                        onScanFailure
+                    );
+                    isScanning = true;
+                    toggleUIState(true);
+                } catch (err) {
+                    console.error("Gagal memulai kamera dengan pengaturan optimal:", err);
+                    
+                    // Fallback ke pengaturan dasar jika constraints advanced gagal
+                    try {
+                        await html5QrCode.start(
+                            { facingMode: "environment" },
+                            config,
+                            onScanSuccess,
+                            onScanFailure
+                        );
+                        isScanning = true;
+                        toggleUIState(true);
+                        return;
+                    } catch (fallbackErr) {
+                        console.error("Fallback kamera gagal:", fallbackErr);
+                        placeholderContainer.classList.remove('hidden');
+                        showError("Gagal mengakses kamera. Pastikan izin kamera telah diberikan di pengaturan browser dan Anda menggunakan sambungan HTTPS atau localhost.");
+                    }
+                }
+            });
+
+            // Matikan Kamera
+            stopBtn.addEventListener('click', async () => {
+                if (isScanning) {
+                    try {
+                        await html5QrCode.stop();
+                        isScanning = false;
+                        toggleUIState(false);
+                        placeholderContainer.classList.remove('hidden');
+                    } catch (err) {
+                        console.error("Gagal menghentikan kamera:", err);
+                    }
+                }
+            });
+
+            function toggleUIState(scanning) {
+                if (scanning) {
+                    startBtn.classList.add('hidden');
+                    stopBtn.classList.remove('hidden');
+                    stopBtn.classList.add('flex');
+                } else {
+                    startBtn.classList.remove('hidden');
+                    startBtn.classList.add('flex');
+                    stopBtn.classList.add('hidden');
+                    stopBtn.classList.remove('flex');
+                }
+            }
+
+            // Tambahkan hasil ke daftar riwayat
+            function addResult(text) {
+                // Cek apakah item sudah ada di urutan teratas untuk mencegah duplikat beruntun
+                if (scannedItems.length > 0 && scannedItems[0] === text) {
+                    return; // Lewati jika persis sama dengan yang baru saja ditambahkan
+                }
+
+                scannedItems.unshift(text); // Masukkan ke awal array
+                renderList();
+            }
+
+            // Hapus item individual berdasarkan indeks
+            window.removeItem = function(index) {
+                scannedItems.splice(index, 1);
+                renderList();
+            }
+
+            // Hapus semua riwayat
+            clearAllBtn.addEventListener('click', () => {
+                if (confirm("Yakin ingin menghapus seluruh riwayat pindai?")) {
+                    scannedItems = [];
+                    renderList();
+                }
+            });
+
+            // Render ulang tampilan daftar riwayat di DOM
+            function renderList() {
+                resultsList.innerHTML = '';
+                
+                if (scannedItems.length === 0) {
+                    emptyState.style.display = 'flex';
+                    resultsList.appendChild(emptyState);
+                    badgeCount.classList.add('hidden');
+                    clearAllBtn.classList.add('hidden');
+                    return;
+                }
+
+                emptyState.style.display = 'none';
+                badgeCount.textContent = scannedItems.length;
+                badgeCount.classList.remove('hidden');
+                clearAllBtn.classList.remove('flex'); // Pakai flex/inline-flex
+                clearAllBtn.classList.remove('hidden');
+                clearAllBtn.classList.add('flex');
+
+                scannedItems.forEach((item, index) => {
+                    const li = document.createElement('li');
+                    li.className = "bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between gap-3 transition-all animate-fade-in";
+                    
+                    const textContainer = document.createElement('div');
+                    textContainer.className = "flex-1 min-w-0";
+                    
+                    const textSpan = document.createElement('p');
+                    textSpan.className = "font-mono text-xs text-slate-800 break-all line-clamp-3";
+                    textSpan.textContent = item;
+                    
+                    textContainer.appendChild(textSpan);
+
+                    const actionDiv = document.createElement('div');
+                    actionDiv.className = "flex items-center gap-1.5 shrink-0";
+
+                    // Tombol Salin
+                    const copyBtn = document.createElement('button');
+                    copyBtn.className = "p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors focus:ring-2 focus:ring-blue-300";
+                    copyBtn.innerHTML = '<i class="ph ph-copy text-base"></i>';
+                    copyBtn.title = "Salin teks";
+                    copyBtn.onclick = () => copyToClipboard(item, copyBtn);
+
+                    // Tombol Hapus
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = "p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors focus:ring-2 focus:ring-red-300";
+                    deleteBtn.innerHTML = '<i class="ph ph-trash text-base"></i>';
+                    deleteBtn.title = "Hapus item";
+                    deleteBtn.onclick = () => removeItem(index);
+
+                    actionDiv.appendChild(copyBtn);
+                    actionDiv.appendChild(deleteBtn);
+                    
+                    li.appendChild(textContainer);
+                    li.appendChild(actionDiv);
+
+                    resultsList.appendChild(li);
+                });
+            }
+
+            // Fungsi Salin ke Clipboard yang Aman
+            async function copyToClipboard(text, btnElement) {
+                try {
+                    if (navigator.clipboard && window.isSecureContext) {
+                        await navigator.clipboard.writeText(text);
+                        showToast("Berhasil disalin ke clipboard!");
+                    } else {
+                        const textArea = document.createElement("textarea");
+                        textArea.value = text;
+                        textArea.style.position = "fixed";
+                        textArea.style.left = "-9999px";
+                        document.body.appendChild(textArea);
+                        textArea.focus();
+                        textArea.select();
+                        document.execCommand('copy');
+                        textArea.remove();
+                        showToast("Berhasil disalin ke clipboard!");
+                    }
+
+                    // Ubah ikon tombol sementara menjadi centang hijau
+                    const originalHTML = btnElement.innerHTML;
+                    btnElement.innerHTML = '<i class="ph ph-check text-base text-emerald-600"></i>';
+                    btnElement.classList.replace('bg-blue-50', 'bg-emerald-50');
+                    
+                    setTimeout(() => {
+                        btnElement.innerHTML = originalHTML;
+                        btnElement.classList.replace('bg-emerald-50', 'bg-blue-50');
+                    }, 1500);
+
+                } catch (err) {
+                    console.error("Gagal menyalin:", err);
+                    showToast("Gagal menyalin teks!");
+                }
+            }
+
+            // Menampilkan Toast Notifikasi
+            function showToast(msg) {
+                const toast = document.getElementById('toast');
+                const toastMessage = document.getElementById('toast-message');
+                toastMessage.textContent = msg;
+
+                toast.classList.remove('opacity-0');
+                toast.classList.add('opacity-100');
+
+                setTimeout(() => {
+                    toast.classList.remove('opacity-100');
+                    toast.classList.add('opacity-0');
+                }, 2500);
+            }
+        });
+    </script>
+</body>
+</html>
