@@ -48,29 +48,46 @@ const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
    B. MESIN PARSER (PENGUBAH TEKS JADI TAMPILAN WEB)
    ========================================================================== */
 function parseContent(text) {
-    // 1. Mengubah pola Markdown dasar (Judul, Tebal, Miring, Media, dan Grafik)
+    // 0. SANITASI KEAMANAN (ANTI-XSS) Wajib dijalankan paling pertama!
+    // Ini mengubah < dan > bawaan user agar tidak dibaca sebagai tag HTML jahat.
     let html = text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+
+    // 1. FORMATTING DASAR & PROTEKSI MEDIA
+    html = html
         .replace(/^### (.*$)/gim, '<h3>$1</h3>')
         .replace(/^## (.*$)/gim, '<h2>$1</h2>')
         .replace(/^# (.*$)/gim, '<h1>$1</h1>')
         .replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>')
         .replace(/\*(.*?)\*/gim, '<em>$1</em>')
-        .replace(/!\[(.*?)\]\((.*?)\)/gim, '<img alt="$1" src="$2" loading="lazy">')
-        .replace(/@audio\[(.*?)\]\((.*?)\)/gim, '<audio controls><source src="$2"></audio>')
-        .replace(/@video\[(.*?)\]\((.*?)\)/gim, '<video controls><source src="$2"></video>')
+        // Regex dengan Callback untuk mengecek link javascript: jahat
+        .replace(/!\[(.*?)\]\((.*?)\)/gim, (match, alt, url) => {
+            let safeUrl = url.trim().toLowerCase().startsWith('javascript:') ? '#' : url;
+            return `<img alt="${alt}" src="${safeUrl}" loading="lazy">`;
+        })
+        .replace(/@audio\[(.*?)\]\((.*?)\)/gim, (match, alt, url) => {
+            let safeUrl = url.trim().toLowerCase().startsWith('javascript:') ? '#' : url;
+            return `<audio controls><source src="${safeUrl}"></audio>`;
+        })
+        .replace(/@video\[(.*?)\]\((.*?)\)/gim, (match, alt, url) => {
+            let safeUrl = url.trim().toLowerCase().startsWith('javascript:') ? '#' : url;
+            return `<video controls><source src="${safeUrl}"></video>`;
+        })
         .replace(/@grafik\[(.*?)\]\((.*?)\)/gim, '<div class="chart-wrapper"><div class="chart-container"><canvas class="custom-chart" data-type="$1" data-data="$2"></canvas></div></div>');
 
-    // 2. Logika Pembuat List & Sub-list (Unordered & Ordered)
+    // 2. LOGIKA LIST (Valid HTML W3C & Sub-list Sempurna)
     let lines = html.split('\n');
     let processedLines = [];
-    let listStack = []; // Menyimpan status indentasi: { tag: 'ul'|'ol', indent: angka }
+    let listStack = []; 
+    let inLi = false;
 
     for (let i = 0; i < lines.length; i++) {
         let line = lines[i];
-
-        // Deteksi List tak berurut (ul): spasi(opsional) + "-" atau "*" + spasi + teks
         let ulMatch = line.match(/^(\s*)([-*])\s+(.*)/);
-        // Deteksi List berurut (ol): spasi(opsional) + angka + titik + spasi + teks
         let olMatch = line.match(/^(\s*)(\d+\.)\s+(.*)/);
 
         if (ulMatch || olMatch) {
@@ -78,71 +95,100 @@ function parseContent(text) {
             let content = ulMatch ? ulMatch[3] : olMatch[3];
             let listType = ulMatch ? 'ul' : 'ol';
 
-            // Jika indentasi mundur, tutup sub-list yang ada di level lebih dalam
+            // Tutup list bertingkat yang lebih dalam
             while (listStack.length > 0 && listStack[listStack.length - 1].indent > indent) {
                 let closedList = listStack.pop();
-                processedLines.push(`</${closedList.tag}>`);
+                processedLines.push(`</li></${closedList.tag}>`);
+                inLi = listStack.length > 0; 
             }
 
-            // Jika list baru atau indentasi maju (sub-list), buka tag baru
             if (listStack.length === 0 || listStack[listStack.length - 1].indent < indent) {
+                // Buka list baru (jika sub-list, ia diletakkan di dalam <li> sebelumnya tanpa ditutup)
                 listStack.push({ tag: listType, indent: indent });
                 processedLines.push(`<${listType}>`);
-            } 
-            // Jika tipe list berubah di level yang sama (misal dari ul ke ol)
-            else if (listStack.length > 0 && listStack[listStack.length - 1].indent === indent && listStack[listStack.length - 1].tag !== listType) {
-                let closedList = listStack.pop();
-                processedLines.push(`</${closedList.tag}>`);
-                listStack.push({ tag: listType, indent: indent });
-                processedLines.push(`<${listType}>`);
+            } else if (listStack.length > 0 && listStack[listStack.length - 1].indent === indent) {
+                // Level indentasi sama
+                if (listStack[listStack.length - 1].tag !== listType) {
+                    // Tipe list berubah (misal dari ul ke ol), maka reset
+                    processedLines.push(`</li></${listStack[listStack.length - 1].tag}>`);
+                    listStack.pop();
+                    listStack.push({ tag: listType, indent: indent });
+                    processedLines.push(`<${listType}>`);
+                } else {
+                    // Tipe list sama, cukup tutup <li> pada baris sebelumnya
+                    processedLines.push(`</li>`);
+                }
             }
-
-            // Masukkan isi elemen list
-            processedLines.push(`<li>${content}</li>`);
+            
+            // Biarkan <li> ini tetap terbuka (jangan ada </li> di ujung)
+            // Ini wajib agar jika baris selanjutnya adalah sub-list, sub-list tersebut valid berada di DALAM <li> ini.
+            processedLines.push(`<li>${content}`); 
+            inLi = true;
         } else {
-            // Jika baris bukan list, tutup semua list yang masih terbuka
+            // Tutup semua list jika bertemu paragraf / teks biasa
             while (listStack.length > 0) {
                 let closedList = listStack.pop();
-                processedLines.push(`</${closedList.tag}>`);
+                processedLines.push(`</li></${closedList.tag}>`);
             }
+            inLi = false;
             processedLines.push(line);
         }
     }
-    // Tutup sisa list jika teks berakhir tapi list belum ditutup
+    // Tutup bersih sisa stack di akhir teks
     while (listStack.length > 0) {
         let closedList = listStack.pop();
-        processedLines.push(`</${closedList.tag}>`);
+        processedLines.push(`</li></${closedList.tag}>`);
     }
-    
     html = processedLines.join('\n');
 
-    // 3. Logika Pembuat Tabel (Tahan Bug)
+    // 3. LOGIKA TABEL (Anti Geser & Deteksi Markdown Header)
+    let tableRows = html.split('\n');
     let inTable = false;
-    let tableRows = html.split('\n'); 
     
     for (let i = 0; i < tableRows.length; i++) {
-        if (tableRows[i].trim().startsWith('|')) {
-            let cells = tableRows[i].split('|').filter(c => c.trim() !== '');
-            let rowHtml = cells.map(c => `<td>${c.trim()}</td>`).join('');
+        let line = tableRows[i].trim();
+        if (line.startsWith('|')) {
+            // Hilangkan pipa di ujung kanan agar array tidak menghasilkan index kosong di ekor
+            if (line.endsWith('|')) line = line.slice(1, -1);
             
-            if (!inTable) { 
-                tableRows[i] = `<div class="table-responsive"><table><tbody><tr>${rowHtml}</tr>`; 
-                inTable = true; 
-            } else { 
-                tableRows[i] = `<tr>${rowHtml}</tr>`; 
+            // Split kolom. JANGAN gunakan .filter(), karena kolom yang isinya spasi kosong akan menghilang dan tabel rusak!
+            let cells = line.split('|').map(c => c.trim());
+            
+            // Deteksi Markdown Table Header divider (contoh: |---|---|)
+            if (cells.every(c => /^[-:]+$/.test(c) || c === '')) {
+                // Jika terdeteksi, ubah <td> di baris sebelumnya menjadi <th>
+                if (inTable && tableRows[i-1].includes('<td>')) {
+                    tableRows[i-1] = tableRows[i-1].replace(/<td>/g, '<th>').replace(/<\/td>/g, '</th>');
+                }
+                tableRows[i] = ''; // Sembunyikan baris pemisah "---" agar tidak ikut dirender
+                continue;
             }
-        } else if (inTable) { 
-            tableRows[i-1] += '</tbody></table></div>'; 
-            inTable = false; 
+
+            let rowHtml = cells.map(c => `<td>${c}</td>`).join('');
+            
+            if (!inTable) {
+                tableRows[i] = `<div class="table-responsive"><table><tbody><tr>${rowHtml}</tr>`;
+                inTable = true;
+            } else {
+                tableRows[i] = `<tr>${rowHtml}</tr>`;
+            }
+        } else if (inTable) {
+            tableRows[i-1] += '</tbody></table></div>';
+            inTable = false;
         }
     }
     if (inTable) tableRows[tableRows.length - 1] += '</tbody></table></div>';
-    html = tableRows.join('\n');
+    
+    // Gabungkan array, namun filter baris string kosong yang ditinggalkan oleh row "---" tabel tadi
+    html = tableRows.filter(line => line !== '').join('\n');
 
-    // 4. Merapikan Enter (Spasi Kosong)
-    // [PENTING] Tambahkan ul, ol, dan li ke dalam pengecualian agar tidak jadi <br>
-    html = html.replace(/\n*(<\/?(h1|h2|h3|table|tbody|tr|td|div|audio|video|img|ul|ol|li)[^>]*>)\n*/gi, '$1');
+    // 4. CLEANUP SPASI & BR Sempurna
+    // Regex di bawah untuk mencegah tag-tag dasar kemasukan <br>
+    html = html.replace(/\n*(<\/?(h1|h2|h3|table|tbody|tr|td|th|div|audio|video|img|ul|ol|li)[^>]*>)\n*/gi, '$1');
     html = html.replace(/\n{3,}/g, '\n\n'); 
+    
+    // Karena di langkah 0 kita sudah membersihkan < dan > milik user menjadi &lt; dan &gt;
+    // Maka regex (?![^<]*>) di sini menjadi 100% AMAN dari bug! (Tidak akan merusak matematika seperti 5 < 10)
     return html.replace(/\n(?![^<]*>)/g, '<br>');
 }
 
