@@ -47,11 +47,8 @@ const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 /* ==========================================================================
    B. MESIN PARSER (PENGUBAH TEKS JADI TAMPILAN WEB)
    ========================================================================== */
-/**
- * Fungsi pembaca Markdown Kustom SecureReader
- */
 function parseContent(text) {
-    // 1. Mengubah pola Markdown dasar
+    // 1. Parser Dasar & Media (Tetap sama)
     let html = text
         .replace(/^### (.*$)/gim, '<h3>$1</h3>')
         .replace(/^## (.*$)/gim, '<h2>$1</h2>')
@@ -64,25 +61,31 @@ function parseContent(text) {
         .replace(/@grafik\[(.*?)\]\((.*?)\)/gim, '<div class="chart-wrapper"><div class="chart-container"><canvas class="custom-chart" data-type="$1" data-data="$2"></canvas></div></div>');
 
     // ==========================================
-    // 2. PARSER LIST (Metode Regex Sibling - Anti Bug Browser)
+    // 2. PARSER LIST & SUB-LIST (REGEX MURNI DIPERBAIKI)
     // ==========================================
-    // A. Ubah Sub-List (awalan "-- ")
-    html = html.replace(/^--\s+(.*$)/gim, '<ul class="sub-list"><li>$1</li></ul>');
+    // A. Sub-List (awalan "-- ")
+    html = html.replace(/^-- (.*$)/gim, '<ul class="sub-list"><li>$1</li></ul>_sub');
     
-    // B. Ubah List Utama Bullet (awalan "- ")
-    html = html.replace(/^-\s+(.*$)/gim, '<ul><li>$1</li></ul>');
+    // B. List Utama Bullet (awalan "- ")
+    html = html.replace(/^- (.*$)/gim, '<ul><li>$1</li></ul>_main');
     
-    // C. Ubah List Utama Angka (awalan "1. ")
-    html = html.replace(/^\d+\.\s+(.*$)/gim, '<ol><li>$1</li></ol>');
+    // C. List Utama Angka (awalan "1. ")
+    html = html.replace(/^\d+\. (.*$)/gim, '<ol><li>$1</li></ol>_num');
 
-    // D. Gabungkan tag list yang berdekatan (Grouping)
-    html = html.replace(/<\/ul>\n*<ul class="sub-list">/g, ''); // Gabungkan sesama sub-list
-    html = html.replace(/<\/ul>\n*<ul>/g, ''); // Gabungkan sesama list utama
-    html = html.replace(/<\/ol>\n*<ol>/g, ''); // Gabungkan sesama list angka
+    // D. Penggabungan (Hanya menggabungkan list yang tipenya sama persis)
+    // Menggunakan [\r\n]* untuk mencegah bug Enter di Windows vs Mac
+    html = html.replace(/<\/ul>_sub[\r\n]*<ul class="sub-list">/gi, ''); 
+    html = html.replace(/<\/ul>_main[\r\n]*<ul>/gi, ''); 
+    html = html.replace(/<\/ol>_num[\r\n]*<ol>/gi, ''); 
+
+    // E. Hapus penanda sementara
+    html = html.replace(/_sub/g, '');
+    html = html.replace(/_main/g, '');
+    html = html.replace(/_num/g, '');
 
 
     // ==========================================
-    // 3. PARSER TABEL
+    // 3. PARSER TABEL (Tetap sama)
     // ==========================================
     let inTable = false;
     let tableRows = html.split('\n'); 
@@ -105,7 +108,7 @@ function parseContent(text) {
     html = tableRows.join('\n');
 
     // ==========================================
-    // 4. PEMBERSIHAN ENTER BERLEBIH
+    // 4. PEMBERSIHAN ENTER BERLEBIH (Tetap sama)
     // ==========================================
     html = html.replace(/\n*(<\/?(h1|h2|h3|table|tbody|tr|td|div|audio|video|img|ul|ol|li)[^>]*>)\n*/gi, '$1');
     html = html.replace(/\n{3,}/g, '\n\n'); 
