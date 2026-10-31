@@ -48,8 +48,7 @@ const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
    B. MESIN PARSER (PENGUBAH TEKS JADI TAMPILAN WEB)
    ========================================================================== */
 /**
- * Fungsi ini membaca tulisan rahasia Anda dan mengubah simbol khusus menjadi tag HTML.
- * Telah dioptimalkan dengan Logika: "-" untuk List Utama, "--" untuk Sub-List.
+ * Fungsi pembaca Markdown Kustom SecureReader
  */
 function parseContent(text) {
     // 1. Mengubah pola Markdown dasar
@@ -64,90 +63,50 @@ function parseContent(text) {
         .replace(/@video\[(.*?)\]\((.*?)\)/gim, '<video controls><source src="$2"></video>')
         .replace(/@grafik\[(.*?)\]\((.*?)\)/gim, '<div class="chart-wrapper"><div class="chart-container"><canvas class="custom-chart" data-type="$1" data-data="$2"></canvas></div></div>');
 
-    // 2. PARSER BLOK: Tabel & List (Line-by-Line System Anti-Bug)
-    let lines = html.split('\n');
-    let result = [];
+    // ==========================================
+    // 2. PARSER LIST (Metode Regex Sibling - Anti Bug Browser)
+    // ==========================================
+    // A. Ubah Sub-List (awalan "-- ")
+    html = html.replace(/^--\s+(.*$)/gim, '<ul class="sub-list"><li>$1</li></ul>');
     
+    // B. Ubah List Utama Bullet (awalan "- ")
+    html = html.replace(/^-\s+(.*$)/gim, '<ul><li>$1</li></ul>');
+    
+    // C. Ubah List Utama Angka (awalan "1. ")
+    html = html.replace(/^\d+\.\s+(.*$)/gim, '<ol><li>$1</li></ol>');
+
+    // D. Gabungkan tag list yang berdekatan (Grouping)
+    html = html.replace(/<\/ul>\n*<ul class="sub-list">/g, ''); // Gabungkan sesama sub-list
+    html = html.replace(/<\/ul>\n*<ul>/g, ''); // Gabungkan sesama list utama
+    html = html.replace(/<\/ol>\n*<ol>/g, ''); // Gabungkan sesama list angka
+
+
+    // ==========================================
+    // 3. PARSER TABEL
+    // ==========================================
     let inTable = false;
-    let inUl = false;
-    let inOl = false;
-    let inSubUl = false;
-
-    // Fungsi otomatis untuk menutup list jika pengguna beralih ke paragraf biasa
-    const closeLists = () => {
-        if (inSubUl) { result.push('</ul>'); inSubUl = false; }
-        if (inUl) { result.push('</ul>'); inUl = false; }
-        if (inOl) { result.push('</ol>'); inOl = false; }
-    };
-
-    for (let i = 0; i < lines.length; i++) {
-        let line = lines[i];
-        let trimmed = line.trim();
-        
-        // A. CEK TABEL
-        if (trimmed.startsWith('|')) {
-            closeLists(); 
-            let cells = trimmed.split('|').filter(c => c.trim() !== '');
+    let tableRows = html.split('\n'); 
+    for (let i = 0; i < tableRows.length; i++) {
+        if (tableRows[i].trim().startsWith('|')) {
+            let cells = tableRows[i].split('|').filter(c => c.trim() !== '');
             let rowHtml = cells.map(c => `<td>${c.trim()}</td>`).join('');
-            
             if (!inTable) { 
-                result.push(`<div class="table-responsive"><table><tbody><tr>${rowHtml}</tr>`); 
+                tableRows[i] = `<div class="table-responsive"><table><tbody><tr>${rowHtml}</tr>`; 
                 inTable = true; 
             } else { 
-                result.push(`<tr>${rowHtml}</tr>`); 
+                tableRows[i] = `<tr>${rowHtml}</tr>`; 
             }
-        } 
-        else {
-            if (inTable) { result.push('</tbody></table></div>'); inTable = false; }
-            
-            // ==============================================================
-            // LOGIKA BARU: B. CEK SUB-LIST (Mendeteksi awalan dua strip "-- ")
-            // ==============================================================
-            if (trimmed.match(/^-- /)) {
-                // Buang tanda "-- " dari awal teks
-                let content = trimmed.replace(/^-- /, '');
-                
-                // Pastikan list induk sudah ada agar HTML tidak error
-                if (!inUl) { result.push('<ul>'); inUl = true; }
-                if (!inSubUl) { result.push('<ul class="sub-list">'); inSubUl = true; }
-                
-                result.push(`<li>${content}</li>`);
-            }
-            // ==============================================================
-            // LOGIKA BARU: C. CEK LIST UTAMA (Mendeteksi awalan satu strip "- " atau "* ")
-            // ==============================================================
-            else if (trimmed.match(/^[-*] /)) {
-                let content = trimmed.replace(/^[-*] /, '');
-                
-                if (inSubUl) { result.push('</ul>'); inSubUl = false; } // Tutup sub-listnya saja
-                if (inOl) { result.push('</ol>'); inOl = false; } // Ganti mode dari angka ke bullet
-                
-                if (!inUl) { result.push('<ul>'); inUl = true; }
-                result.push(`<li>${content}</li>`);
-            }
-            // D. CEK LIST UTAMA ANGKA (Misal: "1. ")
-            else if (trimmed.match(/^\d+\. /)) {
-                let content = trimmed.replace(/^\d+\. /, '');
-                if (inSubUl) { result.push('</ul>'); inSubUl = false; } 
-                if (inUl) { result.push('</ul>'); inUl = false; }
-                
-                if (!inOl) { result.push('<ol>'); inOl = true; }
-                result.push(`<li>${content}</li>`);
-            }
-            // E. TEKS PARAGRAF BIASA
-            else {
-                if (trimmed !== '') closeLists(); 
-                result.push(line);
-            }
+        } else if (inTable) { 
+            tableRows[i-1] += '</tbody></table></div>'; 
+            inTable = false; 
         }
     }
-    
-    if (inTable) result.push('</tbody></table></div>');
-    closeLists(); 
-    
-    html = result.join('\n');
+    if (inTable) tableRows[tableRows.length - 1] += '</tbody></table></div>';
+    html = tableRows.join('\n');
 
-    // 3. Merapikan Enter yang berlebihan
+    // ==========================================
+    // 4. PEMBERSIHAN ENTER BERLEBIH
+    // ==========================================
     html = html.replace(/\n*(<\/?(h1|h2|h3|table|tbody|tr|td|div|audio|video|img|ul|ol|li)[^>]*>)\n*/gi, '$1');
     html = html.replace(/\n{3,}/g, '\n\n'); 
     return html.replace(/\n(?![^<]*>)/g, '<br>');

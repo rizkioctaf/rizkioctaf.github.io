@@ -260,21 +260,21 @@ header {
    ========================================================================== */
 .article-body ul, .preview-content ul { margin-bottom: 16px; padding-left: 24px; list-style-type: disc; }
 .article-body ol, .preview-content ol { margin-bottom: 16px; padding-left: 24px; list-style-type: decimal; }
-.article-body li, .preview-content li { margin-bottom: 8px; font-size: 1.05rem; }
+.article-body li, .preview-content li { margin-bottom: 6px; font-size: 1.05rem; }
 
-/* Desain Khusus Sub-List */
+/* Desain Khusus Sub-List (Trik Ilusi Sibling) */
 .article-body ul.sub-list, .preview-content ul.sub-list { 
-    margin-top: 4px;         /* Merapatkan jarak dengan poin di atasnya */
-    margin-bottom: 4px; 
-    padding-left: 24px;      /* Menjorok ke dalam (Indent) */
-    list-style-type: circle; /* Ikon bullet berubah menjadi titik bolong (outline) */
-    color: var(--text-muted);/* Warna abu-abu agar hierarkinya terlihat jelas */
+    margin-top: -16px;       /* Menarik sub-list ke atas agar menempel dengan list utama */
+    margin-bottom: 16px; 
+    padding-left: 48px;      /* Identasi ganda agar terlihat menjorok masuk ke dalam */
+    list-style-type: circle; /* Mengubah titik menjadi bolong tengahnya */
+    color: var(--text-muted);
 }
-/* Ukuran teks sub-list sedikit diperkecil */
 .article-body ul.sub-list li, .preview-content ul.sub-list li {
-    font-size: 0.95rem;
-    margin-bottom: 4px;
+    font-size: 0.95rem;      /* Teks sub-list dibuat sedikit lebih kecil */
+    margin-bottom: 6px;
 }
+
 /* ==========================================================================
    12. STUDIO EDITOR (CREATE.HTML)
    ========================================================================== */
