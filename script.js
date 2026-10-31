@@ -47,84 +47,50 @@ const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 /* ==========================================================================
    B. MESIN PARSER (PENGUBAH TEKS JADI TAMPILAN WEB)
    ========================================================================== */
+/**
+ * Fungsi Pembaca Markdown Kustom SecureReader
+ */
 function parseContent(text) {
-    // 1. Mengubah pola Markdown dasar (Judul, Tebal, Miring, Media, dan Grafik)
+    // 1. Parser Dasar & Media
     let html = text
         .replace(/^### (.*$)/gim, '<h3>$1</h3>')
         .replace(/^## (.*$)/gim, '<h2>$1</h2>')
         .replace(/^# (.*$)/gim, '<h1>$1</h1>')
         .replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>')
         .replace(/\*(.*?)\*/gim, '<em>$1</em>')
-        .replace(/!\[(.*?)\]\((.*?)\)/gim, '<img alt="$1" src="$2" loading="lazy">')
+        .replace(/!\[(.*?)\]\((.*?)\)/gim, '<img alt="$1" src="$2" loading="lazy">') 
         .replace(/@audio\[(.*?)\]\((.*?)\)/gim, '<audio controls><source src="$2"></audio>')
         .replace(/@video\[(.*?)\]\((.*?)\)/gim, '<video controls><source src="$2"></video>')
         .replace(/@grafik\[(.*?)\]\((.*?)\)/gim, '<div class="chart-wrapper"><div class="chart-container"><canvas class="custom-chart" data-type="$1" data-data="$2"></canvas></div></div>');
 
-    // 2. Logika Pembuat List & Sub-list (Unordered & Ordered)
-    let lines = html.split('\n');
-    let processedLines = [];
-    let listStack = []; // Menyimpan status indentasi: { tag: 'ul'|'ol', indent: angka }
-
-    for (let i = 0; i < lines.length; i++) {
-        let line = lines[i];
-
-        // Deteksi List tak berurut (ul): spasi(opsional) + "-" atau "*" + spasi + teks
-        let ulMatch = line.match(/^(\s*)([-*])\s+(.*)/);
-        // Deteksi List berurut (ol): spasi(opsional) + angka + titik + spasi + teks
-        let olMatch = line.match(/^(\s*)(\d+\.)\s+(.*)/);
-
-        if (ulMatch || olMatch) {
-            let indent = ulMatch ? ulMatch[1].length : olMatch[1].length;
-            let content = ulMatch ? ulMatch[3] : olMatch[3];
-            let listType = ulMatch ? 'ul' : 'ol';
-
-            // Jika indentasi mundur, tutup sub-list yang ada di level lebih dalam
-            while (listStack.length > 0 && listStack[listStack.length - 1].indent > indent) {
-                let closedList = listStack.pop();
-                processedLines.push(`</${closedList.tag}>`);
-            }
-
-            // Jika list baru atau indentasi maju (sub-list), buka tag baru
-            if (listStack.length === 0 || listStack[listStack.length - 1].indent < indent) {
-                listStack.push({ tag: listType, indent: indent });
-                processedLines.push(`<${listType}>`);
-            } 
-            // Jika tipe list berubah di level yang sama (misal dari ul ke ol)
-            else if (listStack.length > 0 && listStack[listStack.length - 1].indent === indent && listStack[listStack.length - 1].tag !== listType) {
-                let closedList = listStack.pop();
-                processedLines.push(`</${closedList.tag}>`);
-                listStack.push({ tag: listType, indent: indent });
-                processedLines.push(`<${listType}>`);
-            }
-
-            // Masukkan isi elemen list
-            processedLines.push(`<li>${content}</li>`);
-        } else {
-            // Jika baris bukan list, tutup semua list yang masih terbuka
-            while (listStack.length > 0) {
-                let closedList = listStack.pop();
-                processedLines.push(`</${closedList.tag}>`);
-            }
-            processedLines.push(line);
-        }
-    }
-    // Tutup sisa list jika teks berakhir tapi list belum ditutup
-    while (listStack.length > 0) {
-        let closedList = listStack.pop();
-        processedLines.push(`</${closedList.tag}>`);
-    }
+    // ==========================================
+    // 2. PARSER LIST & SUB-LIST (REGEX ORIGINAL)
+    // ==========================================
+    // A. Sub-List (Logika "-- ")
+    // Menggunakan (.*) alih-alih (.*$) untuk kebal terhadap \r\n di textarea
+    html = html.replace(/^[ \t]*--[ \t]+(.*)/gim, '<ul class="sub-list"><li>$1</li></ul>_sub');
     
-    html = processedLines.join('\n');
+    // B. List Utama Bullet (Logika "- ")
+    html = html.replace(/^[ \t]*-[ \t]+(.*)/gim, '<ul><li>$1</li></ul>_main');
 
-    // 3. Logika Pembuat Tabel (Tahan Bug)
+    // C. Penggabungan (Grouping)
+    // Menggunakan [\r\n\s]* agar enter tipe apapun dijamin tembus dan list tergabung
+    html = html.replace(/<\/ul>_sub[\r\n\s]*<ul class="sub-list">/gim, '');
+    html = html.replace(/<\/ul>_main[\r\n\s]*<ul>/gim, '');
+
+    // D. Hapus penanda sementara
+    html = html.replace(/_sub/g, '');
+    html = html.replace(/_main/g, '');
+
+    // ==========================================
+    // 3. PARSER TABEL
+    // ==========================================
     let inTable = false;
     let tableRows = html.split('\n'); 
-    
     for (let i = 0; i < tableRows.length; i++) {
         if (tableRows[i].trim().startsWith('|')) {
             let cells = tableRows[i].split('|').filter(c => c.trim() !== '');
             let rowHtml = cells.map(c => `<td>${c.trim()}</td>`).join('');
-            
             if (!inTable) { 
                 tableRows[i] = `<div class="table-responsive"><table><tbody><tr>${rowHtml}</tr>`; 
                 inTable = true; 
@@ -139,8 +105,9 @@ function parseContent(text) {
     if (inTable) tableRows[tableRows.length - 1] += '</tbody></table></div>';
     html = tableRows.join('\n');
 
-    // 4. Merapikan Enter (Spasi Kosong)
-    // [PENTING] Tambahkan ul, ol, dan li ke dalam pengecualian agar tidak jadi <br>
+    // ==========================================
+    // 4. PEMBERSIHAN ENTER BERLEBIH
+    // ==========================================
     html = html.replace(/\n*(<\/?(h1|h2|h3|table|tbody|tr|td|div|audio|video|img|ul|ol|li)[^>]*>)\n*/gi, '$1');
     html = html.replace(/\n{3,}/g, '\n\n'); 
     return html.replace(/\n(?![^<]*>)/g, '<br>');
