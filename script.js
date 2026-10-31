@@ -48,10 +48,11 @@ const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
    B. MESIN PARSER (PENGUBAH TEKS JADI TAMPILAN WEB)
    ========================================================================== */
 /**
- * Fungsi Pembaca Markdown Kustom SecureReader
+ * Fungsi ini membaca tulisan rahasia Anda dan mengubah simbol khusus (##, **, dll) 
+ * menjadi tag desain HTML yang sesungguhnya. Termasuk fitur List!
  */
 function parseContent(text) {
-    // 1. Parser Dasar & Media
+    // 1. Mengubah pola Markdown dasar (Judul, Tebal, Miring, Media, dan Grafik)
     let html = text
         .replace(/^### (.*$)/gim, '<h3>$1</h3>')
         .replace(/^## (.*$)/gim, '<h2>$1</h2>')
@@ -64,33 +65,31 @@ function parseContent(text) {
         .replace(/@grafik\[(.*?)\]\((.*?)\)/gim, '<div class="chart-wrapper"><div class="chart-container"><canvas class="custom-chart" data-type="$1" data-data="$2"></canvas></div></div>');
 
     // ==========================================
-    // 2. PARSER LIST & SUB-LIST (REGEX ORIGINAL)
+    // 2. PARSER LIST & SUB-LIST (FITUR BARU)
     // ==========================================
-    // A. Sub-List (Logika "-- ")
-    // Menggunakan (.*) alih-alih (.*$) untuk kebal terhadap \r\n di textarea
-    html = html.replace(/^[ \t]*--[ \t]+(.*)/gim, '<ul class="sub-list"><li>$1</li></ul>_sub');
-    
-    // B. List Utama Bullet (Logika "- ")
-    html = html.replace(/^[ \t]*-[ \t]+(.*)/gim, '<ul><li>$1</li></ul>_main');
+    // A. Sub-List (Gunakan 2 atau 4 spasi sebelum tanda strip/bintang)
+    html = html.replace(/^ {2,4}[-*] (.*$)/gim, '<ul class="sub-list"><li>$1</li></ul>');
+    html = html.replace(/<\/ul>\n*<ul class="sub-list">/g, '\n'); // Gabungkan sub-list berdekatan
 
-    // C. Penggabungan (Grouping)
-    // Menggunakan [\r\n\s]* agar enter tipe apapun dijamin tembus dan list tergabung
-    html = html.replace(/<\/ul>_sub[\r\n\s]*<ul class="sub-list">/gim, '');
-    html = html.replace(/<\/ul>_main[\r\n\s]*<ul>/gim, '');
+    // B. List Utama Bullet Point (Gunakan awalan - atau *)
+    html = html.replace(/^[-*] (.*$)/gim, '<ul><li>$1</li></ul>');
+    html = html.replace(/<\/ul>\n*<ul>/g, '\n'); // Gabungkan list berdekatan
 
-    // D. Hapus penanda sementara
-    html = html.replace(/_sub/g, '');
-    html = html.replace(/_main/g, '');
+    // C. List Utama Angka (Gunakan awalan angka dan titik, misal 1. )
+    html = html.replace(/^\d+\. (.*$)/gim, '<ol><li>$1</li></ol>');
+    html = html.replace(/<\/ol>\n*<ol>/g, '\n'); // Gabungkan list berdekatan
 
     // ==========================================
     // 3. PARSER TABEL
     // ==========================================
     let inTable = false;
     let tableRows = html.split('\n'); 
+    
     for (let i = 0; i < tableRows.length; i++) {
         if (tableRows[i].trim().startsWith('|')) {
             let cells = tableRows[i].split('|').filter(c => c.trim() !== '');
             let rowHtml = cells.map(c => `<td>${c.trim()}</td>`).join('');
+            
             if (!inTable) { 
                 tableRows[i] = `<div class="table-responsive"><table><tbody><tr>${rowHtml}</tr>`; 
                 inTable = true; 
@@ -106,8 +105,9 @@ function parseContent(text) {
     html = tableRows.join('\n');
 
     // ==========================================
-    // 4. PEMBERSIHAN ENTER BERLEBIH
+    // 4. PEMBERSIHAN ENTER (SPASI KOSONG)
     // ==========================================
+    // (Perbaikan: Menambahkan ul, ol, dan li agar spasi list tidak terlalu renggang)
     html = html.replace(/\n*(<\/?(h1|h2|h3|table|tbody|tr|td|div|audio|video|img|ul|ol|li)[^>]*>)\n*/gi, '$1');
     html = html.replace(/\n{3,}/g, '\n\n'); 
     return html.replace(/\n(?![^<]*>)/g, '<br>');
