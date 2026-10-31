@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Raw Extractor - SecureReader</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#000000">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Memanggil CSS Global -->
+    <link rel="stylesheet" href="style.css">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+</head>
+
+<!-- ID page-raw untuk memicu fungsi di script.js -->
+<body id="page-raw">
+
+    <!-- Wadah Pop-up -->
+    <div id="toast-container" aria-live="polite"></div>
+
+    <header>
+        <div class="nav-container">
+            <a href="index.html" class="logo" aria-label="Kembali ke Beranda">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                Raw Extractor
+            </a>
+        </div>
+    </header>
+
+    <main style="max-width: 800px; margin: 40px auto; padding: 0 20px;">
+        
+        <!-- PANEL UPLOAD (Menggunakan class .panel dari style.css) -->
+        <section class="panel" id="extractPanel">
+            <h2 style="margin-bottom: 10px; text-align: center;">Bongkar JSON ke Markdown</h2>
+            <p style="text-align: center; color: var(--text-muted); margin-bottom: 25px;">Upload file terenkripsi (.json) untuk mengambil teks aslinya secara luring.</p>
+            
+            <form id="extractForm">
+                <div class="form-group">
+                    <label for="jsonFile">Pilih File (.json)</label>
+                    <input type="file" id="jsonFile" accept=".json" required style="padding: 10px; border: 2px dashed var(--border); border-radius: 8px; cursor: pointer; background: var(--bg-body); outline: none;">
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Kata Sandi Artikel</label>
+                    <!-- Menggunakan class pw-input dari style.css -->
+                    <input type="password" id="password" class="pw-input" placeholder="Masukkan kata sandi..." required autocomplete="off" spellcheck="false" style="margin-bottom: 0;">
+                </div>
+                
+                <button type="submit" id="btnExtract" class="btn-unlock" style="margin-top: 15px;">Bongkar File JSON</button>
+            </form>
+        </section>
+
+        <!-- PANEL HASIL (Disembunyikan di awal) -->
+        <section class="panel" id="rawResult" style="display: none; margin-top: 20px; animation: fadeIn 0.4s ease;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 style="margin: 0; font-size: 1.1rem;">Kode Markdown Asli</h3>
+                <!-- Menggunakan btn-unlock untuk tombol yang konsisten -->
+                <button type="button" id="btnCopy" class="btn-unlock" style="width: auto; padding: 8px 16px;">Salin Semua</button>
+            </div>
+            
+            <textarea id="rawTextContent" readonly style="width: 100%; min-height: 400px; padding: 15px; border: 1px solid var(--border); border-radius: 8px; font-family: monospace; font-size: 0.95rem; background: var(--bg-body); resize: vertical; outline: none; cursor: text;"></textarea>
+        </section>
+
+    </main>
+
+    <!-- Memanggil JS Global -->
+    <script src="script.js"></script>
+</body>
+</html>

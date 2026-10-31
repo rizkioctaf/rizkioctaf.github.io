@@ -254,13 +254,13 @@ function renderCharts(container) {
 /* ==========================================================================
    C. PENGATUR JALUR HALAMAN (ROUTER)
    ========================================================================== */
-// Setelah HTML siap 100%, sistem akan mengecek ID halaman untuk menyalakan fungsi yang pas
 document.addEventListener('DOMContentLoaded', () => {
     const pageId = document.body.id; 
     
     if (pageId === 'page-index') initIndex();
     else if (pageId === 'page-view') initView();
     else if (pageId === 'page-create') initCreate();
+    else if (pageId === 'page-raw') initRaw();
 });
 
 
@@ -646,19 +646,104 @@ function initCreate() {
     };
 }
 
+/* ==========================================================================
+   G. LOGIKA RAW EXTRACTOR (RAW.HTML)
+   ========================================================================== */
+function initRaw() {
+    // Fungsi membaca isi file yang diupload
+    const readUploadedFile = (file) => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    resolve(JSON.parse(e.target.result));
+                } catch (error) {
+                    reject(new Error('Format file rusak atau bukan JSON yang valid.'));
+                }
+            };
+            reader.onerror = () => reject(new Error('Gagal membaca file dari memori perangkat.'));
+            reader.readAsText(file);
+        });
+    };
+
+    document.getElementById('extractForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const fileInput = document.getElementById('jsonFile');
+        const pwd = document.getElementById('password').value;
+        const btn = document.getElementById('btnExtract');
+
+        if (fileInput.files.length === 0) {
+            showToast('Harap pilih file JSON terlebih dahulu!', 'error');
+            return;
+        }
+
+        btn.textContent = 'Membaca & Mendekripsi...';
+        btn.disabled = true;
+
+        await delay(50); // Meminjam fungsi delay() dari global utilitas
+
+        try {
+            const file = fileInput.files[0];
+            const encData = await readUploadedFile(file);
+
+            if (!encData.salt || !encData.iv || !encData.ciphertext) {
+                throw new Error('File JSON ini bukan berasal dari SecureReader!');
+            }
+
+            const key = CryptoJS.PBKDF2(pwd, CryptoJS.enc.Hex.parse(encData.salt), {
+                keySize: 256/32, iterations: 10000, hasher: CryptoJS.algo.SHA256
+            });
+
+            const decrypted = CryptoJS.AES.decrypt(encData.ciphertext, key, {
+                iv: CryptoJS.enc.Hex.parse(encData.iv),
+                mode: CryptoJS.mode.CBC,
+                padding: CryptoJS.pad.Pkcs7
+            });
+
+            const plaintext = decrypted.toString(CryptoJS.enc.Utf8);
+            
+            if (!plaintext) throw new Error('Kata sandi salah atau file rusak!');
+
+            // Tampilkan UI Hasil
+            document.getElementById('extractPanel').style.display = 'none';
+            document.getElementById('rawResult').style.display = 'block';
+            document.getElementById('rawTextContent').value = plaintext;
+            
+            showToast('Berhasil membongkar teks asli!', 'success');
+
+        } catch (err) {
+            showToast(err.message, 'error');
+        } finally {
+            btn.textContent = 'Bongkar File JSON';
+            btn.disabled = false;
+        }
+    });
+
+    // Fitur Salin
+    document.getElementById('btnCopy').addEventListener('click', function() {
+        const textArea = document.getElementById('rawTextContent');
+        textArea.select();
+        textArea.setSelectionRange(0, 99999); 
+        document.execCommand('copy');
+        showToast('Teks berhasil disalin ke clipboard!', 'success');
+    });
+}
 
 /* ==========================================================================
-   G. PENDAFTARAN MODE OFFLINE (PWA SERVICE WORKER)
+   H. PENDAFTARAN PWA (SERVICE WORKER)
    ========================================================================== */
-// Cek jika browser yang dipakai modern dan mendukung fitur Offline
+// Mendaftarkan Service Worker sebagai syarat wajib dari browser (Chrome/Safari)
+// agar aplikasi ini memunculkan tombol "Install" (Add to Home Screen).
+// Catatan: Fitur Cache/Offline dinonaktifkan agar file selalu update secara real-time.
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js')
             .then(registration => {
-                console.log('✅ Sistem Keamanan Offline (Service Worker) aktif bersiaga.', registration.scope);
+                console.log('✅ Service Worker terdaftar (Syarat Instalasi PWA terpenuhi).', registration.scope);
             })
             .catch(error => {
-                console.error('❌ Gagal mengaktifkan sistem offline:', error);
+                console.error('❌ Gagal mendaftarkan Service Worker:', error);
             });
     });
 }
