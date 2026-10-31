@@ -47,7 +47,6 @@ const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 /* ==========================================================================
    B. MESIN PARSER (PENGUBAH TEKS JADI TAMPILAN WEB)
    ========================================================================== */
-
 /**
  * Fungsi ini membaca tulisan rahasia Anda dan mengubah simbol khusus (##, **, dll) 
  * menjadi tag desain HTML yang sesungguhnya. Termasuk fitur List!
@@ -66,19 +65,26 @@ function parseContent(text) {
         .replace(/@grafik\[(.*?)\]\((.*?)\)/gim, '<div class="chart-wrapper"><div class="chart-container"><canvas class="custom-chart" data-type="$1" data-data="$2"></canvas></div></div>');
 
     // ==========================================
-    // 2. PARSER LIST & SUB-LIST (FITUR BARU)
+    // 2. PARSER LIST & SUB-LIST (PERBAIKAN ANTI-BUG)
     // ==========================================
     // A. Sub-List (Gunakan 2 atau 4 spasi sebelum tanda strip/bintang)
-    html = html.replace(/^ {2,4}[-*] (.*$)/gim, '<ul class="sub-list"><li>$1</li></ul>');
-    html = html.replace(/<\/ul>\n*<ul class="sub-list">/g, '\n'); // Gabungkan sub-list berdekatan
+    // Diberi penanda sementara '_sub' agar tidak tercampur dengan list utama
+    html = html.replace(/^ {2,4}[-*] (.*$)/gim, '<ul class="sub-list"><li>$1</li></ul>_sub');
+    html = html.replace(/<\/ul>_sub\n*<ul class="sub-list">/g, ''); // Gabungkan HANYA sesama sub-list
+    html = html.replace(/<\/ul>_sub/g, '</ul>'); // Bersihkan penanda sementara
 
     // B. List Utama Bullet Point (Gunakan awalan - atau *)
-    html = html.replace(/^[-*] (.*$)/gim, '<ul><li>$1</li></ul>');
-    html = html.replace(/<\/ul>\n*<ul>/g, '\n'); // Gabungkan list berdekatan
+    // Diberi penanda sementara '_main'
+    html = html.replace(/^[-*] (.*$)/gim, '<ul><li>$1</li></ul>_main');
+    html = html.replace(/<\/ul>_main\n*<ul>/g, ''); // Gabungkan HANYA sesama list bullet
+    html = html.replace(/<\/ul>_main/g, '</ul>');
 
     // C. List Utama Angka (Gunakan awalan angka dan titik, misal 1. )
-    html = html.replace(/^\d+\. (.*$)/gim, '<ol><li>$1</li></ol>');
-    html = html.replace(/<\/ol>\n*<ol>/g, '\n'); // Gabungkan list berdekatan
+    // Diberi penanda sementara '_num'
+    html = html.replace(/^\d+\. (.*$)/gim, '<ol><li>$1</li></ol>_num');
+    html = html.replace(/<\/ol>_num\n*<ol>/g, ''); // Gabungkan HANYA sesama list angka
+    html = html.replace(/<\/ol>_num/g, '</ol>');
+
 
     // ==========================================
     // 3. PARSER TABEL
@@ -108,7 +114,6 @@ function parseContent(text) {
     // ==========================================
     // 4. PEMBERSIHAN ENTER (SPASI KOSONG)
     // ==========================================
-    // (Perbaikan: Menambahkan ul, ol, dan li agar spasi list tidak terlalu renggang)
     html = html.replace(/\n*(<\/?(h1|h2|h3|table|tbody|tr|td|div|audio|video|img|ul|ol|li)[^>]*>)\n*/gi, '$1');
     html = html.replace(/\n{3,}/g, '\n\n'); 
     return html.replace(/\n(?![^<]*>)/g, '<br>');
