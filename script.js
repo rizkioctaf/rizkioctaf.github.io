@@ -47,8 +47,11 @@ const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 /* ==========================================================================
    B. MESIN PARSER (PENGUBAH TEKS JADI TAMPILAN WEB)
    ========================================================================== */
+/**
+ * Fungsi pembaca Markdown Kustom SecureReader
+ */
 function parseContent(text) {
-    // 1. Parser Dasar & Media (Tetap sama)
+    // 1. Parser Dasar & Media
     let html = text
         .replace(/^### (.*$)/gim, '<h3>$1</h3>')
         .replace(/^## (.*$)/gim, '<h2>$1</h2>')
@@ -61,31 +64,30 @@ function parseContent(text) {
         .replace(/@grafik\[(.*?)\]\((.*?)\)/gim, '<div class="chart-wrapper"><div class="chart-container"><canvas class="custom-chart" data-type="$1" data-data="$2"></canvas></div></div>');
 
     // ==========================================
-    // 2. PARSER LIST & SUB-LIST (REGEX MURNI DIPERBAIKI)
+    // 2. PARSER LIST & SUB-LIST (ANTI AUTO-CORRECT)
     // ==========================================
-    // A. Sub-List (awalan "-- ")
-    html = html.replace(/^-- (.*$)/gim, '<ul class="sub-list"><li>$1</li></ul>_sub');
+    // A. Sub-List: Toleransi Spasi Awal dan Tangkap wujud asli "--", atau wujud auto-correct "—" / "–"
+    html = html.replace(/^[ \t]*(?:--|—|–)\s+([^\r\n]+)/gim, '<ul class="sub-list"><li>$1</li></ul>_sub');
     
-    // B. List Utama Bullet (awalan "- ")
-    html = html.replace(/^- (.*$)/gim, '<ul><li>$1</li></ul>_main');
+    // B. List Bullet: Toleransi Spasi Awal dan Tangkap wujud "-", "*", atau "•"
+    html = html.replace(/^[ \t]*[-*•]\s+([^\r\n]+)/gim, '<ul><li>$1</li></ul>_main');
     
-    // C. List Utama Angka (awalan "1. ")
-    html = html.replace(/^\d+\. (.*$)/gim, '<ol><li>$1</li></ol>_num');
+    // C. List Angka: Toleransi Spasi Awal
+    html = html.replace(/^[ \t]*\d+\.\s+([^\r\n]+)/gim, '<ol><li>$1</li></ol>_num');
 
-    // D. Penggabungan (Hanya menggabungkan list yang tipenya sama persis)
-    // Menggunakan [\r\n]* untuk mencegah bug Enter di Windows vs Mac
-    html = html.replace(/<\/ul>_sub[\r\n]*<ul class="sub-list">/gi, ''); 
-    html = html.replace(/<\/ul>_main[\r\n]*<ul>/gi, ''); 
-    html = html.replace(/<\/ol>_num[\r\n]*<ol>/gi, ''); 
+    // D. Penggabungan List: Menggunakan \s* agar aman melibas spasi & enter jenis apapun
+    html = html.replace(/<\/ul>_sub\s*<ul class="sub-list">/gi, ''); 
+    html = html.replace(/<\/ul>_main\s*<ul>/gi, ''); 
+    html = html.replace(/<\/ol>_num\s*<ol>/gi, ''); 
 
-    // E. Hapus penanda sementara
+    // E. Hapus Penanda
     html = html.replace(/_sub/g, '');
     html = html.replace(/_main/g, '');
     html = html.replace(/_num/g, '');
 
 
     // ==========================================
-    // 3. PARSER TABEL (Tetap sama)
+    // 3. PARSER TABEL
     // ==========================================
     let inTable = false;
     let tableRows = html.split('\n'); 
@@ -108,7 +110,7 @@ function parseContent(text) {
     html = tableRows.join('\n');
 
     // ==========================================
-    // 4. PEMBERSIHAN ENTER BERLEBIH (Tetap sama)
+    // 4. PEMBERSIHAN ENTER BERLEBIH
     // ==========================================
     html = html.replace(/\n*(<\/?(h1|h2|h3|table|tbody|tr|td|div|audio|video|img|ul|ol|li)[^>]*>)\n*/gi, '$1');
     html = html.replace(/\n{3,}/g, '\n\n'); 
