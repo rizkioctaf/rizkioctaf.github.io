@@ -255,6 +255,19 @@ header {
 .chart-wrapper { width: 100%; overflow-x: auto; margin: 30px 0; border: 1px solid var(--border); border-radius: 8px; }
 .chart-container { position: relative; height: 350px; min-width: 650px; padding: 15px; }
 
+/* Desain List (Bullet, Number, & Sub-list) */
+.article-body ul, .preview-content ul { margin-bottom: 16px; padding-left: 24px; list-style-type: disc; }
+.article-body ol, .preview-content ol { margin-bottom: 16px; padding-left: 24px; list-style-type: decimal; }
+.article-body li, .preview-content li { margin-bottom: 8px; font-size: 1.05rem; }
+
+/* Desain Khusus Sub-List (Menjorok ke dalam dengan titik berlubang) */
+.article-body ul.sub-list, .preview-content ul.sub-list { 
+    margin-top: -8px; 
+    margin-bottom: 8px; 
+    padding-left: 40px; 
+    list-style-type: circle; /* Titik bullet tengahnya bolong */
+    color: var(--text-muted); /* Warna sedikit diredupkan membedakan dari teks utama */
+}
 
 /* ==========================================================================
    12. STUDIO EDITOR (CREATE.HTML)
