@@ -46,7 +46,8 @@ const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 /* ==========================================================================
    B. MESIN PARSER (PENGUBAH TEKS JADI TAMPILAN WEB)
-   ========================================================================== *//**
+   ========================================================================== */
+/**
  * Fungsi ini membaca tulisan rahasia Anda dan mengubah simbol khusus (##, **, dll) 
  * menjadi tag desain HTML. Telah dioptimalkan untuk List Bersarang (Nested List).
  */
