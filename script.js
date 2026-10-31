@@ -48,10 +48,10 @@ const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
    B. MESIN PARSER (PENGUBAH TEKS JADI TAMPILAN WEB)
    ========================================================================== */
 /**
- * Fungsi pembaca Markdown Kustom SecureReader
+ * Fungsi Pembaca Markdown Kustom SecureReader
  */
 function parseContent(text) {
-    // 1. Mengubah pola Markdown dasar
+    // 1. Parser Dasar & Media
     let html = text
         .replace(/^### (.*$)/gim, '<h3>$1</h3>')
         .replace(/^## (.*$)/gim, '<h2>$1</h2>')
@@ -64,22 +64,23 @@ function parseContent(text) {
         .replace(/@grafik\[(.*?)\]\((.*?)\)/gim, '<div class="chart-wrapper"><div class="chart-container"><canvas class="custom-chart" data-type="$1" data-data="$2"></canvas></div></div>');
 
     // ==========================================
-    // 2. PARSER LIST (Metode Regex Sibling - Anti Bug Browser)
+    // 2. PARSER LIST & SUB-LIST (REGEX ORIGINAL)
     // ==========================================
-    // A. Ubah Sub-List (awalan "-- ")
-    html = html.replace(/^--\s+(.*$)/gim, '<ul class="sub-list"><li>$1</li></ul>');
+    // A. Sub-List (Logika "-- ")
+    // Menggunakan (.*) alih-alih (.*$) untuk kebal terhadap \r\n di textarea
+    html = html.replace(/^[ \t]*--[ \t]+(.*)/gim, '<ul class="sub-list"><li>$1</li></ul>_sub');
     
-    // B. Ubah List Utama Bullet (awalan "- ")
-    html = html.replace(/^-\s+(.*$)/gim, '<ul><li>$1</li></ul>');
-    
-    // C. Ubah List Utama Angka (awalan "1. ")
-    html = html.replace(/^\d+\.\s+(.*$)/gim, '<ol><li>$1</li></ol>');
+    // B. List Utama Bullet (Logika "- ")
+    html = html.replace(/^[ \t]*-[ \t]+(.*)/gim, '<ul><li>$1</li></ul>_main');
 
-    // D. Gabungkan tag list yang berdekatan (Grouping)
-    html = html.replace(/<\/ul>\n*<ul class="sub-list">/g, ''); // Gabungkan sesama sub-list
-    html = html.replace(/<\/ul>\n*<ul>/g, ''); // Gabungkan sesama list utama
-    html = html.replace(/<\/ol>\n*<ol>/g, ''); // Gabungkan sesama list angka
+    // C. Penggabungan (Grouping)
+    // Menggunakan [\r\n\s]* agar enter tipe apapun dijamin tembus dan list tergabung
+    html = html.replace(/<\/ul>_sub[\r\n\s]*<ul class="sub-list">/gim, '');
+    html = html.replace(/<\/ul>_main[\r\n\s]*<ul>/gim, '');
 
+    // D. Hapus penanda sementara
+    html = html.replace(/_sub/g, '');
+    html = html.replace(/_main/g, '');
 
     // ==========================================
     // 3. PARSER TABEL
