@@ -48,11 +48,11 @@ const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
    B. MESIN PARSER (PENGUBAH TEKS JADI TAMPILAN WEB)
    ========================================================================== */
 /**
- * Fungsi ini membaca tulisan rahasia Anda dan mengubah simbol khusus (##, **, dll) 
- * menjadi tag desain HTML. Telah dioptimalkan untuk List Bersarang (Nested List).
+ * Fungsi ini membaca tulisan rahasia Anda dan mengubah simbol khusus menjadi tag HTML.
+ * Telah dioptimalkan dengan Logika: "-" untuk List Utama, "--" untuk Sub-List.
  */
 function parseContent(text) {
-    // 1. Mengubah pola Markdown dasar (Judul, Tebal, Miring, Media, Grafik)
+    // 1. Mengubah pola Markdown dasar
     let html = text
         .replace(/^### (.*$)/gim, '<h3>$1</h3>')
         .replace(/^## (.*$)/gim, '<h2>$1</h2>')
@@ -86,7 +86,7 @@ function parseContent(text) {
         
         // A. CEK TABEL
         if (trimmed.startsWith('|')) {
-            closeLists(); // Jika ketemu tabel, list sebelumnya ditutup
+            closeLists(); 
             let cells = trimmed.split('|').filter(c => c.trim() !== '');
             let rowHtml = cells.map(c => `<td>${c.trim()}</td>`).join('');
             
@@ -98,11 +98,14 @@ function parseContent(text) {
             }
         } 
         else {
-            if (inTable) { result.push('</tbody></table></div>'); inTable = false; } // Tutup tabel
+            if (inTable) { result.push('</tbody></table></div>'); inTable = false; }
             
-            // B. CEK SUB-LIST (Mendeteksi tombol Tab atau Spasi di awal kalimat)
-            if (line.match(/^[ \t]+[-*] /)) {
-                let content = line.replace(/^[ \t]+[-*] /, '');
+            // ==============================================================
+            // LOGIKA BARU: B. CEK SUB-LIST (Mendeteksi awalan dua strip "-- ")
+            // ==============================================================
+            if (trimmed.match(/^-- /)) {
+                // Buang tanda "-- " dari awal teks
+                let content = trimmed.replace(/^-- /, '');
                 
                 // Pastikan list induk sudah ada agar HTML tidak error
                 if (!inUl) { result.push('<ul>'); inUl = true; }
@@ -110,18 +113,21 @@ function parseContent(text) {
                 
                 result.push(`<li>${content}</li>`);
             }
-            // C. CEK LIST UTAMA (Bullet)
-            else if (line.match(/^[-*] /)) {
-                let content = line.replace(/^[-*] /, '');
+            // ==============================================================
+            // LOGIKA BARU: C. CEK LIST UTAMA (Mendeteksi awalan satu strip "- " atau "* ")
+            // ==============================================================
+            else if (trimmed.match(/^[-*] /)) {
+                let content = trimmed.replace(/^[-*] /, '');
+                
                 if (inSubUl) { result.push('</ul>'); inSubUl = false; } // Tutup sub-listnya saja
                 if (inOl) { result.push('</ol>'); inOl = false; } // Ganti mode dari angka ke bullet
                 
                 if (!inUl) { result.push('<ul>'); inUl = true; }
                 result.push(`<li>${content}</li>`);
             }
-            // D. CEK LIST UTAMA (Angka)
-            else if (line.match(/^\d+\. /)) {
-                let content = line.replace(/^\d+\. /, '');
+            // D. CEK LIST UTAMA ANGKA (Misal: "1. ")
+            else if (trimmed.match(/^\d+\. /)) {
+                let content = trimmed.replace(/^\d+\. /, '');
                 if (inSubUl) { result.push('</ul>'); inSubUl = false; } 
                 if (inUl) { result.push('</ul>'); inUl = false; }
                 
@@ -130,7 +136,6 @@ function parseContent(text) {
             }
             // E. TEKS PARAGRAF BIASA
             else {
-                // Abaikan enter/spasi kosong agar list tidak terputus di tengah jalan
                 if (trimmed !== '') closeLists(); 
                 result.push(line);
             }
@@ -138,7 +143,7 @@ function parseContent(text) {
     }
     
     if (inTable) result.push('</tbody></table></div>');
-    closeLists(); // Bersihkan sisa tag penutup
+    closeLists(); 
     
     html = result.join('\n');
 
