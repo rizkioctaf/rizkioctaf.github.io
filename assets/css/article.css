@@ -1,0 +1,218 @@
+/* ==========================================================================
+   1. KERTAS BACA & OPTIMAL LINE LENGTH (68 KARAKTER PER BARIS)
+   Lokasi file: website/assets/css/article.css
+   
+   Tujuan utama bagian ini:
+   Mengatur tata letak konten artikel hasil dekripsi (view.html) dan panel
+   pratinjau langsung (create.html). Berdasarkan studi tipografi kognitif,
+   panjang baris 55-72 karakter (68ch) meminimalkan kelelahan gerakan mata
+   (saccadic jump) saat berpindah dari akhir baris ke awal baris berikutnya.
+   ========================================================================== */
+.article-body {
+    background: var(--bg-surface);
+    /* Padding adaptif: menyempit rapi di HP, proporsional di desktop */
+    padding: clamp(28px, 4vw, 48px) clamp(20px, 5vw, 64px);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-subtle);
+    box-shadow: var(--shadow-sm);
+    animation: fadeIn 0.4s ease;
+    width: 100%;
+}
+
+.preview-content {
+    padding: 8px 4px;
+    width: 100%;
+}
+
+/* Diperlebar dari 68ch ke 88ch: mengurangi jumlah baris ke bawah secara signifikan
+   di layar desktop tanpa mengorbankan keterbacaan horizontal */
+.article-body > *,
+.preview-content > * {
+    max-width: 88ch;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Tabel, grafik, gambar, dan video menggunakan lebar penuh kertas */
+.article-body .table-responsive,
+.article-body .chart-wrapper,
+.article-body img,
+.article-body video,
+.preview-content .table-responsive,
+.preview-content .chart-wrapper,
+.preview-content img,
+.preview-content video {
+    max-width: 100%;
+}
+
+/* ==========================================================================
+   2. HIERARKI HEADING, PARAGRAF, & TAUTAN
+   ========================================================================== */
+.article-body h1,
+.preview-content h1 {
+    font-size: clamp(1.75rem, 3vw, 2.25rem);
+    font-weight: 800;
+    line-height: 1.25;
+    letter-spacing: -0.03em;
+    margin-bottom: 24px;
+    color: var(--text-primary);
+}
+
+.article-body h2,
+.preview-content h2 {
+    font-size: clamp(1.3rem, 2.2vw, 1.55rem);
+    font-weight: 700;
+    line-height: 1.35;
+    letter-spacing: -0.02em;
+    margin-top: 40px;
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.article-body h3,
+.preview-content h3 {
+    font-size: 1.15rem;
+    font-weight: 600;
+    margin-top: 26px;
+    margin-bottom: 10px;
+}
+
+.article-body p,
+.preview-content p {
+    font-size: clamp(1rem, 1.05vw, 1.0625rem);
+    line-height: 1.75;
+    margin-bottom: 18px;
+    color: var(--text-primary);
+}
+
+.article-body strong,
+.preview-content strong {
+    font-weight: 600;
+    color: #000000;
+}
+
+.article-body a,
+.preview-content a {
+    color: var(--text-primary);
+    text-decoration: underline;
+    text-decoration-color: var(--border-strong);
+    text-underline-offset: 4px;
+    transition: text-decoration-color var(--transition-fast);
+}
+
+.article-body a:hover,
+.preview-content a:hover {
+    text-decoration-color: var(--accent);
+}
+
+/* ==========================================================================
+   3. DAFTAR BERTINGKAT (NESTED BULLET & NUMBERED LIST)
+   ========================================================================== */
+.article-body ul,
+.preview-content ul,
+.article-body ol,
+.preview-content ol {
+    margin-bottom: 20px;
+    padding-left: 24px;
+}
+
+.article-body li,
+.preview-content li {
+    font-size: clamp(1rem, 1.05vw, 1.0625rem);
+    line-height: 1.7;
+    margin-bottom: 6px;
+}
+
+.article-body li > ul,
+.article-body li > ol,
+.preview-content li > ul,
+.preview-content li > ol {
+    margin-top: 6px;
+    margin-bottom: 6px;
+}
+
+/* ==========================================================================
+   4. MEDIA MONOKROM (GAMBAR, AUDIO, & VIDEO)
+   ========================================================================== */
+.article-body img,
+.preview-content img,
+.article-body video,
+.preview-content video {
+    display: block;
+    height: auto;
+    border-radius: var(--radius-md);
+    margin: 28px auto;
+    border: 1px solid var(--border-subtle);
+    filter: grayscale(100%);
+    transition: filter var(--transition-smooth);
+}
+
+.article-body img:hover,
+.preview-content img:hover {
+    filter: grayscale(0%);
+}
+
+.article-body audio,
+.preview-content audio {
+    width: 100%;
+    margin: 24px 0;
+}
+
+/* ==========================================================================
+   5. TABEL RESPONSIF & GRAFIK STATISTIK (CHART.JS)
+   ========================================================================== */
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    margin: 28px 0;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    background: var(--bg-surface);
+}
+
+.article-body table,
+.preview-content table {
+    width: 100%;
+    min-width: 520px;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+}
+
+.article-body th,
+.preview-content th {
+    background: var(--bg-elevated);
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border-subtle);
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.article-body td,
+.preview-content td {
+    padding: 13px 16px;
+    border-bottom: 1px solid var(--border-subtle);
+    color: var(--text-secondary);
+}
+
+.article-body tr:last-child td,
+.preview-content tr:last-child td {
+    border-bottom: none;
+}
+
+.chart-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    margin: 32px 0;
+    padding: 16px;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    background: var(--bg-surface);
+}
+
+.chart-container {
+    position: relative;
+    height: 340px;
+    min-width: 560px;
+}

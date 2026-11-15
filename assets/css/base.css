@@ -1,0 +1,137 @@
+/* ==========================================================================
+   1. PALET MONOKROM ERGONOMIS (ANTI-HALATION / E-INK FEEL)
+   Lokasi file: website/assets/css/base.css
+   
+   Tujuan utama bagian ini:
+   Mendefinisikan variabel warna global (:root) berbasis psikologi visual.
+   Menghindari kontras ekstrem hitam murni (#000) di atas putih murni (#FFF)
+   yang memicu efek halation (huruf tampak berbayang/bergetar saat dibaca lama),
+   dan menggantinya dengan nuansa kertas cetak lembut (Soft Charcoal & Off-White).
+   ========================================================================== */
+:root {
+    /* Lapisan Latar & Permukaan */
+    --bg-canvas: #F3F3F3;          /* Latar luar aplikasi: abu-abu hangat lembut untuk meredam silau layar */
+    --bg-surface: #FCFCFC;         /* Permukaan kertas baca: putih gading lembut (menyerupai layar E-Ink) */
+    --bg-elevated: #F7F7F7;        /* Latar elemen sekunder seperti kolom input & header tabel */
+    --bg-hover: #ECECEC;           /* Umpan balik warna halus saat kursor menunjuk elemen interaktif */
+
+    /* Hierarki Kontras Teks */
+    --text-primary: #18181B;       /* Soft Charcoal: rasio kontras ~15:1 (sangat tajam namun rileks di mata) */
+    --text-secondary: #52525B;     /* Abu-abu gelap untuk sub-teks, sel tabel, dan daftar isi */
+    --text-muted: #71717A;         /* Abu-abu netral untuk tanggal, placeholder, dan petunjuk non-kritis */
+
+    /* Aksen & Garis Batas */
+    --accent: #111111;             /* Hitam pekat khusus untuk fokus utama, tombol CTA, dan indikator progres */
+    --accent-hover: #2E2E32;       /* Perubahan warna halus saat tombol utama ditekan/di-hover */
+    --accent-contrast: #FAFAFA;    /* Warna teks putih lembut di atas tombol hitam */
+    --border-subtle: #E4E4E7;      /* Garis pemisah ber-noise rendah agar antarmuka terasa lapang */
+    --border-strong: #A1A1AA;      /* Garis batas lebih tegas untuk area fokus atau kotak putus-putus */
+
+    /* Bayangan, Lengkungan Sudut, & Kurva Animasi */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+    --shadow-md: 0 8px 24px -4px rgba(0, 0, 0, 0.08);
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    /* Kurva decelaration alami (cepat di awal, berhenti lembut di akhir) */
+    --transition-fast: 0.18s cubic-bezier(0.2, 0, 0, 1);
+    --transition-smooth: 0.32s cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* ==========================================================================
+   2. RESET CSS & PENGATURAN DASAR DOKUMEN
+   Memperbaiki bug selektor '-' pada kode lama menjadi selektor universal '*'
+   agar padding dan border tidak menambah dimensi lebar elemen secara tak terduga.
+   ========================================================================== */
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    /* Membuat perpindahan gulir saat mengklik tautan Daftar Isi terasa mulus */
+    scroll-behavior: smooth;
+    /* Memberi jarak aman 84px di atas heading tujuan agar tidak tertutup header melayang */
+    scroll-padding-top: 84px;
+    /* Mencegah browser mobile memperbesar ukuran teks secara acak saat rotasi layar */
+    -webkit-text-size-adjust: 100%;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background-color: var(--bg-canvas);
+    color: var(--text-primary);
+    line-height: 1.65;
+    /* Mengaktifkan fitur tipografi OpenType pada font Inter untuk keterbacaan angka & huruf lebih jelas */
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+}
+
+/* Menyelaraskan warna blok seleksi teks agar tetap monokrom murni */
+::selection {
+    background-color: var(--accent);
+    color: var(--accent-contrast);
+}
+
+/* ==========================================================================
+   3. PROTEKSI ANTI-SELEKSI KHUSUS HALAMAN BACA (VIEW.HTML)
+   Mencegah pengguna memblok dan menyalin isi artikel rahasia, namun tetap
+   mengizinkan interaksi normal pada kolom input kata sandi.
+   ========================================================================== */
+body#page-view {
+    user-select: none;
+    -webkit-user-select: none;
+}
+body#page-view img,
+body#page-view video {
+    -webkit-user-drag: none;
+    pointer-events: none;
+}
+body#page-view input,
+body#page-view textarea {
+    user-select: auto;
+    -webkit-user-select: auto;
+}
+
+/* ==========================================================================
+   4. BATANG GULIR (SCROLLBAR) MINIMALIS & ANIMASI GLOBAL
+   ========================================================================== */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #D4D4D8;
+    border-radius: 99px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #A1A1AA;
+}
+
+/* Animasi kemunculan lembut untuk kartu artikel dan panel hasil dekripsi */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Animasi putaran konstan untuk indikator pemuatan (spinner) */
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}

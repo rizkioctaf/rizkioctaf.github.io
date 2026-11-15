@@ -1,23 +1,47 @@
 /* ==========================================================================
-   SERVICE WORKER (DUMMY) - HANYA UNTUK SYARAT INSTALASI
+   SERVICE WORKER (PWA INSTALLABILITY HANDLER)
+   Lokasi file: website/sw.js (Harus berada di root folder agar scope-nya 
+   mencakup seluruh halaman: index.html, view.html, create.html, dan raw.html).
+   
+   Tujuan utama file ini:
+   Memenuhi syarat teknis browser (Chromium, Edge, Safari, Firefox) agar aplikasi 
+   dapat di-install ke perangkat (Add to Home Screen / Install App) tanpa 
+   menyimpan cache file statis secara agresif, sehingga pembaruan artikel dan 
+   kode selalu langsung terlihat secara real-time.
    ========================================================================== */
-// Seluruh fitur Cache dan Mode Offline telah dihapus sesuai permintaan.
-// File ini dipertahankan murni agar browser mengenali web ini sebagai Aplikasi
-// dan memunculkan tombol "Install" (Add to Home Screen).
 
+/**
+ * 1. EVENT 'INSTALL'
+ * Dipicu satu kali oleh browser ketika Service Worker pertama kali didaftarkan
+ * oleh `registerServiceWorker()` di `dom.js`, atau ketika isi file `sw.js` 
+ * mengalami perubahan sekecil apa pun.
+ */
 self.addEventListener('install', (event) => {
-    // Memaksa Service Worker langsung aktif tanpa menunggu
+    // Memaksa Service Worker versi baru langsung masuk ke fase aktif
+    // tanpa menunggu pengguna menutup seluruh tab aplikasi yang sedang terbuka.
     self.skipWaiting();
 });
 
+/**
+ * 2. EVENT 'ACTIVATE'
+ * Dipicu tepat setelah fase 'install' selesai dan Service Worker siap bertugas.
+ * Biasanya digunakan untuk membersihkan cache versi lama (jika memakai cache).
+ */
 self.addEventListener('activate', (event) => {
-    // Langsung mengambil alih kontrol halaman
-    self.clients.claim();
+    // Mengambil alih kendali atas seluruh halaman/tab yang terbuka di bawah scope ini
+    // secara langsung tanpa perlu pengguna me-refresh halaman terlebih dahulu.
+    event.waitUntil(self.clients.claim());
 });
 
+/**
+ * 3. EVENT 'FETCH'
+ * Mencegat setiap permintaan jaringan (HTML, CSS, JS, JSON, gambar) yang keluar 
+ * dari aplikasi. Keberadaan listener 'fetch' merupakan syarat mutlak dari browser 
+ * agar tombol "Install App" dimunculkan.
+ */
 self.addEventListener('fetch', (event) => {
-    // Syarat mutlak PWA: Harus ada event 'fetch' yang terdaftar.
-    // Karena kita tidak memakai Cache, kita biarkan kosong (return).
-    // Browser akan secara otomatis mengambil file langsung dari internet/server.
+    // Sesuai arsitektur aplikasi: tidak menggunakan penyimpanan Cache lokal 
+    // agar data artikel terenkripsi dan metadata.json selalu diambil terbaru 
+    // langsung dari jaringan/server (Network-Only pass-through).
     return;
 });

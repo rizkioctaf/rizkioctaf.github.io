@@ -1,67 +1,107 @@
 <!DOCTYPE html>
+<!-- Deklarasi bahasa dokumen sebagai Bahasa Indonesia untuk SEO dan pembaca layar (Screen Reader) -->
 <html lang="id">
 <head>
+    <!-- Mengatur pengkodean karakter standar UTF-8 agar semua simbol dan huruf tampil sempurna -->
     <meta charset="UTF-8">
-    <!-- Optimasi UX Mobile: Mencegah layar ter-zoom otomatis saat mengetik di kolom pencarian -->
+    
+    <!-- Konfigurasi viewport responsif untuk mobile dan mencegah zoom otomatis saat kolom input ditekan -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
+    <!-- Judul halaman yang muncul di tab browser -->
     <title>Beranda - SecureReader</title>
-    <!-- Deskripsi untuk keperluan SEO dan cuplikan link -->
-    <meta name="description" content="Aplikasi pembaca artikel terenkripsi secara luring (offline).">
+    
+    <!-- Deskripsi aplikasi untuk mesin pencari dan pratinjau tautan -->
+    <meta name="description" content="Aplikasi pembaca dokumen terenkripsi dengan standar keamanan tinggi dan antarmuka monokrom ergonomis.">
 
-    <!-- === KONFIGURASI PWA & TEMA === -->
+    <!-- =====================================================================
+         KONFIGURASI PWA (PROGRESSIVE WEB APP) & IDENTITAS VISUAL
+         Digunakan agar aplikasi dapat di-install ke layar utama (Home Screen)
+         ===================================================================== -->
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#000000"> <!-- Monokrom: Hitam -->
-    <link rel="icon" type="image/x-icon" href="logo.svg">
+    <!-- Warna status bar browser di perangkat mobile disesuaikan dengan palet kertas lembut -->
+    <meta name="theme-color" content="#FCFCFC">
+    <!-- Ikon tab browser (favicon) dan ikon layar utama perangkat Apple -->
+    <link rel="icon" type="image/svg+xml" href="logo.svg">
     <link rel="apple-touch-icon" href="logo.svg">
 
-    <!-- === OPTIMASI KECEPATAN (PRECONNECT) === -->
-    <!-- Membuka jalur koneksi ke server font lebih awal untuk mencegah teks berkedip -->
+    <!-- =====================================================================
+         OPTIMASI PEMUATAN FONT (PRECONNECT)
+         Mempercepat jabat tangan (handshake) DNS & TLS ke server Google Fonts
+         sebelum file CSS font diminta, mencegah teks berkedip (FOIT/FOUT)
+         ===================================================================== -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
-    <!-- Memanggil CSS -->
-    <link rel="stylesheet" href="style.css">
+    <!-- =====================================================================
+         PEMANGGILAN STYLESHEET MODULAR
+         Hanya memuat file CSS yang dibutuhkan oleh halaman Beranda agar ringan
+         ===================================================================== -->
+    <!-- base.css: Variabel warna monokrom ergonomis, reset box-sizing, dan tipografi dasar -->
+    <link rel="stylesheet" href="assets/css/base.css">
+    <!-- components.css: Gaya untuk header melayang, logo, tombol ergonomis, dan notifikasi toast -->
+    <link rel="stylesheet" href="assets/css/components.css">
+    <!-- pages.css: Tata letak khusus daftar kartu artikel dan bilah pencarian beranda -->
+    <link rel="stylesheet" href="assets/css/pages.css">
 </head>
 
+<!-- ID "page-index" menjadi penanda identitas halaman untuk styling khusus -->
 <body id="page-index">
 
-    <!-- Fallback jika pengguna mematikan JavaScript di browser mereka -->
+    <!-- Peringatan darurat yang hanya muncul jika pengguna menonaktifkan JavaScript di browser -->
     <noscript>
-        <div style="background: #111; color: #fff; padding: 20px; text-align: center; font-family: sans-serif; z-index: 9999; position: relative;">
-            <strong>Peringatan Sistem:</strong> Aplikasi ini membutuhkan JavaScript untuk fitur enkripsi keamanan. Harap aktifkan JavaScript di browser Anda.
+        <div style="background: #18181B; color: #FAFAFA; padding: 20px; text-align: center; font-family: sans-serif; z-index: 9999; position: relative;">
+            <strong>Peringatan Sistem:</strong> Aplikasi ini membutuhkan JavaScript untuk memuat daftar dan mendekripsi artikel. Harap aktifkan JavaScript di browser Anda.
         </div>
     </noscript>
 
-    <!-- Wadah Notifikasi Pop-up. aria-live="polite" agar dibacakan oleh fitur tunanetra -->
+    <!-- Wadah notifikasi pop-up melayang di pojok kanan bawah. aria-live="polite" memastikan teks dibacakan otomatis oleh alat bantu tunanetra -->
     <div id="toast-container" aria-live="polite"></div>
 
+    <!-- =====================================================================
+         HEADER NAVIGASI UTAMA (STICKY)
+         Tetap menempel di atas layar saat pengguna menggulir daftar artikel
+         ===================================================================== -->
     <header>
         <div class="nav-container" id="navContainer">
             
-            <!-- Logo Utama -->
+            <!-- Logo aplikasi sekaligus tautan penyegar halaman Beranda -->
             <a href="index.html" class="logo" aria-label="Beranda SecureReader">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                <!-- Ikon perisai vektor (SVG) sebagai simbol keamanan dokumen -->
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                </svg>
                 SecureReader
             </a>
             
-            <!-- Area Fitur Pencarian -->
+            <!-- Area Fitur Pencarian Interaktif -->
             <div class="search-wrapper">
-                <!-- Tombol Buka Pencarian (Ditambah aria-label untuk aksesibilitas) -->
-                <button class="toggle-btn" id="searchOpenBtn" aria-label="Buka kolom pencarian">
-                    <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <!-- Tombol ikon kaca pembesar untuk membuka bilah pencarian (Target sentuh minimal 44x44px) -->
+                <button type="button" class="toggle-btn" id="searchOpenBtn" aria-label="Buka kolom pencarian">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
                 </button>
                 
-                <!-- Grup Input Pencarian -->
+                <!-- Grup input pencarian yang melebar secara halus saat tombol cari diklik -->
                 <div class="search-input-group" id="searchInputGroup">
-                    <svg class="search-icon-inside" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    <!-- Ikon kaca pembesar dekoratif di sisi kiri dalam kolom input -->
+                    <svg class="search-icon-inside" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
                     
+                    <!-- Kolom ketik kata kunci pencarian judul artikel -->
                     <input type="text" id="searchInput" class="search-input" placeholder="Cari judul artikel..." autocomplete="off" aria-label="Cari judul artikel">
                     
-                    <!-- Tombol Tutup Pencarian -->
-                    <button class="toggle-btn close-btn" id="searchCloseBtn" aria-label="Tutup kolom pencarian">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    <!-- Tombol silang (X) untuk menghapus teks pencarian dan menutup bilah pencarian -->
+                    <button type="button" class="toggle-btn close-btn" id="searchCloseBtn" aria-label="Tutup kolom pencarian">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
                     </button>
                 </div>
             </div>
@@ -69,17 +109,22 @@
         </div>
     </header>
 
-    <main style="max-width: 800px; margin: 30px auto; padding: 0 20px; min-height: 80vh;">
+    <!-- =====================================================================
+         KONTEN UTAMA BERANDA
+         Menampilkan daftar kartu artikel secara bertahap (Virtual Rendering)
+         ===================================================================== -->
+    <main class="main-container">
         
-        <!-- Wadah Daftar Artikel -->
+        <!-- Wadah tempat JavaScript menyuntikkan kartu-kartu artikel dari metadata.json -->
         <div class="article-list" id="articleList" role="list"></div>
         
-        <!-- Pemicu Infinite Scroll (Transparan) -->
+        <!-- Elemen sensor tak terlihat di bagian bawah daftar. Saat masuk ke layar (scroll), 
+             IntersectionObserver di index.js akan memuat 20 artikel berikutnya -->
         <div id="loadMoreTrigger" class="load-more-trigger" aria-hidden="true"></div> 
         
     </main>
 
-    <!-- Memanggil Script JS -->
-    <script src="script.js"></script>
+    <!-- Memanggil titik masuk (entry point) JavaScript khusus halaman Beranda sebagai ES Module -->
+    <script type="module" src="assets/js/pages/index.js"></script>
 </body>
 </html>

@@ -2,74 +2,107 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
+    <!-- Mencegah zoom otomatis saat pengguna mengetik sandi di perangkat mobile -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Raw Extractor - SecureReader</title>
     
+    <title>Raw Extractor - SecureReader</title>
+    <meta name="description" content="Alat dekripsi file JSON SecureReader kembali ke kode Markdown mentah secara lokal.">
+    
+    <!-- Konfigurasi PWA & Ikon -->
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#000000">
+    <meta name="theme-color" content="#FCFCFC">
+    <link rel="icon" type="image/svg+xml" href="logo.svg">
+    <link rel="apple-touch-icon" href="logo.svg">
 
+    <!-- Optimasi Font Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
-    <!-- Memanggil CSS Global -->
-    <link rel="stylesheet" href="style.css">
+    <!-- Pemanggilan CSS Modular (Tidak perlu article.css karena output berupa teks mentah di textarea) -->
+    <link rel="stylesheet" href="assets/css/base.css">
+    <link rel="stylesheet" href="assets/css/components.css">
+    <link rel="stylesheet" href="assets/css/pages.css">
     
+    <!-- Library CryptoJS untuk proses dekripsi file yang diunggah -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 </head>
 
-<!-- ID page-raw untuk memicu fungsi di script.js -->
+<!-- ID "page-raw" menandai halaman Raw Extractor -->
 <body id="page-raw">
 
-    <!-- Wadah Pop-up -->
+    <noscript>
+        <div style="background: #18181B; color: #FAFAFA; padding: 20px; text-align: center; font-family: sans-serif; z-index: 9999; position: relative;">
+            <strong>Peringatan Keamanan:</strong> Ekstraktor file membutuhkan JavaScript untuk mendekripsi data secara lokal. Harap aktifkan JavaScript Anda.
+        </div>
+    </noscript>
+
+    <!-- Wadah Notifikasi Pop-up (Toast) -->
     <div id="toast-container" aria-live="polite"></div>
 
+    <!-- Header Navigasi -->
     <header>
         <div class="nav-container">
-            <a href="index.html" class="logo" aria-label="Kembali ke Beranda">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+            <a href="index.html" class="logo" aria-label="Kembali ke Beranda" title="Kembali ke Beranda">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                </svg>
                 Raw Extractor
             </a>
         </div>
     </header>
 
-    <main style="max-width: 800px; margin: 40px auto; padding: 0 20px;">
+    <!-- =====================================================================
+         AREA UTAMA EKSTRAKTOR
+         Memiliki 2 panel bergantian: Panel Unggah File -> Panel Hasil Markdown
+         ===================================================================== -->
+    <main class="main-container">
         
-        <!-- PANEL UPLOAD (Menggunakan class .panel dari style.css) -->
-        <section class="panel" id="extractPanel">
-            <h2 style="margin-bottom: 10px; text-align: center;">Bongkar JSON ke Markdown</h2>
-            <p style="text-align: center; color: var(--text-muted); margin-bottom: 25px;">Upload file terenkripsi (.json) untuk mengambil teks aslinya secara luring.</p>
+        <!-- PANEL 1: FORMULIR UNGGAH FILE & KATA SANDI -->
+        <section class="panel" id="extractPanel" aria-labelledby="extractTitle">
+            <h2 id="extractTitle" style="text-align: center; margin-bottom: 8px;">Bongkar JSON ke Markdown</h2>
+            <p style="text-align: center; color: var(--text-muted); margin-bottom: 28px; font-size: 0.925rem;">
+                Pilih file terenkripsi (<code>.json</code>) dari perangkat Anda untuk mengambil kode Markdown aslinya secara lokal.
+            </p>
             
             <form id="extractForm">
+                <!-- Input pemilihan file .json lokal -->
                 <div class="form-group">
                     <label for="jsonFile">Pilih File (.json)</label>
-                    <input type="file" id="jsonFile" accept=".json" required style="padding: 10px; border: 2px dashed var(--border); border-radius: 8px; cursor: pointer; background: var(--bg-body); outline: none;">
+                    <input type="file" id="jsonFile" accept=".json" required style="padding: 14px; border: 1px dashed var(--border-strong); border-radius: var(--radius-sm); cursor: pointer; background: var(--bg-elevated);">
                 </div>
                 
+                <!-- Input kata sandi dekripsi (Otomatis mendapat tombol intip sandi dari dom.js) -->
                 <div class="form-group">
                     <label for="password">Kata Sandi Artikel</label>
-                    <!-- Menggunakan class pw-input dari style.css -->
                     <input type="password" id="password" class="pw-input" placeholder="Masukkan kata sandi..." required autocomplete="off" spellcheck="false" style="margin-bottom: 0;">
                 </div>
                 
-                <button type="submit" id="btnExtract" class="btn-unlock" style="margin-top: 15px;">Bongkar File JSON</button>
+                <!-- Tombol mulai dekripsi -->
+                <button type="submit" id="btnExtract" class="btn-unlock" style="margin-top: 12px;">
+                    Bongkar File JSON
+                </button>
             </form>
         </section>
 
-        <!-- PANEL HASIL (Disembunyikan di awal) -->
-        <section class="panel" id="rawResult" style="display: none; margin-top: 20px; animation: fadeIn 0.4s ease;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <h3 style="margin: 0; font-size: 1.1rem;">Kode Markdown Asli</h3>
-                <!-- Menggunakan btn-unlock untuk tombol yang konsisten -->
-                <button type="button" id="btnCopy" class="btn-unlock" style="width: auto; padding: 8px 16px;">Salin Semua</button>
+        <!-- PANEL 2: HASIL KODE MARKDOWN ASLI (Tersembunyi hingga dekripsi berhasil) -->
+        <section class="panel" id="rawResult" style="display: none; animation: fadeIn 0.35s ease;" aria-labelledby="resultTitle">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px;">
+                <h3 id="resultTitle" style="margin: 0; font-size: 1.05rem;">Kode Markdown Asli</h3>
+                
+                <!-- Tombol salin seluruh teks ke clipboard -->
+                <button type="button" id="btnCopy" class="btn-unlock" style="width: auto; min-height: 40px; padding: 8px 16px; font-size: 0.875rem;">
+                    Salin Semua
+                </button>
             </div>
             
-            <textarea id="rawTextContent" readonly style="width: 100%; min-height: 400px; padding: 15px; border: 1px solid var(--border); border-radius: 8px; font-family: monospace; font-size: 0.95rem; background: var(--bg-body); resize: vertical; outline: none; cursor: text;"></textarea>
+            <!-- Kotak teks read-only berisi kode Markdown mentah hasil dekripsi -->
+            <textarea id="rawTextContent" readonly style="width: 100%; min-height: 420px; padding: 16px; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.9rem; line-height: 1.65; background: var(--bg-elevated); color: var(--text-primary); resize: vertical; outline: none;"></textarea>
         </section>
 
     </main>
 
-    <!-- Memanggil JS Global -->
-    <script src="script.js"></script>
+    <!-- Memanggil modul logika khusus halaman Raw Extractor -->
+    <script type="module" src="assets/js/pages/raw.js"></script>
 </body>
 </html>
