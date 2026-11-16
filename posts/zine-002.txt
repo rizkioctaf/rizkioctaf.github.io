@@ -1,0 +1,26 @@
+# Heading Tingkat 1: Eksplorasi Web 1.0
+Ini adalah paragraf pembuka biasa yang dirender langsung oleh parser vanila JavaScript.
+
+## Heading Tingkat 2: Struktur Nested List
+Berikut adalah daftar bertingkat hingga 3 level:
+- Perangkat Keras Webmaster
+  - Komputer PC Pentium II
+  - Modem Dial-up 56k
+    - Kabel Telepon RJ-11
+    - Akun ISP Lokal
+- Perangkat Lunak
+  - Notepad.exe
+  - Netscape Navigator
+
+### Heading Tingkat 3: Statistik Pengunjung & Media
+Berikut adalah contoh grafik batang dan garis yang dirender ke HTML5 Canvas:
+
+[chart:bar | Jumlah Pengunjung Hit Counter (1999) | Jan:120, Feb:240, Mar:190, Apr:410]
+
+[chart:line | Kecepatan Unduh Modem (kbps) | 01:28, 02:33, 03:45, 04:52]
+
+[image:https://upload.wikimedia.org/wikipedia/commons/3/3a/Cat03.jpg | Contoh gambar foto kucing]
+
+[audio:https://upload.wikimedia.org/wikipedia/commons/c/c8/Example.ogg | Contoh rekaman audio OGG]
+
+[video:https://media.w3.org/2010/05/sintel/trailer_hd.mp4 | Contoh pemutaran video WebM 360p]

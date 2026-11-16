@@ -1,130 +1,292 @@
 <!DOCTYPE html>
-<!-- Deklarasi bahasa dokumen sebagai Bahasa Indonesia untuk SEO dan pembaca layar (Screen Reader) -->
 <html lang="id">
 <head>
-    <!-- Mengatur pengkodean karakter standar UTF-8 agar semua simbol dan huruf tampil sempurna -->
-    <meta charset="UTF-8">
-    
-    <!-- Konfigurasi viewport responsif untuk mobile dan mencegah zoom otomatis saat kolom input ditekan -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    
-    <!-- Judul halaman yang muncul di tab browser -->
-    <title>Beranda - SecureReader</title>
-    
-    <!-- Deskripsi aplikasi untuk mesin pencari dan pratinjau tautan -->
-    <meta name="description" content="Aplikasi pembaca dokumen terenkripsi dengan standar keamanan tinggi dan antarmuka monokrom ergonomis.">
-
-    <!-- =====================================================================
-         KONFIGURASI PWA (PROGRESSIVE WEB APP) & IDENTITAS VISUAL
-         Digunakan agar aplikasi dapat di-install ke layar utama (Home Screen)
-         ===================================================================== -->
-    <link rel="manifest" href="manifest.json">
-    <!-- Warna status bar browser di perangkat mobile disesuaikan dengan palet kertas lembut -->
-    <meta name="theme-color" content="#FCFCFC">
-    <!-- Ikon tab browser (favicon) dan ikon layar utama perangkat Apple -->
-    <link rel="icon" type="image/svg+xml" href="logo.svg">
-    <link rel="apple-touch-icon" href="logo.svg">
-
-    <!-- =====================================================================
-         OPTIMASI PEMUATAN FONT (PRECONNECT)
-         Mempercepat jabat tangan (handshake) DNS & TLS ke server Google Fonts
-         sebelum file CSS font diminta, mencegah teks berkedip (FOIT/FOUT)
-         ===================================================================== -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    
-    <!-- =====================================================================
-         PEMANGGILAN STYLESHEET MODULAR
-         Hanya memuat file CSS yang dibutuhkan oleh halaman Beranda agar ringan
-         ===================================================================== -->
-    <!-- base.css: Variabel warna monokrom ergonomis, reset box-sizing, dan tipografi dasar -->
-    <link rel="stylesheet" href="assets/css/base.css">
-    <!-- components.css: Gaya untuk header melayang, logo, tombol ergonomis, dan notifikasi toast -->
-    <link rel="stylesheet" href="assets/css/components.css">
-    <!-- pages.css: Tata letak khusus daftar kartu artikel dan bilah pencarian beranda -->
-    <link rel="stylesheet" href="assets/css/pages.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; media-src 'self' https:;">
+  <meta name="referrer" content="no-referrer">
+  <title>WEBMASTER ZINE — Catatan Teknologi, Rekayasa Web &amp; Artikel Pilihan</title>
+  <link rel="stylesheet" href="style.css">
 </head>
+<body>
 
-<!-- ID "page-index" menjadi penanda identitas halaman untuk styling khusus -->
-<body id="page-index">
+<div class="zine-shell">
+  <!-- HEADER BANNER -->
+  <header class="zine-header">
+<pre class="ascii-logo" aria-hidden="true">
+ __      __      ___.                         __                
+/  \    /  \ ____\_ |__   _____ _____    _____/  |_  ___________ 
+\   \/\/   // __ \| __ \ /     \\__  \  /  ___/\   __\/ __ \_  __ \
+ \        /\  ___/| \_\ \  Y Y  \/ __ \_\___ \  |  | \  ___/|  | \/
+  \__/\  /  \___  >___  /__|_|  (____  /____  > |__|  \___  >__|   
+       \/       \/    \/      \/     \/     \/            \/       
+</pre>
+    <div class="zine-subtitle"><b>WEBMASTER ZINE &bull; ARTIKEL TEKNOLOGI, REKAYASA WEB &amp; CATATAN DIGITAL</b></div>
+  </header>
 
-    <!-- Peringatan darurat yang hanya muncul jika pengguna menonaktifkan JavaScript di browser -->
-    <noscript>
-        <div style="background: #18181B; color: #FAFAFA; padding: 20px; text-align: center; font-family: sans-serif; z-index: 9999; position: relative;">
-            <strong>Peringatan Sistem:</strong> Aplikasi ini membutuhkan JavaScript untuk memuat daftar dan mendekripsi artikel. Harap aktifkan JavaScript di browser Anda.
+  <!-- MARQUEE TICKER -->
+  <div class="ticker-box">
+    <marquee scrollamount="3">+++ ARTIKEL TERBARU TELAH TERBIT &bull; KUMPULAN TULISAN TEKNOLOGI, INFRASTRUKTUR WEB &amp; DOKUMENTASI TEKNIS +++</marquee>
+  </div>
+
+  <!-- WORKSPACE UTAMA -->
+  <div class="zine-workspace">
+    
+    <!-- SIDEBAR KIRI -->
+    <aside class="zine-sidebar">
+      <b>:: PENCARIAN ARTIKEL ::</b>
+      <form id="search-form" class="classic-search-form" autocomplete="off">
+        <input 
+          type="search" 
+          id="search-input" 
+          class="classic-input" 
+          placeholder="Cari judul atau tahun..."
+          maxlength="60"
+          aria-label="Cari artikel"
+        >
+        <div class="classic-btn-group">
+          <button type="submit" class="classic-btn">Cari</button>
+          <button type="button" id="reset-btn" class="classic-btn" title="Tampilkan Semua Artikel">Semua</button>
         </div>
-    </noscript>
+      </form>
 
-    <!-- Wadah notifikasi pop-up melayang di pojok kanan bawah. aria-live="polite" memastikan teks dibacakan otomatis oleh alat bantu tunanetra -->
-    <div id="toast-container" aria-live="polite"></div>
+      <hr>
 
-    <!-- =====================================================================
-         HEADER NAVIGASI UTAMA (STICKY)
-         Tetap menempel di atas layar saat pengguna menggulir daftar artikel
-         ===================================================================== -->
-    <header>
-        <div class="nav-container" id="navContainer">
-            
-            <!-- Logo aplikasi sekaligus tautan penyegar halaman Beranda -->
-            <a href="index.html" class="logo" aria-label="Beranda SecureReader">
-                <!-- Ikon perisai vektor (SVG) sebagai simbol keamanan dokumen -->
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-                </svg>
-                SecureReader
-            </a>
-            
-            <!-- Area Fitur Pencarian Interaktif -->
-            <div class="search-wrapper">
-                <!-- Tombol ikon kaca pembesar untuk membuka bilah pencarian (Target sentuh minimal 44x44px) -->
-                <button type="button" class="toggle-btn" id="searchOpenBtn" aria-label="Buka kolom pencarian">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                        <circle cx="11" cy="11" r="8"></circle>
-                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                    </svg>
-                </button>
-                
-                <!-- Grup input pencarian yang melebar secara halus saat tombol cari diklik -->
-                <div class="search-input-group" id="searchInputGroup">
-                    <!-- Ikon kaca pembesar dekoratif di sisi kiri dalam kolom input -->
-                    <svg class="search-icon-inside" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                        <circle cx="11" cy="11" r="8"></circle>
-                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                    </svg>
-                    
-                    <!-- Kolom ketik kata kunci pencarian judul artikel -->
-                    <input type="text" id="searchInput" class="search-input" placeholder="Cari judul artikel..." autocomplete="off" aria-label="Cari judul artikel">
-                    
-                    <!-- Tombol silang (X) untuk menghapus teks pencarian dan menutup bilah pencarian -->
-                    <button type="button" class="toggle-btn close-btn" id="searchCloseBtn" aria-label="Tutup kolom pencarian">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                            <line x1="6" y1="6" x2="18" y2="18"></line>
-                        </svg>
-                    </button>
-                </div>
-            </div>
-            
-        </div>
-    </header>
+      <!-- MOST POPULER -->
+      <b>:: MOST POPULER ::</b>
+      <ul id="most-popular-list" class="sidebar-recent-list">
+        <li><i>Memuat daftar artikel...</i></li>
+      </ul>
+      
+      <hr>
+      
+      <b>:: STATUS SITUS ::</b><br>
+      <span style="font-family: var(--font-mono-retro); font-size: 11.5px; color: #005500; font-weight: bold;">
+        [ONLINE] BLOG AKTIF
+      </span><br>
+      <small style="color: #333333;">Diperbarui berkala dalam format halaman ringkas tanpa pelacak.</small>
+    </aside>
 
-    <!-- =====================================================================
-         KONTEN UTAMA BERANDA
-         Menampilkan daftar kartu artikel secara bertahap (Virtual Rendering)
-         ===================================================================== -->
-    <main class="main-container">
-        
-        <!-- Wadah tempat JavaScript menyuntikkan kartu-kartu artikel dari metadata.json -->
-        <div class="article-list" id="articleList" role="list"></div>
-        
-        <!-- Elemen sensor tak terlihat di bagian bawah daftar. Saat masuk ke layar (scroll), 
-             IntersectionObserver di index.js akan memuat 20 artikel berikutnya -->
-        <div id="loadMoreTrigger" class="load-more-trigger" aria-hidden="true"></div> 
-        
+    <!-- KONTEN UTAMA -->
+    <main class="zine-main">
+      <div class="readable-measure">
+        <h2 id="list-heading" style="margin-top:0; color:#000080;">Daftar Artikel (Terbaru &rarr; Terlama)</h2>
+        <p id="list-subtext">Kumpulan artikel teknis, catatan pengembangan, dan ulasan sistem yang diurutkan dari yang terbaru:</p>
+        <hr size="3">
+
+        <ul id="post-list" class="classic-post-list">
+          <li><i>Memuat daftar artikel...</i></li>
+        </ul>
+
+        <hr size="3">
+        <small><i>Seluruh artikel disajikan dalam format teks statis yang ringan agar cepat dibuka dan nyaman dibaca di berbagai perangkat.</i></small>
+      </div>
     </main>
+  </div>
 
-    <!-- Memanggil titik masuk (entry point) JavaScript khusus halaman Beranda sebagai ES Module -->
-    <script type="module" src="assets/js/pages/index.js"></script>
+  <!-- FOOTER -->
+  <footer class="zine-footer">
+    Kontak Penulis: <a href="mailto:webmaster@webmaster-zine.org">webmaster@webmaster-zine.org</a><br>
+    &copy; 2026 Webmaster Zine &bull; Hak Cipta Dilindungi Undang-Undang.
+  </footer>
+</div>
+
+<script>
+  const POPULAR_POST_IDS = [
+    'zine-002',
+    'zine-001'
+  ];
+
+  let cachedPosts = [];
+  const SAFE_ID_PATTERN = /^[a-zA-Z0-9_-]+$/;
+
+  function getPostDate(post) {
+    return String(post.tanggal || post.date || '1970-01-01').trim();
+  }
+
+  function getPostTitle(post) {
+    return String(post.judul || post.title || '(Artikel Tanpa Judul)').trim();
+  }
+
+  function normalizeText(str) {
+    return String(str || '').toLowerCase().replace(/\s+/g, ' ').trim();
+  }
+
+  function renderMostPopularSidebar(allPosts) {
+    const sidebarListEl = document.getElementById('most-popular-list');
+    sidebarListEl.innerHTML = '';
+
+    const uniqueIds = [...new Set(POPULAR_POST_IDS)];
+    const popularPosts = uniqueIds
+      .filter((id) => SAFE_ID_PATTERN.test(String(id)))
+      .map((targetId) => allPosts.find((post) => String(post.id) === String(targetId)))
+      .filter(Boolean);
+
+    if (popularPosts.length === 0) {
+      const emptyLi = document.createElement('li');
+      emptyLi.textContent = 'Belum ada artikel populer.';
+      sidebarListEl.appendChild(emptyLi);
+      return;
+    }
+
+    popularPosts.forEach((post) => {
+      const li = document.createElement('li');
+
+      const link = document.createElement('a');
+      link.href = `view.html?id=${encodeURIComponent(post.id)}`;
+      link.textContent = getPostTitle(post);
+
+      const dateSmall = document.createElement('span');
+      dateSmall.className = 'sidebar-recent-date';
+      dateSmall.textContent = `[${getPostDate(post)}]`;
+
+      li.appendChild(link);
+      li.appendChild(dateSmall);
+      sidebarListEl.appendChild(li);
+    });
+  }
+
+  function renderPostList(postsToRender, searchKeyword = '') {
+    const listElement = document.getElementById('post-list');
+    const headingElement = document.getElementById('list-heading');
+    const subtextElement = document.getElementById('list-subtext');
+
+    if (searchKeyword !== '') {
+      headingElement.textContent = `Hasil Pencarian: "${searchKeyword}"`;
+      subtextElement.textContent = `Ditemukan ${postsToRender.length} artikel yang sesuai:`;
+    } else {
+      headingElement.innerHTML = 'Daftar Artikel (Terbaru &rarr; Terlama)';
+      subtextElement.textContent = 'Kumpulan artikel teknis, catatan pengembangan, dan ulasan sistem yang diurutkan dari yang terbaru:';
+    }
+
+    listElement.innerHTML = '';
+
+    if (postsToRender.length === 0) {
+      const emptyLi = document.createElement('li');
+      emptyLi.textContent = `Tidak ditemukan artikel yang cocok dengan kata kunci "${searchKeyword}".`;
+      emptyLi.style.fontStyle = 'italic';
+      listElement.appendChild(emptyLi);
+      return;
+    }
+
+    postsToRender.forEach((post, index) => {
+      if (!post || !SAFE_ID_PATTERN.test(String(post.id))) {
+        return;
+      }
+
+      const li = document.createElement('li');
+      const rowDiv = document.createElement('div');
+      rowDiv.className = 'post-item-row';
+
+      const dateSpan = document.createElement('span');
+      dateSpan.className = 'date-tag';
+      dateSpan.textContent = `[${getPostDate(post)}]`;
+
+      const titleWrapper = document.createElement('div');
+      titleWrapper.style.minWidth = '0';
+      const link = document.createElement('a');
+      link.href = `view.html?id=${encodeURIComponent(post.id)}`;
+
+      const boldTitle = document.createElement('b');
+      boldTitle.textContent = getPostTitle(post);
+      link.appendChild(boldTitle);
+      titleWrapper.appendChild(link);
+
+      if (searchKeyword === '' && index === 0) {
+        const newBadge = document.createElement('span');
+        newBadge.className = 'blink-text';
+        newBadge.textContent = ' [TERBARU]';
+        titleWrapper.appendChild(newBadge);
+      }
+
+      rowDiv.appendChild(dateSpan);
+      rowDiv.appendChild(titleWrapper);
+      li.appendChild(rowDiv);
+      listElement.appendChild(li);
+    });
+  }
+
+  async function initHomePage() {
+    const listElement = document.getElementById('post-list');
+    const sidebarListEl = document.getElementById('most-popular-list');
+
+    try {
+      const response = await fetch('metadata.json', { cache: 'no-cache' });
+      if (!response.ok) {
+        throw new Error('Daftar artikel tidak dapat diakses saat ini.');
+      }
+
+      const rawPosts = await response.json();
+      if (!Array.isArray(rawPosts)) {
+        throw new Error('Format daftar artikel tidak valid.');
+      }
+
+      cachedPosts = rawPosts
+        .filter((post) => post && SAFE_ID_PATTERN.test(String(post.id)))
+        .sort((a, b) => {
+          const diff = new Date(getPostDate(b)) - new Date(getPostDate(a));
+          return Number.isNaN(diff) ? 0 : diff;
+        });
+
+      renderPostList(cachedPosts);
+      renderMostPopularSidebar(cachedPosts);
+
+    } catch (error) {
+      console.error('[Zine Index Error]:', error);
+      listElement.innerHTML = '';
+      const errorLi = document.createElement('li');
+      errorLi.style.color = '#800000';
+      errorLi.textContent = 'Daftar artikel sedang tidak tersedia. Silakan muat ulang halaman beberapa saat lagi.';
+      listElement.appendChild(errorLi);
+
+      sidebarListEl.innerHTML = '<li><i>Tidak tersedia.</i></li>';
+    }
+  }
+
+  function setupSearchHandlers() {
+    const searchForm = document.getElementById('search-form');
+    const searchInput = document.getElementById('search-input');
+    const resetButton = document.getElementById('reset-btn');
+
+    const runSearch = () => {
+      const rawKeyword = searchInput.value.replace(/\s+/g, ' ').trim();
+      if (rawKeyword === '') {
+        renderPostList(cachedPosts);
+        return;
+      }
+
+      const normalizedKeyword = normalizeText(rawKeyword);
+      const filteredPosts = cachedPosts.filter((post) => {
+        const titleMatch = normalizeText(getPostTitle(post)).includes(normalizedKeyword);
+        const dateMatch = normalizeText(getPostDate(post)).includes(normalizedKeyword);
+        return titleMatch || dateMatch;
+      });
+
+      renderPostList(filteredPosts, rawKeyword);
+    };
+
+    searchForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      runSearch();
+    });
+
+    searchInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        searchInput.value = '';
+        renderPostList(cachedPosts);
+      }
+    });
+
+    resetButton.addEventListener('click', () => {
+      searchInput.value = '';
+      renderPostList(cachedPosts);
+      searchInput.focus();
+    });
+  }
+
+  setupSearchHandlers();
+  initHomePage();
+</script>
+
 </body>
 </html>

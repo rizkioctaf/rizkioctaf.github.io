@@ -1,131 +1,182 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <!-- Mencegah zoom layar otomatis saat pengguna mengetik kata sandi di ponsel -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    
-    <title>Membaca Dokumen Rahasia - SecureReader</title>
-    
-    <!-- Konfigurasi PWA & Ikon (Menggunakan logo.svg yang valid) -->
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#FCFCFC">
-    <link rel="icon" type="image/svg+xml" href="logo.svg">
-    <link rel="apple-touch-icon" href="logo.svg">
-
-    <!-- Optimasi Font Inter -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    
-    <!-- =====================================================================
-         PEMANGGILAN STYLESHEET MODULAR
-         Memuat seluruh lapisan CSS termasuk article.css untuk tipografi bacaan
-         ===================================================================== -->
-    <link rel="stylesheet" href="assets/css/base.css">
-    <link rel="stylesheet" href="assets/css/components.css">
-    <link rel="stylesheet" href="assets/css/article.css">
-    <link rel="stylesheet" href="assets/css/pages.css">
-    
-    <!-- =====================================================================
-         LIBRARY EKSTERNAL (WAJIB UNTUK HALAMAN BACA)
-         1. CryptoJS: Mesin dekripsi PBKDF2 + AES-256-CBC di sisi klien
-         2. Chart.js: Mesin rendering grafik statistik interaktif monokrom
-         ===================================================================== -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; media-src 'self' https:;">
+  <meta name="referrer" content="no-referrer">
+  <title>Membaca Artikel — Webmaster Zine</title>
+  <link rel="stylesheet" href="style.css">
 </head>
+<body id="top">
 
-<!-- ID "page-view" mengaktifkan proteksi anti-seleksi teks (user-select: none) di CSS -->
-<body id="page-view">
+<div class="zine-shell">
+  <!-- HEADER BANNER (IDENTIK DENGAN INDEX.HTML) -->
+  <header class="zine-header">
+<pre class="ascii-logo" aria-hidden="true">
+ __      __      ___.                         __                
+/  \    /  \ ____\_ |__   _____ _____    _____/  |_  ___________ 
+\   \/\/   // __ \| __ \ /     \\__  \  /  ___/\   __\/ __ \_  __ \
+ \        /\  ___/| \_\ \  Y Y  \/ __ \_\___ \  |  | \  ___/|  | \/
+  \__/\  /  \___  >___  /__|_|  (____  /____  > |__|  \___  >__|   
+       \/       \/    \/      \/     \/     \/            \/       
+</pre>
+    <div class="zine-subtitle"><b>WEBMASTER ZINE &bull; ARTIKEL TEKNOLOGI, REKAYASA WEB &amp; CATATAN DIGITAL</b></div>
+  </header>
 
-    <noscript>
-        <div style="background: #18181B; color: #FAFAFA; padding: 20px; text-align: center; font-family: sans-serif; z-index: 9999; position: relative;">
-            <strong>Peringatan Keamanan:</strong> Dekripsi file rahasia membutuhkan JavaScript. Harap aktifkan JavaScript Anda.
-        </div>
-    </noscript>
+  <!-- TOP NAVIGATION BAR -->
+  <nav class="top-nav-bar">
+    <span>[ <a href="index.html"><b>&lt;&lt; Kembali ke Beranda</b></a> ]</span>
+    <span>[ <a href="#bottom">Ke Bawah Halaman &darr;</a> ]</span>
+  </nav>
 
-    <!-- Wadah Notifikasi Pop-up (Toast) -->
-    <div id="toast-container" aria-live="polite"></div>
+  <!-- ISI ARTIKEL -->
+  <main class="zine-main" style="margin-top: 6px;">
+    <article class="readable-measure" style="margin: 0 auto;">
+      
+      <div id="article-meta" class="article-meta-box">
+        Memuat informasi artikel...
+      </div>
+      
+      <h1 id="article-title" class="article-main-title">
+        Memuat Artikel...
+      </h1>
+      
+      <hr size="3">
 
-    <!-- =====================================================================
-         HEADER NAVIGASI BACA
-         Otomatis bersembunyi saat menggulir ke bawah agar fokus membaca maksimal,
-         dan memiliki bilah progres baca tipis di bagian tepi bawahnya
-         ===================================================================== -->
-    <header>
-        <div class="nav-container">
-            
-            <!-- Tombol kembali ke halaman daftar artikel (Beranda) -->
-            <a href="index.html" class="logo" aria-label="Kembali ke Beranda" title="Kembali ke Beranda">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-                </svg>
-                SecureReader
-            </a>
-            
-            <!-- Menu Daftar Isi (Table of Contents) Otomatis.
-                 Tersembunyi di awal, hanya muncul setelah artikel terbuka dan memiliki sub-judul (H2) -->
-            <div class="toc-wrapper" id="tocWrapper">
-                <!-- Tombol pemicu buka/tutup dropdown daftar isi -->
-                <button type="button" class="toc-btn" id="tocBtn" aria-label="Buka Daftar Isi" aria-expanded="false" aria-controls="tocDropdown" title="Daftar Isi">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                        <line x1="8" y1="6" x2="21" y2="6"></line>
-                        <line x1="8" y1="12" x2="21" y2="12"></line>
-                        <line x1="8" y1="18" x2="21" y2="18"></line>
-                        <line x1="3" y1="6" x2="3.01" y2="6"></line>
-                        <line x1="3" y1="12" x2="3.01" y2="12"></line>
-                        <line x1="3" y1="18" x2="3.01" y2="18"></line>
-                    </svg>
-                </button>
-                
-                <!-- Panel dropdown melayang berisi tautan navigasi cepat antar bab -->
-                <div class="toc-dropdown" id="tocDropdown" role="menu">
-                    <div class="toc-header">Daftar Isi</div>
-                    <div class="toc-list" id="tocList"></div>
-                </div>
-            </div>
+      <div id="article-body"></div>
 
-        </div>
-    </header>
+      <hr size="3">
+      <div style="text-align: center; padding: 8px 0; font-family: var(--font-ui-classic); font-size: 12.5px;">
+        <a href="index.html"><b>[ &lt;&lt; Daftar Semua Artikel ]</b></a> &nbsp;|&nbsp;
+        <a href="#top"><b>[ Kembali ke Atas &uarr; ]</b></a>
+      </div>
+    </article>
+  </main>
 
-    <!-- =====================================================================
-         AREA UTAMA DOKUMEN
-         Memiliki 3 fase tampilan: Loader -> Form Kata Sandi -> Konten Artikel
-         ===================================================================== -->
-    <main class="main-container">
-        
-        <!-- FASE 1: LAYAR LOADING AWAL
-             Menutupi layar sejenak saat sistem memeriksa sesi auto-login 24 jam di localStorage -->
-        <div class="fullscreen-loader" id="mainLoader" role="status">
-            <div class="spinner" aria-hidden="true"></div>
-            <p>Memverifikasi akses keamanan...</p>
-        </div>
+  <!-- FOOTER -->
+  <footer id="bottom" class="zine-footer">
+    Akhir Artikel &bull; Webmaster Zine &bull; Diterbitkan dalam Format Halaman Ringkas.
+  </footer>
+</div>
 
-        <!-- FASE 2: FORMULIR PEMBUKA GEMBOK (KATA SANDI)
-             Muncul jika sesi auto-login tidak ditemukan atau sudah kedaluwarsa -->
-        <section id="passwordPrompt" aria-labelledby="promptTitle">
-            <h2 id="promptTitle">Buka Dokumen Rahasia</h2>
-            
-            <!-- Menampilkan ID file dokumen yang sedang diakses -->
-            <p id="articleTargetName">Memuat ID...</p>
-            
-            <form id="decryptForm">
-                <!-- Input kata sandi (Otomatis dibungkus tombol intip sandi oleh initPasswordToggles() di dom.js) -->
-                <input type="password" id="readPassword" class="pw-input" placeholder="Masukkan kata sandi..." required autofocus autocomplete="off" spellcheck="false" aria-label="Kata Sandi Artikel">
-                
-                <!-- Tombol eksekusi dekripsi -->
-                <button type="submit" class="btn-unlock" id="btnUnlock">Buka Gembok</button>
-            </form>
-        </section>
+<script src="parser.js"></script>
 
-        <!-- FASE 3: WADAH ARTIKEL HASIL DEKRIPSI
-             Dirender dalam lebar optimal 68 karakter per baris agar nyaman dibaca lama -->
-        <article id="decryptedContent" class="article-body"></article>
-        
-    </main>
+<script>
+  const SAFE_ID_PATTERN = /^[a-zA-Z0-9_-]+$/;
 
-    <!-- Memanggil modul logika khusus halaman Baca -->
-    <script type="module" src="assets/js/pages/view.js"></script>
+  function showSafeError(publicTitle, publicMessage, internalDebugInfo = '') {
+    if (internalDebugInfo) {
+      console.error(`[Zine View Security/Error]: ${internalDebugInfo}`);
+    }
+
+    const titleEl = document.getElementById('article-title');
+    const metaEl = document.getElementById('article-meta');
+    const bodyEl = document.getElementById('article-body');
+
+    metaEl.textContent = 'STATUS: ARTIKEL TIDAK TERSEDIA';
+    titleEl.textContent = publicTitle;
+    titleEl.style.color = '#800000';
+
+    bodyEl.innerHTML = '';
+    const msgP = document.createElement('p');
+    msgP.style.fontFamily = 'var(--font-serif-body)';
+    msgP.style.color = '#800000';
+    msgP.textContent = publicMessage;
+    bodyEl.appendChild(msgP);
+  }
+
+  async function loadArticlePage() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const rawId = urlParams.get('id');
+
+    if (!rawId || !SAFE_ID_PATTERN.test(rawId)) {
+      showSafeError(
+        'Alamat Artikel Tidak Valid',
+        'Tautan artikel yang Anda buka tidak lengkap atau tidak valid. Silakan pilih artikel melalui halaman Beranda.',
+        `Invalid ID attempt blocked: ${rawId}`
+      );
+      return;
+    }
+
+    const titleEl = document.getElementById('article-title');
+    const metaEl = document.getElementById('article-meta');
+    const bodyEl = document.getElementById('article-body');
+
+    try {
+      const metaResponse = await fetch('metadata.json', { cache: 'no-cache' });
+      if (!metaResponse.ok) {
+        throw new Error('Gagal membaca daftar artikel.');
+      }
+
+      const posts = await metaResponse.json();
+      const post = Array.isArray(posts)
+        ? posts.find((item) => item && String(item.id) === rawId)
+        : null;
+
+      if (!post) {
+        showSafeError(
+          'Artikel Tidak Ditemukan',
+          'Artikel yang Anda cari tidak tersedia atau telah dihapus.',
+          `ID "${rawId}" tidak terdaftar di metadata.json`
+        );
+        return;
+      }
+
+      const judul = String(post.judul || post.title || '(Artikel Tanpa Judul)').trim();
+      const tanggal = String(post.tanggal || post.date || '-').trim();
+
+      document.title = `${judul} — Webmaster Zine`;
+      titleEl.textContent = judul;
+
+      metaEl.innerHTML = '';
+      
+      const dateSpan = document.createElement('span');
+      const dateBold = document.createElement('b');
+      dateBold.textContent = 'DIPUBLIKASIKAN: ';
+      dateSpan.appendChild(dateBold);
+      dateSpan.appendChild(document.createTextNode(tanggal));
+
+      const catSpan = document.createElement('span');
+      const catBold = document.createElement('b');
+      catBold.textContent = 'KATEGORI: ';
+      catSpan.appendChild(catBold);
+      catSpan.appendChild(document.createTextNode('ARTIKEL & CATATAN'));
+
+      metaEl.appendChild(dateSpan);
+      metaEl.appendChild(catSpan);
+
+      const safeFilePath = `posts/${encodeURIComponent(post.id)}.txt`;
+      const contentResponse = await fetch(safeFilePath);
+
+      if (!contentResponse.ok) {
+        showSafeError(
+          'Isi Artikel Belum Tersedia',
+          'Artikel ini sedang dalam proses penyuntingan dan belum dapat dibaca.',
+          `Missing content file for ID: ${post.id}`
+        );
+        return;
+      }
+
+      const rawText = await contentResponse.text();
+
+      if (typeof ZineParser === 'undefined') {
+        throw new Error('Komponen pembaca artikel gagal dimuat.');
+      }
+
+      ZineParser.render(rawText, bodyEl);
+
+    } catch (error) {
+      showSafeError(
+        'Gangguan Pemuatan Artikel',
+        'Terjadi kendala saat membuka artikel ini. Silakan muat ulang halaman atau kembali ke Beranda.',
+        error.message
+      );
+    }
+  }
+
+  loadArticlePage();
+</script>
+
 </body>
 </html>

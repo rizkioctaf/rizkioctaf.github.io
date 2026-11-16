@@ -1,0 +1,554 @@
+/* ==========================================================================
+   FILE: style.css
+   DESKRIPSI: Lembar gaya Classic Web 1.0 (Era 1996) - Edisi Tahan Banting.
+              Dirancang untuk menangani anomali konten ekstrem (teks tanpa spasi,
+              layar 280px hingga 4K, HiDPI, mode aksesibilitas, dan rasio media).
+   ========================================================================== */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+:root {
+  --bg-netscape: #c0c0c0;
+  --panel-grey: #d4d0c8;
+  --navy-classic: #000080;
+  --paper-white: #ffffff;
+  --ink-black: #111111;
+  --link-blue: #0000ff;
+  --link-visited: #800080;
+  --accent-red: #800000;
+  --border-light: #ffffff;
+  --border-dark: #808080;
+
+  --font-serif-body: "Times New Roman", Times, Georgia, serif;
+  --font-ui-classic: Verdana, Tahoma, "MS Sans Serif", Arial, sans-serif;
+  --font-mono-retro: "Courier New", Courier, "Lucida Console", monospace;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background-color: var(--bg-netscape);
+  color: var(--ink-black);
+  font-family: var(--font-serif-body);
+  font-size: clamp(15px, 1vw + 12px, 17.5px);
+  line-height: 1.55;
+  margin: 0;
+  padding: clamp(2px, 1.5vw, 14px);
+  overflow-x: hidden;
+}
+
+hr {
+  border: 0;
+  border-top: 1px solid var(--border-dark);
+  border-bottom: 1px solid var(--border-light);
+  margin: 8px 0;
+}
+
+/* Tautan Klasik HTML 3.2 */
+a:link {
+  color: var(--link-blue);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+a:visited {
+  color: var(--link-visited);
+}
+a:active {
+  color: #ff0000;
+  background-color: #ffff00;
+}
+a:focus-visible,
+button:focus-visible,
+input:focus-visible {
+  outline: 2px dotted #000000;
+  outline-offset: 1px;
+}
+
+/* Bingkai Utama */
+.zine-shell {
+  width: 100%;
+  max-width: 1080px;
+  margin: 0 auto;
+  background-color: var(--panel-grey);
+  border: 2px outset var(--border-light);
+  padding: clamp(3px, 0.8vw, 6px);
+}
+
+/* Header Banner */
+.zine-header {
+  background-color: var(--navy-classic);
+  color: #ffffff;
+  text-align: center;
+  padding: clamp(8px, 1.8vw, 14px) 6px;
+  border: 2px inset var(--border-dark);
+  overflow: hidden;
+}
+
+pre.ascii-logo {
+  font-family: var(--font-mono-retro);
+  font-size: clamp(4.5px, 1.22vw, 11.5px);
+  line-height: 1.05;
+  color: #ffff00;
+  margin: 0 auto 4px auto;
+  display: inline-block;
+  text-align: left;
+  max-width: 100%;
+  overflow: hidden;
+  user-select: none;
+}
+
+.zine-subtitle {
+  font-family: var(--font-ui-classic);
+  font-size: clamp(10px, 1.1vw, 13px);
+  letter-spacing: 0.4px;
+  line-height: 1.3;
+  overflow-wrap: break-word;
+}
+
+/* Marquee Ticker */
+.ticker-box {
+  background-color: #000000;
+  color: #00ff00;
+  font-family: var(--font-mono-retro);
+  font-size: 12px;
+  font-weight: bold;
+  padding: 2px 4px;
+  margin-top: 4px;
+  border: 2px inset var(--border-dark);
+  overflow: hidden;
+}
+
+/* Bar Navigasi Atas */
+.top-nav-bar {
+  background-color: var(--bg-netscape);
+  font-family: var(--font-ui-classic);
+  font-size: 12px;
+  padding: 5px 8px;
+  margin-top: 4px;
+  border: 2px groove var(--border-light);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+}
+
+.top-nav-bar a {
+  display: inline-block;
+  padding: 2px 0;
+}
+
+/* Tata Letak Grid Responsif */
+.zine-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 5px;
+  margin-top: 5px;
+}
+
+@media (min-width: 768px) {
+  .zine-workspace {
+    grid-template-columns: 230px minmax(0, 1fr);
+    align-items: start;
+    gap: 8px;
+    margin-top: 6px;
+  }
+
+  .zine-sidebar {
+    position: sticky;
+    top: 8px;
+    max-height: calc(100vh - 16px);
+    overflow-y: auto;
+  }
+}
+
+@media (min-width: 1025px) {
+  .zine-workspace {
+    grid-template-columns: 255px minmax(0, 1fr);
+    gap: 10px;
+  }
+}
+
+/* Sidebar Kiri */
+.zine-sidebar {
+  background-color: var(--bg-netscape);
+  border: 2px groove var(--border-light);
+  padding: clamp(7px, 1.2vw, 10px);
+  font-family: var(--font-ui-classic);
+  font-size: 12px;
+  line-height: 1.4;
+  min-width: 0;
+}
+
+.classic-search-form {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.classic-input {
+  width: 100%;
+  min-width: 0;
+  background-color: #ffffff;
+  color: #000000;
+  font-family: var(--font-mono-retro);
+  font-size: 13px; /* >= 13px mencegah auto-zoom ekstrem pada iOS Safari */
+  padding: 4px 6px;
+  border: 2px inset var(--border-dark);
+  border-radius: 0;
+}
+
+.classic-input:focus {
+  background-color: #ffffea;
+}
+
+.classic-btn-group {
+  display: flex;
+  gap: 4px;
+}
+
+.classic-btn {
+  flex: 1;
+  background-color: var(--bg-netscape);
+  color: #000000;
+  font-family: var(--font-ui-classic);
+  font-size: 11.5px;
+  font-weight: bold;
+  padding: 5px 7px;
+  border: 2px outset var(--border-light);
+  border-radius: 0;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.classic-btn:active {
+  border: 2px inset var(--border-dark);
+  padding: 6px 6px 4px 8px;
+}
+
+@media (max-width: 767px) {
+  .classic-search-form {
+    flex-direction: row;
+  }
+  .classic-input {
+    flex: 1;
+  }
+  .classic-btn-group {
+    flex: 0 0 auto;
+  }
+}
+
+/* Daftar Most Populer di Sidebar */
+ul.sidebar-recent-list {
+  list-style-type: square;
+  padding-left: 15px;
+  margin: 5px 0 2px 0;
+  font-family: var(--font-ui-classic);
+  font-size: 11.5px;
+  line-height: 1.38;
+}
+
+ul.sidebar-recent-list li {
+  margin-bottom: 6px;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+ul.sidebar-recent-list li:last-child {
+  margin-bottom: 0;
+}
+
+.sidebar-recent-date {
+  display: inline-block;
+  font-family: var(--font-mono-retro);
+  font-size: 10.5px;
+  color: var(--accent-red);
+  margin-left: 4px;
+}
+
+@media (min-width: 768px) {
+  .sidebar-recent-date {
+    display: block;
+    margin-left: 0;
+    margin-top: 1px;
+  }
+}
+
+/* Area Kertas Bacaan */
+.zine-main {
+  background-color: var(--paper-white);
+  border: 2px inset var(--border-dark);
+  padding: clamp(10px, 2.2vw, 24px);
+  min-width: 0;
+}
+
+.readable-measure {
+  max-width: 74ch;
+  min-width: 0;
+}
+
+#list-heading {
+  font-family: var(--font-ui-classic);
+  font-size: clamp(15px, 1.8vw, 19px);
+  margin: 0 0 4px 0;
+  letter-spacing: -0.2px;
+  overflow-wrap: anywhere;
+}
+
+#list-subtext {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+/* Daftar Artikel di Beranda */
+ul.classic-post-list {
+  list-style-type: square;
+  padding-left: 18px;
+  margin: 8px 0;
+}
+
+ul.classic-post-list li {
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px dashed #b8b8b8;
+  min-width: 0;
+}
+
+ul.classic-post-list li:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.post-item-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+@media (min-width: 640px) {
+  .post-item-row {
+    flex-direction: row;
+    align-items: baseline;
+    gap: 8px;
+  }
+}
+
+.post-item-row a {
+  display: inline-block;
+  padding: 2px 0;
+  font-family: var(--font-ui-classic);
+  font-size: clamp(13px, 1.2vw, 14.5px);
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.date-tag {
+  font-family: var(--font-mono-retro);
+  font-size: 12.5px;
+  color: var(--accent-red);
+  font-weight: bold;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Tipografi & Konten Artikel */
+.article-meta-box {
+  font-family: var(--font-mono-retro);
+  font-size: 12px;
+  background-color: #ffffcc;
+  border: 1px solid var(--border-dark);
+  padding: 5px 8px;
+  margin-bottom: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+}
+
+.article-main-title {
+  font-family: var(--font-serif-body);
+  font-size: clamp(20px, 2.8vw, 29px);
+  line-height: 1.22;
+  font-weight: bold;
+  color: var(--navy-classic);
+  margin: 0 0 8px 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+#article-body {
+  font-family: var(--font-serif-body);
+  font-size: clamp(16px, 1.1vw + 12.5px, 18.5px);
+  line-height: 1.62;
+  color: var(--ink-black);
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+#article-body p {
+  margin: 0 0 12px 0;
+}
+
+#article-body h1 {
+  font-family: var(--font-ui-classic);
+  font-size: clamp(17.5px, 2vw, 22px);
+  line-height: 1.3;
+  color: #000000;
+  border-bottom: 3px double #000000;
+  padding-bottom: 3px;
+  margin: 20px 0 10px 0;
+}
+
+#article-body h2 {
+  font-family: var(--font-ui-classic);
+  font-size: clamp(15.5px, 1.7vw, 18.5px);
+  line-height: 1.3;
+  color: var(--navy-classic);
+  margin: 18px 0 8px 0;
+}
+
+#article-body h3 {
+  font-family: var(--font-serif-body);
+  font-size: clamp(16px, 1.5vw, 18.5px);
+  line-height: 1.35;
+  color: var(--accent-red);
+  font-style: italic;
+  margin: 14px 0 6px 0;
+}
+
+/* Nested List 3 Tingkat */
+#article-body ul {
+  list-style-type: disc;
+  padding-left: clamp(18px, 2.5vw, 24px);
+  margin: 6px 0 12px 0;
+}
+#article-body ul li {
+  margin-bottom: 4px;
+}
+#article-body ul ul {
+  list-style-type: circle;
+  margin: 2px 0;
+}
+#article-body ul ul ul {
+  list-style-type: square;
+}
+
+/* Kotak Media & Grafik */
+.retro-media-box {
+  background-color: var(--bg-netscape);
+  border: 2px ridge var(--border-light);
+  padding: clamp(6px, 1.2vw, 10px);
+  margin: 14px 0;
+  text-align: center;
+  font-family: var(--font-ui-classic);
+  font-size: 12px;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.retro-media-box img,
+.retro-media-box video {
+  display: block;
+  margin: 0 auto;
+  width: auto;
+  max-width: 100%;
+  max-height: 75vh; /* Mencegah gambar portrait tinggi memenuhi layar ponsel */
+  height: auto;
+  object-fit: contain;
+  border: 2px inset var(--border-dark);
+  background-color: #000000;
+}
+
+.retro-media-box audio {
+  width: 100%;
+  max-width: 480px;
+}
+
+.retro-media-caption {
+  font-family: var(--font-mono-retro);
+  font-size: 11.5px;
+  margin-top: 6px;
+  color: #000000;
+  overflow-wrap: anywhere;
+}
+
+/* Pembungkus Scroll Horizontal untuk Grafik */
+.retro-chart-scroll {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  background-color: #ffffff;
+  border: 2px inset var(--border-dark);
+  padding: 2px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.retro-chart-scroll::-webkit-scrollbar {
+  height: 12px;
+}
+.retro-chart-scroll::-webkit-scrollbar-track {
+  background: var(--bg-netscape);
+  border-top: 1px solid var(--border-dark);
+}
+.retro-chart-scroll::-webkit-scrollbar-thumb {
+  background: var(--panel-grey);
+  border: 2px outset var(--border-light);
+}
+
+canvas.retro-chart {
+  display: block;
+  margin: 0 auto;
+  background-color: #ffffff;
+  height: 250px;
+  max-width: none;
+}
+
+.retro-chart-hint {
+  font-family: var(--font-mono-retro);
+  font-size: 10.5px;
+  color: #333333;
+  margin-top: 4px;
+}
+
+.blink-text {
+  animation: blinker 1s steps(1, end) infinite;
+  color: #ff0000;
+  font-weight: bold;
+  font-family: var(--font-mono-retro);
+  font-size: 11.5px;
+}
+
+@keyframes blinker {
+  50% { opacity: 0; }
+}
+
+/* Footer */
+.zine-footer {
+  text-align: center;
+  font-size: 11.5px;
+  font-family: var(--font-mono-retro);
+  line-height: 1.4;
+  padding: 8px 4px 4px 4px;
+  margin-top: 6px;
+  border-top: 2px groove var(--border-light);
+  overflow-wrap: anywhere;
+}
+
+/* Aksesibilitas: Matikan animasi kedip/gerak jika user mengaktifkan Reduce Motion */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .blink-text {
+    animation: none;
+  }
+}
