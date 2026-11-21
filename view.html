@@ -3,11 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; media-src 'self' https:;">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; media-src 'self' https:; manifest-src 'self'; worker-src 'self';">
   <meta name="referrer" content="no-referrer">
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23c0c0c0'/%3E%3Cpolygon points='0,0 32,0 30,2 2,2 2,30 0,32' fill='%23ffffff'/%3E%3Cpolygon points='32,32 0,32 2,30 30,30 30,2 32,0' fill='%23808080'/%3E%3Crect x='4' y='4' width='24' height='24' fill='%23000080'/%3E%3Ctext x='16' y='23' font-family='Courier New, monospace' font-size='20' font-weight='bold' fill='%23ffff00' text-anchor='middle'%3EA%3C/text%3E%3C/svg%3E">
+  <meta name="theme-color" content="#000080">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Arsip Digital">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+  <link rel="apple-touch-icon" href="icon-192.png">
   <title>Membaca Artikel — Arsip Digital</title>
-  <link rel="manifest" href="manifest.webmanifest">
   <link rel="stylesheet" href="style.css">
 </head>
 <body id="top">
@@ -147,12 +153,6 @@
     bodyEl.appendChild(msgP);
   }
 
-  /**
-   * Pengingat Posisi Baca Otomatis dengan Pembersihan Riwayat (Maksimal 30 Artikel)
-   * - Menyimpan koordinat Y secara throttled (250ms) saat scroll/reload.
-   * - Menghapus penanda bila pembaca sudah kembali ke atas atau selesai ke bagian bawah.
-   * - Memulihkan posisi baca secara bertahap untuk dokumen panjang (100.000+ baris).
-   */
   function initReadingPositionMemory(articleId) {
     const storageKey = `${STORAGE_PREFIX}${articleId}`;
     let savedY = null;
@@ -377,18 +377,8 @@
     }
   }
 
-  loadArticlePage();
-  /* ========================================================================
-     SERVICE WORKER (HALAMAN BACA - TANPA AUTO-RELOAD MENGGANGGU)
-     ======================================================================== */
   function setupServiceWorker() {
-    const isSecureContextForSw =
-      'serviceWorker' in navigator &&
-      (window.location.protocol === 'https:' ||
-        window.location.hostname === 'localhost' ||
-        window.location.hostname === '127.0.0.1');
-
-    if (!isSecureContextForSw) return;
+    if (!('serviceWorker' in navigator) || !window.isSecureContext) return;
 
     window.addEventListener('load', async () => {
       try {
@@ -401,6 +391,9 @@
       }
     });
   }
+
+  setupServiceWorker();
+  loadArticlePage();
 </script>
 
 </body>

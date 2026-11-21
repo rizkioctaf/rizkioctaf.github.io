@@ -1,0 +1,29 @@
+{
+  "id": "./index.html",
+  "name": "Arsip Digital — Catatan Teknologi & Dokumentasi Teknis",
+  "short_name": "Arsip Digital",
+  "description": "Arsip digital statis ringan berisi catatan teknologi, rekayasa web, dan dokumentasi teknis.",
+  "lang": "id",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#c0c0c0",
+  "theme_color": "#000080",
+  "categories": ["education", "books", "news"],
+  "icons": [
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

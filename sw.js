@@ -1,21 +1,23 @@
 /* ==========================================================================
    FILE: sw.js
-   DESKRIPSI: Service Worker Arsip Digital - Selalu Sinkron & Anti-Stale
-              - Mengecek versi terbaru secara aktif saat aktivasi & fetch
+   DESKRIPSI: Service Worker Arsip Digital (Instalasi & Akses Luring)
+              - App Shell & ikon PNG di-cache saat instalasi
               - Network-First (cache: 'no-store') untuk HTML, metadata.json,
                 dan berkas artikel agar publikasi baru selalu tampil
-              - Stale-While-Revalidate untuk CSS, parser.js, dan manifest
-              - Mengirim sinyal pembaruan ke klien aktif bila versi berubah
+              - Stale-While-Revalidate untuk CSS, parser.js, manifest & ikon
+              - Pembersihan otomatis cache versi lama saat aktivasi
    ========================================================================== */
 
-const CACHE_VERSION = 'arsip-digital-2026-11-21-v2';
+const CACHE_VERSION = 'arsip-digital-v1';
 const SHELL_ASSETS = [
   './',
   './index.html',
   './view.html',
   './style.css',
   './parser.js',
-  './manifest.webmanifest'
+  './manifest.json',
+  './icon-192.png',
+  './icon-512.png'
 ];
 
 self.addEventListener('install', (event) => {
@@ -30,7 +32,6 @@ self.addEventListener('install', (event) => {
       )
     )
   );
-  // Segera aktifkan versi baru tanpa menunggu antrean lama
   self.skipWaiting();
 });
 
@@ -97,7 +98,6 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
 
-  // 1. Halaman navigasi & berkas artikel/indeks -> selalu utamakan versi terbaru dari server
   const isDynamicContent =
     req.mode === 'navigate' ||
     url.pathname.endsWith('.html') ||
@@ -110,6 +110,5 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 2. Aset antarmuka & parser -> tampil instan dari cache sambil perbarui di latar belakang
   event.respondWith(staleWhileRevalidate(req));
 });
