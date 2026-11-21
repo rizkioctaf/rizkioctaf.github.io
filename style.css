@@ -5,6 +5,7 @@
               - Tipografi 3 peran selaras antara Beranda (index.html) & Bacaan (view.html)
               - Anti-Font-Boosting mobile agar ukuran teks konsisten di seluruh halaman
               - Logo ASCII proporsional via container query (cqw) anti-terpotong
+              - Navigasi atas & bawah artikel selaras (sejajar di desktop, terpusat rapi di layar sempit)
               - Target sentuh ramah jari (>= 42px pada perangkat layar sentuh)
    ========================================================================== */
 
@@ -178,7 +179,7 @@ pre.ascii-logo {
   100% { transform: translateX(-100%); }
 }
 
-/* Bar Navigasi Atas (Halaman Baca) */
+/* Bar Navigasi Atas (Halaman Baca) - Selaras dengan Navigasi Bawah Artikel */
 .top-nav-bar {
   background-color: var(--bg-desktop);
   font-family: var(--font-ui-classic);
@@ -187,15 +188,47 @@ pre.ascii-logo {
   margin-top: 5px;
   border: 2px groove var(--border-light);
   display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
   align-items: center;
+  gap: 8px;
 }
 
-.nav-bracket-link {
+.nav-bracket-link,
+.nav-bracket-btn {
   display: inline-flex;
   align-items: center;
   min-height: 36px;
   padding: 4px 6px;
+  font-family: var(--font-ui-classic);
+  font-size: inherit;
   font-weight: bold;
+}
+
+.nav-bracket-btn {
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  border: 0;
+  margin: 0;
+  color: var(--link-blue);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.nav-bracket-btn:hover {
+  background-color: #efefef;
+}
+
+.nav-bracket-btn:active {
+  color: #ff0000;
+  background-color: #ffff00;
+}
+
+.nav-bracket-btn.is-feedback {
+  color: var(--accent-red);
+  text-decoration: none;
 }
 
 /* Tata Letak Grid Responsif */
@@ -348,6 +381,16 @@ ul.sidebar-featured-list a {
   font-size: 11.5px;
   color: var(--ink-muted);
   line-height: 1.4;
+}
+
+.sidebar-install-box {
+  margin-top: 2px;
+}
+
+.sidebar-install-btn {
+  width: 100%;
+  margin-top: 7px;
+  color: var(--navy-classic);
 }
 
 /* Area Kertas Bacaan (Selaras antara index.html & view.html) */
@@ -698,12 +741,16 @@ canvas.retro-chart {
   font-size: 12.5px;
 }
 
+/* Penyelarasan Navigasi Atas & Bawah Artikel di Layar Sempit (Terpusat Rapi) */
 @media (max-width: 480px) {
+  .top-nav-bar,
   .article-bottom-nav {
     flex-direction: column;
     align-items: stretch;
     text-align: center;
   }
+  .top-nav-bar .nav-bracket-link,
+  .top-nav-bar .nav-bracket-btn,
   .article-bottom-nav .nav-bracket-link {
     justify-content: center;
   }
@@ -728,7 +775,8 @@ canvas.retro-chart {
     min-height: var(--touch-target-min);
   }
 
-  .nav-bracket-link {
+  .nav-bracket-link,
+  .nav-bracket-btn {
     min-height: var(--touch-target-min);
     padding: 6px 8px;
   }

@@ -3,8 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; media-src 'self' https:;">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; media-src 'self' https:; manifest-src 'self'; worker-src 'self';">
   <meta name="referrer" content="no-referrer">
+  <meta name="theme-color" content="#000080">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Arsip Digital">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23c0c0c0'/%3E%3Cpolygon points='0,0 32,0 30,2 2,2 2,30 0,32' fill='%23ffffff'/%3E%3Cpolygon points='32,32 0,32 2,30 30,30 30,2 32,0' fill='%23808080'/%3E%3Crect x='4' y='4' width='24' height='24' fill='%23000080'/%3E%3Ctext x='16' y='23' font-family='Courier New, monospace' font-size='20' font-weight='bold' fill='%23ffff00' text-anchor='middle'%3EA%3C/text%3E%3C/svg%3E">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' fill='%23c0c0c0'/%3E%3Crect x='20' y='20' width='140' height='140' fill='%23000080'/%3E%3Ctext x='90' y='130' font-family='Courier New, monospace' font-size='112' font-weight='bold' fill='%23ffff00' text-anchor='middle'%3EA%3C/text%3E%3C/svg%3E">
   <title>ARSIP DIGITAL — Catatan Teknologi, Rekayasa Web &amp; Artikel Pilihan</title>
   <link rel="stylesheet" href="style.css">
 </head>
@@ -61,6 +69,14 @@
       <span class="sidebar-section-title">:: STATUS PORTAL ::</span>
       <span class="status-badge">[AKTIF] PUBLIKASI DARING</span>
       <span class="sidebar-note">Diperbarui berkala dalam format halaman teks ringkas tanpa pelacak pengunjung.</span>
+
+      <!-- KOTAK INSTALASI APLIKASI -->
+      <div id="install-box" class="sidebar-install-box" hidden>
+        <hr>
+        <span class="sidebar-section-title">:: APLIKASI PERANGKAT ::</span>
+        <span id="install-note" class="sidebar-note">Pasang Arsip Digital ke layar utama untuk akses cepat dan pembacaan luring.</span>
+        <button type="button" id="install-app-btn" class="classic-btn sidebar-install-btn">[ + Pasang ke Perangkat ]</button>
+      </div>
     </aside>
 
     <!-- KONTEN UTAMA -->
@@ -100,8 +116,8 @@
     'zine-001'
   ];
 
-  const PAGE_SIZE = 14; // Tampilkan tepat 14 judul artikel per halaman
-  const INDEX_CHUNK_SIZE = 40000; // Proses 40.000 item per frame tanpa membekukan UI
+  const PAGE_SIZE = 14;
+  const INDEX_CHUNK_SIZE = 40000;
   const SAFE_ID_PATTERN = /^[a-zA-Z0-9_-]+$/;
 
   let allIndexedPosts = [];
@@ -394,7 +410,112 @@
     });
   }
 
+  /* ========================================================================
+     INSTALASI APLIKASI (PWA) & SERVICE WORKER
+     ======================================================================== */
+  function setupAppInstallation() {
+    const isSecureContextForSw =
+      'serviceWorker' in navigator &&
+      (window.location.protocol === 'https:' ||
+        window.location.hostname === 'localhost' ||
+        window.location.hostname === '127.0.0.1');
+
+    let isRefreshingForUpdate = false;
+    let hadExistingController = Boolean(navigator.serviceWorker && navigator.serviceWorker.controller);
+
+    const triggerPageRefresh = () => {
+      if (isRefreshingForUpdate) return;
+      isRefreshingForUpdate = true;
+      window.location.reload();
+    };
+
+    if (isSecureContextForSw) {
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        // Muat ulang hanya jika sebelumnya sudah ada Service Worker aktif (artinya ini pembaruan)
+        if (hadExistingController) {
+          triggerPageRefresh();
+        }
+        hadExistingController = true;
+      });
+
+      navigator.serviceWorker.addEventListener('message', (event) => {
+        if (event.data && event.data.type === 'SW_UPDATED' && hadExistingController) {
+          triggerPageRefresh();
+        }
+      });
+
+      window.addEventListener('load', async () => {
+        try {
+          const registration = await navigator.serviceWorker.register('./sw.js', {
+            updateViaCache: 'none'
+          });
+          await registration.update();
+        } catch (err) {
+          console.warn('[SW Registration]:', err);
+        }
+      });
+    }
+
+    const installBox = document.getElementById('install-box');
+    const installNote = document.getElementById('install-note');
+    const installBtn = document.getElementById('install-app-btn');
+    let deferredInstallPrompt = null;
+
+    const isStandalone =
+      window.matchMedia('(display-mode: standalone)').matches ||
+      window.navigator.standalone === true;
+
+    if (isStandalone) {
+      if (installBox) installBox.hidden = true;
+      return;
+    }
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredInstallPrompt = e;
+      if (installBox) installBox.hidden = false;
+      if (installBtn) {
+        installBtn.hidden = false;
+        installBtn.disabled = false;
+      }
+    });
+
+    if (installBtn) {
+      installBtn.addEventListener('click', async () => {
+        if (!deferredInstallPrompt) return;
+        installBtn.disabled = true;
+        try {
+          deferredInstallPrompt.prompt();
+          const { outcome } = await deferredInstallPrompt.userChoice;
+          deferredInstallPrompt = null;
+
+          if (outcome === 'accepted') {
+            if (installBox) installBox.hidden = true;
+          } else {
+            installBtn.disabled = false;
+          }
+        } catch {
+          installBtn.disabled = false;
+        }
+      });
+    }
+
+    window.addEventListener('appinstalled', () => {
+      deferredInstallPrompt = null;
+      if (installBox) installBox.hidden = true;
+    });
+
+    const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    if (isIos && installBox && installNote && installBtn) {
+      installBox.hidden = false;
+      installBtn.hidden = true;
+      installNote.textContent =
+        'Di Safari iOS: ketuk tombol Bagikan (ikon kotak panah atas), lalu pilih "Tambah ke Layar Utama".';
+    }
+  }
+
   setupInteractions();
+  setupAppInstallation();
   initHomePage();
 </script>
 

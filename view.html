@@ -5,7 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; media-src 'self' https:;">
   <meta name="referrer" content="no-referrer">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23c0c0c0'/%3E%3Cpolygon points='0,0 32,0 30,2 2,2 2,30 0,32' fill='%23ffffff'/%3E%3Cpolygon points='32,32 0,32 2,30 30,30 30,2 32,0' fill='%23808080'/%3E%3Crect x='4' y='4' width='24' height='24' fill='%23000080'/%3E%3Ctext x='16' y='23' font-family='Courier New, monospace' font-size='20' font-weight='bold' fill='%23ffff00' text-anchor='middle'%3EA%3C/text%3E%3C/svg%3E">
   <title>Membaca Artikel — Arsip Digital</title>
+  <link rel="manifest" href="manifest.webmanifest">
   <link rel="stylesheet" href="style.css">
 </head>
 <body id="top">
@@ -23,6 +25,7 @@
   <!-- NAVIGASI ATAS -->
   <nav class="top-nav-bar" aria-label="Navigasi Atas Artikel">
     <a href="index.html" class="nav-bracket-link">[ &lt;&lt; Kembali ke Daftar Artikel ]</a>
+    <button type="button" id="share-btn" class="nav-bracket-btn nav-share-btn" title="Bagikan tautan artikel ini">[ Bagikan ]</button>
   </nav>
 
   <!-- ISI ARTIKEL -->
@@ -62,6 +65,66 @@
   const STORAGE_PREFIX = 'arsip_read_pos_';
   const HISTORY_KEY = 'arsip_read_history';
   const MAX_HISTORY_ITEMS = 30;
+
+  let currentArticleTitle = '';
+
+  function fallbackCopyText(text) {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.setAttribute('readonly', '');
+    textArea.style.position = 'fixed';
+    textArea.style.opacity = '0';
+    document.body.appendChild(textArea);
+    textArea.select();
+    let copied = false;
+    try {
+      copied = document.execCommand('copy');
+    } catch {
+      copied = false;
+    }
+    document.body.removeChild(textArea);
+    return copied;
+  }
+
+  async function handleShareArticle(buttonEl) {
+    const shareUrl = window.location.href;
+    const shareTitle = currentArticleTitle || document.title;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: shareTitle,
+          text: `${shareTitle} — Arsip Digital`,
+          url: shareUrl
+        });
+        return;
+      } catch (err) {
+        if (err && err.name === 'AbortError') return;
+      }
+    }
+
+    let copied = false;
+    if (navigator.clipboard && window.isSecureContext) {
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        copied = true;
+      } catch {
+        copied = fallbackCopyText(shareUrl);
+      }
+    } else {
+      copied = fallbackCopyText(shareUrl);
+    }
+
+    const originalLabel = '[ Bagikan ]';
+    buttonEl.textContent = copied ? '[ Tautan Disalin! ]' : '[ Salin URL di Bilah Alamat ]';
+    buttonEl.classList.add('is-feedback');
+
+    clearTimeout(buttonEl._feedbackTimer);
+    buttonEl._feedbackTimer = setTimeout(() => {
+      buttonEl.textContent = originalLabel;
+      buttonEl.classList.remove('is-feedback');
+    }, 2200);
+  }
 
   function showSafeError(publicTitle, publicMessage, internalDebugInfo = '') {
     if (internalDebugInfo) {
@@ -204,6 +267,11 @@
   }
 
   async function loadArticlePage() {
+    const shareBtn = document.getElementById('share-btn');
+    if (shareBtn) {
+      shareBtn.addEventListener('click', () => handleShareArticle(shareBtn));
+    }
+
     const urlParams = new URLSearchParams(window.location.search);
     const rawId = urlParams.get('id');
 
@@ -244,6 +312,7 @@
       const tanggal = String(post.tanggal || post.date || '-').trim();
       const artikelId = String(post.id).trim();
 
+      currentArticleTitle = judul;
       document.title = `${judul} — Arsip Digital`;
       titleEl.textContent = judul;
 
@@ -309,6 +378,29 @@
   }
 
   loadArticlePage();
+  /* ========================================================================
+     SERVICE WORKER (HALAMAN BACA - TANPA AUTO-RELOAD MENGGANGGU)
+     ======================================================================== */
+  function setupServiceWorker() {
+    const isSecureContextForSw =
+      'serviceWorker' in navigator &&
+      (window.location.protocol === 'https:' ||
+        window.location.hostname === 'localhost' ||
+        window.location.hostname === '127.0.0.1');
+
+    if (!isSecureContextForSw) return;
+
+    window.addEventListener('load', async () => {
+      try {
+        const registration = await navigator.serviceWorker.register('./sw.js', {
+          updateViaCache: 'none'
+        });
+        await registration.update();
+      } catch (err) {
+        console.warn('[SW Registration]:', err);
+      }
+    });
+  }
 </script>
 
 </body>
