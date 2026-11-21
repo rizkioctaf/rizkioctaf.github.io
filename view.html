@@ -5,34 +5,29 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; media-src 'self' https:;">
   <meta name="referrer" content="no-referrer">
-  <title>Membaca Artikel — Webmaster Zine</title>
+  <title>Membaca Artikel — Arsip Digital</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body id="top">
 
-<div class="zine-shell">
-  <!-- HEADER BANNER (IDENTIK DENGAN INDEX.HTML) -->
-  <header class="zine-header">
-<pre class="ascii-logo" aria-hidden="true">
- __      __      ___.                         __                
-/  \    /  \ ____\_ |__   _____ _____    _____/  |_  ___________ 
-\   \/\/   // __ \| __ \ /     \\__  \  /  ___/\   __\/ __ \_  __ \
- \        /\  ___/| \_\ \  Y Y  \/ __ \_\___ \  |  | \  ___/|  | \/
-  \__/\  /  \___  >___  /__|_|  (____  /____  > |__|  \___  >__|   
-       \/       \/    \/      \/     \/     \/            \/       
-</pre>
-    <div class="zine-subtitle"><b>WEBMASTER ZINE &bull; ARTIKEL TEKNOLOGI, REKAYASA WEB &amp; CATATAN DIGITAL</b></div>
+<div class="portal-shell">
+  <!-- HEADER BANNER -->
+  <header class="portal-header">
+<pre class="ascii-logo" aria-hidden="true">   _   ___  ___ ___ ___   ___ ___ ___ ___ _____ _   _    
+  /_\ | _ \/ __|_ _| _ \ |   \_ _/ __|_ _|_   _/_\ | |   
+ / _ \|   /\__ \| ||  _/ | |) | | (_ || |  | |/ _ \| |__ 
+/_/ \_\_|_\|___/___|_|   |___/___\___|___| |_/_/ \_\____|</pre>
+    <div class="portal-subtitle">ARSIP DIGITAL &bull; CATATAN TEKNOLOGI, REKAYASA WEB &amp; DOKUMENTASI TEKNIS</div>
   </header>
 
-  <!-- TOP NAVIGATION BAR -->
-  <nav class="top-nav-bar">
-    <span>[ <a href="index.html"><b>&lt;&lt; Kembali ke Beranda</b></a> ]</span>
-    <span>[ <a href="#bottom">Ke Bawah Halaman &darr;</a> ]</span>
+  <!-- NAVIGASI ATAS -->
+  <nav class="top-nav-bar" aria-label="Navigasi Atas Artikel">
+    <a href="index.html" class="nav-bracket-link">[ &lt;&lt; Kembali ke Daftar Artikel ]</a>
   </nav>
 
   <!-- ISI ARTIKEL -->
-  <main class="zine-main" style="margin-top: 6px;">
-    <article class="readable-measure" style="margin: 0 auto;">
+  <main class="portal-main portal-main-article">
+    <article class="readable-measure article-measure">
       
       <div id="article-meta" class="article-meta-box">
         Memuat informasi artikel...
@@ -42,21 +37,21 @@
         Memuat Artikel...
       </h1>
       
-      <hr size="3">
+      <hr class="thick-rule">
 
       <div id="article-body"></div>
 
-      <hr size="3">
-      <div style="text-align: center; padding: 8px 0; font-family: var(--font-ui-classic); font-size: 12.5px;">
-        <a href="index.html"><b>[ &lt;&lt; Daftar Semua Artikel ]</b></a> &nbsp;|&nbsp;
-        <a href="#top"><b>[ Kembali ke Atas &uarr; ]</b></a>
-      </div>
+      <hr class="thick-rule">
+      <nav class="article-bottom-nav" aria-label="Navigasi Bawah Artikel">
+        <a href="index.html" class="nav-bracket-link">[ &lt;&lt; Kembali ke Daftar Artikel ]</a>
+        <a href="#top" class="nav-bracket-link">[ Kembali ke Atas &uarr; ]</a>
+      </nav>
     </article>
   </main>
 
   <!-- FOOTER -->
-  <footer id="bottom" class="zine-footer">
-    Akhir Artikel &bull; Webmaster Zine &bull; Diterbitkan dalam Format Halaman Ringkas.
+  <footer class="portal-footer">
+    Akhir Halaman &bull; Arsip Digital &bull; Diterbitkan dalam Format Halaman Teks Ringkas.
   </footer>
 </div>
 
@@ -64,10 +59,13 @@
 
 <script>
   const SAFE_ID_PATTERN = /^[a-zA-Z0-9_-]+$/;
+  const STORAGE_PREFIX = 'arsip_read_pos_';
+  const HISTORY_KEY = 'arsip_read_history';
+  const MAX_HISTORY_ITEMS = 30;
 
   function showSafeError(publicTitle, publicMessage, internalDebugInfo = '') {
     if (internalDebugInfo) {
-      console.error(`[Zine View Security/Error]: ${internalDebugInfo}`);
+      console.error(`[Portal View Security/Error]: ${internalDebugInfo}`);
     }
 
     const titleEl = document.getElementById('article-title');
@@ -84,6 +82,125 @@
     msgP.style.color = '#800000';
     msgP.textContent = publicMessage;
     bodyEl.appendChild(msgP);
+  }
+
+  /**
+   * Pengingat Posisi Baca Otomatis dengan Pembersihan Riwayat (Maksimal 30 Artikel)
+   * - Menyimpan koordinat Y secara throttled (250ms) saat scroll/reload.
+   * - Menghapus penanda bila pembaca sudah kembali ke atas atau selesai ke bagian bawah.
+   * - Memulihkan posisi baca secara bertahap untuk dokumen panjang (100.000+ baris).
+   */
+  function initReadingPositionMemory(articleId) {
+    const storageKey = `${STORAGE_PREFIX}${articleId}`;
+    let savedY = null;
+    let isRestoring = false;
+    let userInterrupted = false;
+    let saveTimer = null;
+
+    try {
+      const rawSaved = localStorage.getItem(storageKey);
+      if (rawSaved) {
+        const parsedY = parseInt(rawSaved, 10);
+        if (Number.isFinite(parsedY) && parsedY > 120) {
+          savedY = parsedY;
+          isRestoring = true;
+        }
+      }
+    } catch {
+      // Abaikan jika localStorage diblokir mode privat browser
+    }
+
+    const updateHistoryIndex = (key, shouldRemove) => {
+      try {
+        let history = [];
+        try {
+          const parsed = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+          if (Array.isArray(parsed)) history = parsed;
+        } catch {
+          history = [];
+        }
+
+        history = history.filter((item) => item !== key);
+
+        if (!shouldRemove) {
+          history.push(key);
+          while (history.length > MAX_HISTORY_ITEMS) {
+            const oldestKey = history.shift();
+            if (oldestKey) localStorage.removeItem(oldestKey);
+          }
+        }
+
+        if (history.length === 0) {
+          localStorage.removeItem(HISTORY_KEY);
+        } else {
+          localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+        }
+      } catch {
+        // Abaikan jika kuota penyimpanan penuh
+      }
+    };
+
+    const saveCurrentPosition = () => {
+      if (isRestoring) return;
+      try {
+        const currentY = Math.round(window.scrollY || window.pageYOffset || 0);
+        const maxScrollable = document.documentElement.scrollHeight - window.innerHeight;
+
+        if (currentY <= 120 || (maxScrollable > 200 && currentY >= maxScrollable - 60)) {
+          localStorage.removeItem(storageKey);
+          updateHistoryIndex(storageKey, true);
+        } else {
+          localStorage.setItem(storageKey, String(currentY));
+          updateHistoryIndex(storageKey, false);
+        }
+      } catch {
+        // Abaikan jika kuota penyimpanan penuh
+      }
+    };
+
+    const scheduleSave = () => {
+      if (saveTimer !== null) return;
+      saveTimer = setTimeout(() => {
+        saveTimer = null;
+        saveCurrentPosition();
+      }, 250);
+    };
+
+    const cancelRestoreOnUserInput = () => {
+      if (isRestoring) {
+        userInterrupted = true;
+        isRestoring = false;
+      }
+    };
+
+    window.addEventListener('wheel', cancelRestoreOnUserInput, { passive: true });
+    window.addEventListener('touchstart', cancelRestoreOnUserInput, { passive: true });
+    window.addEventListener('keydown', (e) => {
+      if (['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', ' '].includes(e.key)) {
+        cancelRestoreOnUserInput();
+      }
+    });
+
+    window.addEventListener('scroll', scheduleSave, { passive: true });
+    window.addEventListener('beforeunload', saveCurrentPosition);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') {
+        saveCurrentPosition();
+      }
+    });
+
+    const tryRestore = (isFinished = false) => {
+      if (!isRestoring || userInterrupted || savedY === null) return;
+
+      const maxScrollable = document.documentElement.scrollHeight - window.innerHeight;
+      if (maxScrollable >= savedY || isFinished) {
+        const targetY = Math.min(savedY, Math.max(0, maxScrollable));
+        window.scrollTo({ top: targetY, behavior: 'auto' });
+        isRestoring = false;
+      }
+    };
+
+    return { tryRestore };
   }
 
   async function loadArticlePage() {
@@ -117,7 +234,7 @@
       if (!post) {
         showSafeError(
           'Artikel Tidak Ditemukan',
-          'Artikel yang Anda cari tidak tersedia atau telah dihapus.',
+          'Artikel yang Anda cari tidak tersedia atau telah dipindahkan.',
           `ID "${rawId}" tidak terdaftar di metadata.json`
         );
         return;
@@ -125,8 +242,9 @@
 
       const judul = String(post.judul || post.title || '(Artikel Tanpa Judul)').trim();
       const tanggal = String(post.tanggal || post.date || '-').trim();
+      const artikelId = String(post.id).trim();
 
-      document.title = `${judul} — Webmaster Zine`;
+      document.title = `${judul} — Arsip Digital`;
       titleEl.textContent = judul;
 
       metaEl.innerHTML = '';
@@ -137,23 +255,28 @@
       dateSpan.appendChild(dateBold);
       dateSpan.appendChild(document.createTextNode(tanggal));
 
-      const catSpan = document.createElement('span');
-      const catBold = document.createElement('b');
-      catBold.textContent = 'KATEGORI: ';
-      catSpan.appendChild(catBold);
-      catSpan.appendChild(document.createTextNode('ARTIKEL & CATATAN'));
+      const idSpan = document.createElement('span');
+      const idBold = document.createElement('b');
+      idBold.textContent = 'ID: ';
+      idSpan.appendChild(idBold);
+      idSpan.appendChild(document.createTextNode(artikelId));
+
+      const progressSpan = document.createElement('span');
+      progressSpan.id = 'render-progress';
+      progressSpan.textContent = 'MEMUAT ISI: 0%';
 
       metaEl.appendChild(dateSpan);
-      metaEl.appendChild(catSpan);
+      metaEl.appendChild(idSpan);
+      metaEl.appendChild(progressSpan);
 
-      const safeFilePath = `posts/${encodeURIComponent(post.id)}.txt`;
+      const safeFilePath = `posts/${encodeURIComponent(artikelId)}.txt`;
       const contentResponse = await fetch(safeFilePath);
 
       if (!contentResponse.ok) {
         showSafeError(
           'Isi Artikel Belum Tersedia',
           'Artikel ini sedang dalam proses penyuntingan dan belum dapat dibaca.',
-          `Missing content file for ID: ${post.id}`
+          `Missing content file for ID: ${artikelId}`
         );
         return;
       }
@@ -164,7 +287,17 @@
         throw new Error('Komponen pembaca artikel gagal dimuat.');
       }
 
-      ZineParser.render(rawText, bodyEl);
+      const scrollMemory = initReadingPositionMemory(artikelId);
+
+      await ZineParser.render(rawText, bodyEl, (percent) => {
+        if (percent < 100) {
+          progressSpan.textContent = `MEMUAT ISI: ${percent}%`;
+          scrollMemory.tryRestore(false);
+        } else {
+          progressSpan.remove();
+          scrollMemory.tryRestore(true);
+        }
+      });
 
     } catch (error) {
       showSafeError(

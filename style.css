@@ -1,8 +1,11 @@
 /* ==========================================================================
    FILE: style.css
-   DESKRIPSI: Lembar gaya Classic Web 1.0 (Era 1996) - Edisi Tahan Banting.
-              Dirancang untuk menangani anomali konten ekstrem (teks tanpa spasi,
-              layar 280px hingga 4K, HiDPI, mode aksesibilitas, dan rasio media).
+   DESKRIPSI: Lembar gaya Classic Web 1.0 (Era 1996) - Edisi Final & Sinkron.
+              - Sistem Bevel 3D (outset/inset/groove/ridge) otentik
+              - Tipografi 3 peran (Verdana UI, Times Bacaan, Courier Data)
+              - Logo ASCII proporsional via container query (cqw) anti-terpotong
+              - Target sentuh ramah jari (>= 42px pada perangkat layar sentuh)
+              - Paginasi tunggal berlatar putih & navigasi bawah artikel responsif
    ========================================================================== */
 
 *, *::before, *::after {
@@ -10,20 +13,25 @@
 }
 
 :root {
-  --bg-netscape: #c0c0c0;
+  --bg-desktop: #c0c0c0;
   --panel-grey: #d4d0c8;
   --navy-classic: #000080;
   --paper-white: #ffffff;
   --ink-black: #111111;
+  --ink-muted: #333333;
   --link-blue: #0000ff;
   --link-visited: #800080;
   --accent-red: #800000;
+  --accent-green: #005500;
+  --note-yellow: #ffffcc;
   --border-light: #ffffff;
   --border-dark: #808080;
 
   --font-serif-body: "Times New Roman", Times, Georgia, serif;
   --font-ui-classic: Verdana, Tahoma, "MS Sans Serif", Arial, sans-serif;
   --font-mono-retro: "Courier New", Courier, "Lucida Console", monospace;
+
+  --touch-target-min: 42px;
 }
 
 html {
@@ -32,13 +40,13 @@ html {
 }
 
 body {
-  background-color: var(--bg-netscape);
+  background-color: var(--bg-desktop);
   color: var(--ink-black);
   font-family: var(--font-serif-body);
-  font-size: clamp(15px, 1vw + 12px, 17.5px);
-  line-height: 1.55;
+  font-size: clamp(16px, 1vw + 12px, 18px);
+  line-height: 1.58;
   margin: 0;
-  padding: clamp(2px, 1.5vw, 14px);
+  padding: clamp(4px, 1.5vw, 14px);
   overflow-x: hidden;
 }
 
@@ -46,17 +54,26 @@ hr {
   border: 0;
   border-top: 1px solid var(--border-dark);
   border-bottom: 1px solid var(--border-light);
-  margin: 8px 0;
+  margin: 10px 0;
+}
+
+hr.thick-rule {
+  border-top: 2px solid var(--border-dark);
+  border-bottom: 1px solid var(--border-light);
+  margin: 12px 0;
 }
 
 /* Tautan Klasik HTML 3.2 */
 a:link {
   color: var(--link-blue);
   text-decoration: underline;
-  text-underline-offset: 2px;
+  text-underline-offset: 3px;
 }
 a:visited {
   color: var(--link-visited);
+}
+a:hover {
+  background-color: #efefef;
 }
 a:active {
   color: #ff0000;
@@ -66,100 +83,128 @@ a:focus-visible,
 button:focus-visible,
 input:focus-visible {
   outline: 2px dotted #000000;
-  outline-offset: 1px;
+  outline-offset: 2px;
 }
 
 /* Bingkai Utama */
-.zine-shell {
+.portal-shell {
   width: 100%;
-  max-width: 1080px;
+  max-width: 1060px;
   margin: 0 auto;
   background-color: var(--panel-grey);
   border: 2px outset var(--border-light);
-  padding: clamp(3px, 0.8vw, 6px);
+  padding: clamp(4px, 0.9vw, 8px);
 }
 
-/* Header Banner */
-.zine-header {
+/* Header Banner & Logo ASCII Responsif */
+.portal-header {
+  container-type: inline-size;
   background-color: var(--navy-classic);
   color: #ffffff;
   text-align: center;
-  padding: clamp(8px, 1.8vw, 14px) 6px;
+  padding: clamp(10px, 2.2vw, 18px) 8px;
   border: 2px inset var(--border-dark);
-  overflow: hidden;
 }
 
 pre.ascii-logo {
-  font-family: var(--font-mono-retro);
-  font-size: clamp(4.5px, 1.22vw, 11.5px);
-  line-height: 1.05;
+  font-family: "Courier New", Courier, monospace;
+  font-weight: 700;
+  font-size: clamp(7.5px, 2.65cqw, 14px);
+  line-height: 1.08;
+  letter-spacing: 0;
   color: #ffff00;
-  margin: 0 auto 4px auto;
-  display: inline-block;
-  text-align: left;
+  text-shadow: 1px 1px 0 #000000, 0 0 1px #ffff00;
+  margin: 0 auto 8px auto;
+  display: block;
+  width: fit-content;
   max-width: 100%;
-  overflow: hidden;
+  white-space: pre;
+  text-align: left;
+  overflow-x: visible;
   user-select: none;
+  -webkit-text-size-adjust: none;
 }
 
-.zine-subtitle {
+@supports not (font-size: 1cqw) {
+  pre.ascii-logo {
+    font-size: clamp(6.8px, 2.3vw, 13px);
+  }
+}
+
+.portal-subtitle {
   font-family: var(--font-ui-classic);
-  font-size: clamp(10px, 1.1vw, 13px);
+  font-size: clamp(10.5px, 1.15vw, 13px);
+  font-weight: bold;
   letter-spacing: 0.4px;
-  line-height: 1.3;
+  line-height: 1.35;
   overflow-wrap: break-word;
 }
 
-/* Marquee Ticker */
+/* Ticker Pengumuman Klasik */
 .ticker-box {
   background-color: #000000;
   color: #00ff00;
   font-family: var(--font-mono-retro);
   font-size: 12px;
   font-weight: bold;
-  padding: 2px 4px;
-  margin-top: 4px;
+  padding: 4px 6px;
+  margin-top: 5px;
   border: 2px inset var(--border-dark);
   overflow: hidden;
+  white-space: nowrap;
 }
 
-/* Bar Navigasi Atas */
+.ticker-track {
+  display: inline-block;
+  padding-left: 100%;
+  animation: ticker-scroll 26s linear infinite;
+}
+
+.ticker-box:hover .ticker-track {
+  animation-play-state: paused;
+}
+
+@keyframes ticker-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-100%); }
+}
+
+/* Bar Navigasi Atas (Halaman Baca) */
 .top-nav-bar {
-  background-color: var(--bg-netscape);
+  background-color: var(--bg-desktop);
   font-family: var(--font-ui-classic);
-  font-size: 12px;
-  padding: 5px 8px;
-  margin-top: 4px;
+  font-size: 12.5px;
+  padding: 4px 8px;
+  margin-top: 5px;
   border: 2px groove var(--border-light);
   display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
   align-items: center;
-  gap: 6px;
 }
 
-.top-nav-bar a {
-  display: inline-block;
-  padding: 2px 0;
+.nav-bracket-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 4px 6px;
+  font-weight: bold;
 }
 
 /* Tata Letak Grid Responsif */
-.zine-workspace {
+.portal-workspace {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 5px;
-  margin-top: 5px;
+  gap: 6px;
+  margin-top: 6px;
 }
 
 @media (min-width: 768px) {
-  .zine-workspace {
-    grid-template-columns: 230px minmax(0, 1fr);
+  .portal-workspace {
+    grid-template-columns: 245px minmax(0, 1fr);
     align-items: start;
     gap: 8px;
-    margin-top: 6px;
   }
 
-  .zine-sidebar {
+  .portal-sidebar {
     position: sticky;
     top: 8px;
     max-height: calc(100vh - 16px);
@@ -168,38 +213,47 @@ pre.ascii-logo {
 }
 
 @media (min-width: 1025px) {
-  .zine-workspace {
-    grid-template-columns: 255px minmax(0, 1fr);
+  .portal-workspace {
+    grid-template-columns: 265px minmax(0, 1fr);
     gap: 10px;
   }
 }
 
 /* Sidebar Kiri */
-.zine-sidebar {
-  background-color: var(--bg-netscape);
+.portal-sidebar {
+  background-color: var(--bg-desktop);
   border: 2px groove var(--border-light);
-  padding: clamp(7px, 1.2vw, 10px);
+  padding: clamp(8px, 1.4vw, 12px);
+  font-family: var(--font-ui-classic);
+  font-size: 12.5px;
+  line-height: 1.45;
+  min-width: 0;
+}
+
+.sidebar-section-title {
+  display: block;
   font-family: var(--font-ui-classic);
   font-size: 12px;
-  line-height: 1.4;
-  min-width: 0;
+  font-weight: bold;
+  color: #000000;
+  margin-bottom: 5px;
 }
 
 .classic-search-form {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  margin-top: 4px;
+  gap: 6px;
 }
 
 .classic-input {
   width: 100%;
   min-width: 0;
-  background-color: #ffffff;
+  min-height: 38px;
+  background-color: var(--paper-white);
   color: #000000;
   font-family: var(--font-mono-retro);
-  font-size: 13px; /* >= 13px mencegah auto-zoom ekstrem pada iOS Safari */
-  padding: 4px 6px;
+  font-size: 14px;
+  padding: 6px 8px;
   border: 2px inset var(--border-dark);
   border-radius: 0;
 }
@@ -210,101 +264,179 @@ pre.ascii-logo {
 
 .classic-btn-group {
   display: flex;
-  gap: 4px;
+  gap: 6px;
 }
 
 .classic-btn {
   flex: 1;
-  background-color: var(--bg-netscape);
+  min-height: 38px;
+  background-color: var(--bg-desktop);
   color: #000000;
   font-family: var(--font-ui-classic);
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: bold;
-  padding: 5px 7px;
+  padding: 6px 10px;
   border: 2px outset var(--border-light);
   border-radius: 0;
   cursor: pointer;
   white-space: nowrap;
+  text-align: center;
 }
 
-.classic-btn:active {
+.classic-btn:hover:not(:disabled) {
+  background-color: #dcdcdc;
+}
+
+.classic-btn:active:not(:disabled) {
   border: 2px inset var(--border-dark);
-  padding: 6px 6px 4px 8px;
+  padding: 7px 9px 5px 11px;
 }
 
-@media (max-width: 767px) {
-  .classic-search-form {
-    flex-direction: row;
-  }
-  .classic-input {
-    flex: 1;
-  }
-  .classic-btn-group {
-    flex: 0 0 auto;
-  }
-}
-
-/* Daftar Most Populer di Sidebar */
-ul.sidebar-recent-list {
+/* Daftar Artikel Pilihan di Sidebar */
+ul.sidebar-featured-list {
   list-style-type: square;
-  padding-left: 15px;
-  margin: 5px 0 2px 0;
+  padding-left: 16px;
+  margin: 4px 0 2px 0;
   font-family: var(--font-ui-classic);
-  font-size: 11.5px;
-  line-height: 1.38;
+  font-size: 12px;
+  line-height: 1.4;
 }
 
-ul.sidebar-recent-list li {
+ul.sidebar-featured-list li {
   margin-bottom: 6px;
   overflow-wrap: anywhere;
   word-break: break-word;
 }
 
-ul.sidebar-recent-list li:last-child {
+ul.sidebar-featured-list li:last-child {
   margin-bottom: 0;
 }
 
-.sidebar-recent-date {
+ul.sidebar-featured-list a {
   display: inline-block;
-  font-family: var(--font-mono-retro);
-  font-size: 10.5px;
-  color: var(--accent-red);
-  margin-left: 4px;
+  padding: 3px 0;
 }
 
-@media (min-width: 768px) {
-  .sidebar-recent-date {
-    display: block;
-    margin-left: 0;
-    margin-top: 1px;
-  }
+.sidebar-item-date {
+  display: block;
+  font-family: var(--font-mono-retro);
+  font-size: 11px;
+  color: var(--accent-red);
+  margin-top: 1px;
+}
+
+.status-badge {
+  display: inline-block;
+  font-family: var(--font-mono-retro);
+  font-size: 12px;
+  color: var(--accent-green);
+  font-weight: bold;
+  margin-bottom: 3px;
+}
+
+.sidebar-note {
+  display: block;
+  font-size: 11.5px;
+  color: var(--ink-muted);
+  line-height: 1.4;
 }
 
 /* Area Kertas Bacaan */
-.zine-main {
+.portal-main {
   background-color: var(--paper-white);
   border: 2px inset var(--border-dark);
-  padding: clamp(10px, 2.2vw, 24px);
+  padding: clamp(12px, 2.5vw, 26px);
   min-width: 0;
+}
+
+.portal-main-article {
+  margin-top: 6px;
 }
 
 .readable-measure {
-  max-width: 74ch;
+  max-width: 72ch;
   min-width: 0;
 }
 
-#list-heading {
+.article-measure {
+  margin: 0 auto;
+}
+
+.section-heading {
   font-family: var(--font-ui-classic);
-  font-size: clamp(15px, 1.8vw, 19px);
+  font-size: clamp(16px, 1.9vw, 20px);
+  font-weight: bold;
+  color: var(--navy-classic);
   margin: 0 0 4px 0;
   letter-spacing: -0.2px;
   overflow-wrap: anywhere;
 }
 
-#list-subtext {
+.section-subtext {
   margin: 0 0 8px 0;
-  font-size: 14px;
-  line-height: 1.4;
+  font-size: 14.5px;
+  color: var(--ink-muted);
+  line-height: 1.45;
+}
+
+.list-footnote {
+  display: block;
+  font-size: 13px;
+  color: var(--ink-muted);
+  font-style: italic;
+}
+
+/* Paginasi Tunggal di Bawah Daftar Artikel (Berlatar Putih) */
+.pagination-bar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  background-color: var(--paper-white);
+  border-top: 1px solid var(--border-dark);
+  padding: 12px 0 4px 0;
+  margin: 14px 0 4px 0;
+  font-family: var(--font-ui-classic);
+  font-size: 12px;
+}
+
+.pagination-bar[hidden] {
+  display: none;
+}
+
+.pagination-info {
+  font-family: var(--font-mono-retro);
+  font-size: 12px;
+  font-weight: bold;
+  color: var(--ink-black);
+  text-align: center;
+  flex: 1 1 auto;
+}
+
+.pagination-btn {
+  flex: 0 0 auto;
+  min-width: 122px;
+}
+
+.pagination-btn:disabled {
+  background-color: #f4f4f4;
+  color: #777777;
+  cursor: not-allowed;
+  border: 1px solid #b8b8b8;
+}
+
+@media (max-width: 480px) {
+  .pagination-info {
+    order: -1;
+    flex-basis: 100%;
+    padding-bottom: 6px;
+    border-bottom: 1px dashed #b8b8b8;
+  }
+  .pagination-btn {
+    flex: 1 1 calc(50% - 4px);
+    min-width: 0;
+  }
 }
 
 /* Daftar Artikel di Beranda */
@@ -338,16 +470,20 @@ ul.classic-post-list li:last-child {
   .post-item-row {
     flex-direction: row;
     align-items: baseline;
-    gap: 8px;
+    gap: 10px;
   }
+}
+
+.post-title-wrap {
+  min-width: 0;
 }
 
 .post-item-row a {
   display: inline-block;
-  padding: 2px 0;
+  padding: 4px 0;
   font-family: var(--font-ui-classic);
-  font-size: clamp(13px, 1.2vw, 14.5px);
-  line-height: 1.4;
+  font-size: clamp(13.5px, 1.25vw, 15px);
+  line-height: 1.42;
   overflow-wrap: anywhere;
   word-break: break-word;
 }
@@ -365,18 +501,18 @@ ul.classic-post-list li:last-child {
 .article-meta-box {
   font-family: var(--font-mono-retro);
   font-size: 12px;
-  background-color: #ffffcc;
+  background-color: var(--note-yellow);
   border: 1px solid var(--border-dark);
-  padding: 5px 8px;
-  margin-bottom: 10px;
+  padding: 6px 10px;
+  margin-bottom: 12px;
   display: flex;
   flex-wrap: wrap;
-  gap: 4px 14px;
+  gap: 4px 16px;
 }
 
 .article-main-title {
   font-family: var(--font-serif-body);
-  font-size: clamp(20px, 2.8vw, 29px);
+  font-size: clamp(21px, 2.9vw, 30px);
   line-height: 1.22;
   font-weight: bold;
   color: var(--navy-classic);
@@ -387,56 +523,56 @@ ul.classic-post-list li:last-child {
 
 #article-body {
   font-family: var(--font-serif-body);
-  font-size: clamp(16px, 1.1vw + 12.5px, 18.5px);
-  line-height: 1.62;
+  font-size: clamp(16.5px, 1.1vw + 13px, 18.5px);
+  line-height: 1.65;
   color: var(--ink-black);
   overflow-wrap: anywhere;
   word-break: break-word;
 }
 
 #article-body p {
-  margin: 0 0 12px 0;
+  margin: 0 0 14px 0;
 }
 
 #article-body h1 {
   font-family: var(--font-ui-classic);
-  font-size: clamp(17.5px, 2vw, 22px);
+  font-size: clamp(18px, 2.1vw, 22px);
   line-height: 1.3;
   color: #000000;
   border-bottom: 3px double #000000;
-  padding-bottom: 3px;
-  margin: 20px 0 10px 0;
+  padding-bottom: 4px;
+  margin: 22px 0 10px 0;
 }
 
 #article-body h2 {
   font-family: var(--font-ui-classic);
-  font-size: clamp(15.5px, 1.7vw, 18.5px);
-  line-height: 1.3;
+  font-size: clamp(16px, 1.8vw, 19px);
+  line-height: 1.32;
   color: var(--navy-classic);
-  margin: 18px 0 8px 0;
+  margin: 20px 0 8px 0;
 }
 
 #article-body h3 {
   font-family: var(--font-serif-body);
-  font-size: clamp(16px, 1.5vw, 18.5px);
+  font-size: clamp(16.5px, 1.6vw, 19px);
   line-height: 1.35;
   color: var(--accent-red);
   font-style: italic;
-  margin: 14px 0 6px 0;
+  margin: 16px 0 6px 0;
 }
 
 /* Nested List 3 Tingkat */
 #article-body ul {
   list-style-type: disc;
-  padding-left: clamp(18px, 2.5vw, 24px);
-  margin: 6px 0 12px 0;
+  padding-left: clamp(20px, 2.6vw, 26px);
+  margin: 6px 0 14px 0;
 }
 #article-body ul li {
-  margin-bottom: 4px;
+  margin-bottom: 5px;
 }
 #article-body ul ul {
   list-style-type: circle;
-  margin: 2px 0;
+  margin: 3px 0;
 }
 #article-body ul ul ul {
   list-style-type: square;
@@ -444,13 +580,13 @@ ul.classic-post-list li:last-child {
 
 /* Kotak Media & Grafik */
 .retro-media-box {
-  background-color: var(--bg-netscape);
+  background-color: var(--bg-desktop);
   border: 2px ridge var(--border-light);
-  padding: clamp(6px, 1.2vw, 10px);
-  margin: 14px 0;
+  padding: clamp(8px, 1.4vw, 12px);
+  margin: 16px 0;
   text-align: center;
   font-family: var(--font-ui-classic);
-  font-size: 12px;
+  font-size: 12.5px;
   max-width: 100%;
   overflow: hidden;
 }
@@ -461,7 +597,7 @@ ul.classic-post-list li:last-child {
   margin: 0 auto;
   width: auto;
   max-width: 100%;
-  max-height: 75vh; /* Mencegah gambar portrait tinggi memenuhi layar ponsel */
+  max-height: 75vh;
   height: auto;
   object-fit: contain;
   border: 2px inset var(--border-dark);
@@ -475,7 +611,7 @@ ul.classic-post-list li:last-child {
 
 .retro-media-caption {
   font-family: var(--font-mono-retro);
-  font-size: 11.5px;
+  font-size: 12px;
   margin-top: 6px;
   color: #000000;
   overflow-wrap: anywhere;
@@ -486,7 +622,7 @@ ul.classic-post-list li:last-child {
   width: 100%;
   overflow-x: auto;
   overflow-y: hidden;
-  background-color: #ffffff;
+  background-color: var(--paper-white);
   border: 2px inset var(--border-dark);
   padding: 2px;
   -webkit-overflow-scrolling: touch;
@@ -496,7 +632,7 @@ ul.classic-post-list li:last-child {
   height: 12px;
 }
 .retro-chart-scroll::-webkit-scrollbar-track {
-  background: var(--bg-netscape);
+  background: var(--bg-desktop);
   border-top: 1px solid var(--border-dark);
 }
 .retro-chart-scroll::-webkit-scrollbar-thumb {
@@ -507,16 +643,16 @@ ul.classic-post-list li:last-child {
 canvas.retro-chart {
   display: block;
   margin: 0 auto;
-  background-color: #ffffff;
-  height: 250px;
+  background-color: var(--paper-white);
+  height: 260px;
   max-width: none;
 }
 
 .retro-chart-hint {
   font-family: var(--font-mono-retro);
-  font-size: 10.5px;
-  color: #333333;
-  margin-top: 4px;
+  font-size: 11px;
+  color: var(--ink-muted);
+  margin-top: 5px;
 }
 
 .blink-text {
@@ -531,24 +667,73 @@ canvas.retro-chart {
   50% { opacity: 0; }
 }
 
+/* Navigasi Bawah Artikel */
+.article-bottom-nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  font-family: var(--font-ui-classic);
+  font-size: 12.5px;
+}
+
+@media (max-width: 480px) {
+  .article-bottom-nav {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+  }
+  .article-bottom-nav .nav-bracket-link {
+    justify-content: center;
+  }
+}
+
 /* Footer */
-.zine-footer {
+.portal-footer {
   text-align: center;
-  font-size: 11.5px;
+  font-size: 12px;
   font-family: var(--font-mono-retro);
-  line-height: 1.4;
-  padding: 8px 4px 4px 4px;
-  margin-top: 6px;
+  line-height: 1.5;
+  padding: 10px 6px 6px 6px;
+  margin-top: 8px;
   border-top: 2px groove var(--border-light);
   overflow-wrap: anywhere;
 }
 
-/* Aksesibilitas: Matikan animasi kedip/gerak jika user mengaktifkan Reduce Motion */
+/* Ergonomi Perangkat Layar Sentuh (Mobile / Tablet) */
+@media (max-width: 767px), (pointer: coarse) {
+  .classic-input,
+  .classic-btn {
+    min-height: var(--touch-target-min);
+  }
+
+  .nav-bracket-link {
+    min-height: var(--touch-target-min);
+    padding: 6px 8px;
+  }
+
+  .post-item-row a {
+    padding: 6px 0;
+  }
+
+  ul.sidebar-featured-list a {
+    padding: 5px 0;
+  }
+}
+
+/* Aksesibilitas: Matikan animasi kedip & ticker jika user mengaktifkan Reduce Motion */
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
   }
-  .blink-text {
+  .blink-text,
+  .ticker-track {
     animation: none;
+  }
+  .ticker-track {
+    padding-left: 0;
+    white-space: normal;
   }
 }

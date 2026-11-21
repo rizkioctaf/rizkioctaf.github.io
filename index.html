@@ -5,36 +5,34 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; media-src 'self' https:;">
   <meta name="referrer" content="no-referrer">
-  <title>WEBMASTER ZINE — Catatan Teknologi, Rekayasa Web &amp; Artikel Pilihan</title>
+  <title>ARSIP DIGITAL — Catatan Teknologi, Rekayasa Web &amp; Artikel Pilihan</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<div class="zine-shell">
+<div class="portal-shell">
   <!-- HEADER BANNER -->
-  <header class="zine-header">
-<pre class="ascii-logo" aria-hidden="true">
- __      __      ___.                         __                
-/  \    /  \ ____\_ |__   _____ _____    _____/  |_  ___________ 
-\   \/\/   // __ \| __ \ /     \\__  \  /  ___/\   __\/ __ \_  __ \
- \        /\  ___/| \_\ \  Y Y  \/ __ \_\___ \  |  | \  ___/|  | \/
-  \__/\  /  \___  >___  /__|_|  (____  /____  > |__|  \___  >__|   
-       \/       \/    \/      \/     \/     \/            \/       
-</pre>
-    <div class="zine-subtitle"><b>WEBMASTER ZINE &bull; ARTIKEL TEKNOLOGI, REKAYASA WEB &amp; CATATAN DIGITAL</b></div>
+  <header class="portal-header">
+<pre class="ascii-logo" aria-hidden="true">   _   ___  ___ ___ ___   ___ ___ ___ ___ _____ _   _    
+  /_\ | _ \/ __|_ _| _ \ |   \_ _/ __|_ _|_   _/_\ | |   
+ / _ \|   /\__ \| ||  _/ | |) | | (_ || |  | |/ _ \| |__ 
+/_/ \_\_|_\|___/___|_|   |___/___\___|___| |_/_/ \_\____|</pre>
+    <div class="portal-subtitle">ARSIP DIGITAL &bull; CATATAN TEKNOLOGI, REKAYASA WEB &amp; DOKUMENTASI TEKNIS</div>
   </header>
 
-  <!-- MARQUEE TICKER -->
-  <div class="ticker-box">
-    <marquee scrollamount="3">+++ ARTIKEL TERBARU TELAH TERBIT &bull; KUMPULAN TULISAN TEKNOLOGI, INFRASTRUKTUR WEB &amp; DOKUMENTASI TEKNIS +++</marquee>
+  <!-- TICKER PENGUMUMAN -->
+  <div class="ticker-box" aria-label="Pengumuman Situs">
+    <div class="ticker-track">
+      +++ PUBLIKASI TERBARU TELAH TERSEDIA &bull; KUMPULAN ARTIKEL TEKNOLOGI, INFRASTRUKTUR WEB &amp; PANDUAN TEKNIS +++
+    </div>
   </div>
 
   <!-- WORKSPACE UTAMA -->
-  <div class="zine-workspace">
+  <div class="portal-workspace">
     
     <!-- SIDEBAR KIRI -->
-    <aside class="zine-sidebar">
-      <b>:: PENCARIAN ARTIKEL ::</b>
+    <aside class="portal-sidebar" aria-label="Navigasi dan Pencarian">
+      <span class="sidebar-section-title">:: PENCARIAN ARTIKEL ::</span>
       <form id="search-form" class="classic-search-form" autocomplete="off">
         <input 
           type="search" 
@@ -42,7 +40,7 @@
           class="classic-input" 
           placeholder="Cari judul atau tahun..."
           maxlength="60"
-          aria-label="Cari artikel"
+          aria-label="Kata kunci pencarian artikel"
         >
         <div class="classic-btn-group">
           <button type="submit" class="classic-btn">Cari</button>
@@ -52,147 +50,225 @@
 
       <hr>
 
-      <!-- MOST POPULER -->
-      <b>:: MOST POPULER ::</b>
-      <ul id="most-popular-list" class="sidebar-recent-list">
+      <!-- ARTIKEL PILIHAN -->
+      <span class="sidebar-section-title">:: ARTIKEL PILIHAN ::</span>
+      <ul id="featured-list" class="sidebar-featured-list">
         <li><i>Memuat daftar artikel...</i></li>
       </ul>
       
       <hr>
       
-      <b>:: STATUS SITUS ::</b><br>
-      <span style="font-family: var(--font-mono-retro); font-size: 11.5px; color: #005500; font-weight: bold;">
-        [ONLINE] BLOG AKTIF
-      </span><br>
-      <small style="color: #333333;">Diperbarui berkala dalam format halaman ringkas tanpa pelacak.</small>
+      <span class="sidebar-section-title">:: STATUS PORTAL ::</span>
+      <span class="status-badge">[AKTIF] PUBLIKASI DARING</span>
+      <span class="sidebar-note">Diperbarui berkala dalam format halaman teks ringkas tanpa pelacak pengunjung.</span>
     </aside>
 
     <!-- KONTEN UTAMA -->
-    <main class="zine-main">
+    <main class="portal-main">
       <div class="readable-measure">
-        <h2 id="list-heading" style="margin-top:0; color:#000080;">Daftar Artikel (Terbaru &rarr; Terlama)</h2>
-        <p id="list-subtext">Kumpulan artikel teknis, catatan pengembangan, dan ulasan sistem yang diurutkan dari yang terbaru:</p>
-        <hr size="3">
+        <h1 id="list-heading" class="section-heading">Daftar Artikel (Terbaru &rarr; Terlama)</h1>
+        <p id="list-subtext" class="section-subtext">Kumpulan artikel teknis, catatan pengembangan, dan ulasan sistem yang diurutkan dari yang terbaru:</p>
+        <hr class="thick-rule">
 
         <ul id="post-list" class="classic-post-list">
           <li><i>Memuat daftar artikel...</i></li>
         </ul>
 
-        <hr size="3">
-        <small><i>Seluruh artikel disajikan dalam format teks statis yang ringan agar cepat dibuka dan nyaman dibaca di berbagai perangkat.</i></small>
+        <!-- NAVIGASI PAGINASI TUNGGAL DI BAWAH -->
+        <nav id="pagination-bar" class="pagination-bar" aria-label="Navigasi Halaman Artikel" hidden>
+          <button type="button" id="prev-page-btn" class="classic-btn pagination-btn">&lt;&lt; Sebelumnya</button>
+          <span id="page-info" class="pagination-info">Halaman 1 dari 1 (0 artikel)</span>
+          <button type="button" id="next-page-btn" class="classic-btn pagination-btn">Berikutnya &gt;&gt;</button>
+        </nav>
+
+        <hr class="thick-rule">
+        <small class="list-footnote">Seluruh artikel disajikan dalam format teks statis yang ringan agar cepat dibuka dan nyaman dibaca di berbagai perangkat.</small>
       </div>
     </main>
   </div>
 
   <!-- FOOTER -->
-  <footer class="zine-footer">
-    Kontak Penulis: <a href="mailto:webmaster@webmaster-zine.org">webmaster@webmaster-zine.org</a><br>
-    &copy; 2026 Webmaster Zine &bull; Hak Cipta Dilindungi Undang-Undang.
+  <footer class="portal-footer">
+    Surel Redaksi: <a href="mailto:redaksi@arsipdigital.id">redaksi@arsipdigital.id</a><br>
+    &copy; 2026 Arsip Digital &bull; Hak Cipta Dilindungi Undang-Undang.
   </footer>
 </div>
 
 <script>
-  const POPULAR_POST_IDS = [
+  const FEATURED_POST_IDS = [
     'zine-002',
     'zine-001'
   ];
 
-  let cachedPosts = [];
+  const PAGE_SIZE = 14; // Tampilkan tepat 14 judul artikel per halaman
+  const INDEX_CHUNK_SIZE = 40000; // Proses 40.000 item per frame tanpa membekukan UI
   const SAFE_ID_PATTERN = /^[a-zA-Z0-9_-]+$/;
 
-  function getPostDate(post) {
-    return String(post.tanggal || post.date || '1970-01-01').trim();
-  }
+  let allIndexedPosts = [];
+  let activePostsView = [];
+  let currentPage = 1;
+  let activeSearchKeyword = '';
+  let searchGenerationId = 0;
 
-  function getPostTitle(post) {
-    return String(post.judul || post.title || '(Artikel Tanpa Judul)').trim();
+  function yieldToMainThread() {
+    return new Promise((resolve) => setTimeout(resolve, 0));
   }
 
   function normalizeText(str) {
-    return String(str || '').toLowerCase().replace(/\s+/g, ' ').trim();
+    return String(str || '').toLowerCase().trim();
   }
 
-  function renderMostPopularSidebar(allPosts) {
-    const sidebarListEl = document.getElementById('most-popular-list');
+  async function buildIndexedPostsAsync(rawPosts) {
+    const total = rawPosts.length;
+    const indexed = new Array(total);
+    let validCount = 0;
+
+    for (let i = 0; i < total; i += INDEX_CHUNK_SIZE) {
+      const end = Math.min(i + INDEX_CHUNK_SIZE, total);
+      for (let j = i; j < end; j++) {
+        const post = rawPosts[j];
+        if (!post) continue;
+
+        const id = String(post.id || '');
+        if (!SAFE_ID_PATTERN.test(id)) continue;
+
+        const title = String(post.judul || post.title || '(Artikel Tanpa Judul)').trim();
+        const date = String(post.tanggal || post.date || '1970-01-01').trim();
+
+        indexed[validCount++] = {
+          id,
+          title,
+          date,
+          _searchKey: `${title.toLowerCase()} ${date.toLowerCase()}`
+        };
+      }
+      if (end < total) {
+        await yieldToMainThread();
+      }
+    }
+
+    indexed.length = validCount;
+
+    indexed.sort((a, b) => {
+      if (a.date > b.date) return -1;
+      if (a.date < b.date) return 1;
+      return 0;
+    });
+
+    return indexed;
+  }
+
+  function renderFeaturedSidebar(allPosts) {
+    const sidebarListEl = document.getElementById('featured-list');
     sidebarListEl.innerHTML = '';
 
-    const uniqueIds = [...new Set(POPULAR_POST_IDS)];
-    const popularPosts = uniqueIds
-      .filter((id) => SAFE_ID_PATTERN.test(String(id)))
-      .map((targetId) => allPosts.find((post) => String(post.id) === String(targetId)))
-      .filter(Boolean);
-
-    if (popularPosts.length === 0) {
-      const emptyLi = document.createElement('li');
-      emptyLi.textContent = 'Belum ada artikel populer.';
-      sidebarListEl.appendChild(emptyLi);
+    const uniqueIds = [...new Set(FEATURED_POST_IDS)].filter((id) => SAFE_ID_PATTERN.test(String(id)));
+    if (uniqueIds.length === 0) {
+      sidebarListEl.innerHTML = '<li>Belum ada artikel pilihan.</li>';
       return;
     }
 
-    popularPosts.forEach((post) => {
-      const li = document.createElement('li');
+    const targetSet = new Set(uniqueIds);
+    const foundMap = new Map();
+    for (let i = 0; i < allPosts.length && foundMap.size < targetSet.size; i++) {
+      if (targetSet.has(allPosts[i].id)) {
+        foundMap.set(allPosts[i].id, allPosts[i]);
+      }
+    }
 
+    const fragment = document.createDocumentFragment();
+    uniqueIds.forEach((id) => {
+      const post = foundMap.get(id);
+      if (!post) return;
+
+      const li = document.createElement('li');
       const link = document.createElement('a');
       link.href = `view.html?id=${encodeURIComponent(post.id)}`;
-      link.textContent = getPostTitle(post);
+      link.textContent = post.title;
 
       const dateSmall = document.createElement('span');
-      dateSmall.className = 'sidebar-recent-date';
-      dateSmall.textContent = `[${getPostDate(post)}]`;
+      dateSmall.className = 'sidebar-item-date';
+      dateSmall.textContent = `[${post.date}]`;
 
       li.appendChild(link);
       li.appendChild(dateSmall);
-      sidebarListEl.appendChild(li);
+      fragment.appendChild(li);
     });
+
+    if (fragment.childNodes.length === 0) {
+      sidebarListEl.innerHTML = '<li>Belum ada artikel pilihan.</li>';
+    } else {
+      sidebarListEl.appendChild(fragment);
+    }
   }
 
-  function renderPostList(postsToRender, searchKeyword = '') {
+  function updatePaginationControls(totalItems, totalPages) {
+    const paginationBar = document.getElementById('pagination-bar');
+    const showBar = totalItems > PAGE_SIZE;
+
+    paginationBar.hidden = !showBar;
+    if (!showBar) return;
+
+    document.getElementById('page-info').textContent =
+      `Halaman ${currentPage.toLocaleString('id-ID')} dari ${totalPages.toLocaleString('id-ID')} (${totalItems.toLocaleString('id-ID')} artikel)`;
+
+    document.getElementById('prev-page-btn').disabled = currentPage <= 1;
+    document.getElementById('next-page-btn').disabled = currentPage >= totalPages;
+  }
+
+  function renderCurrentPage() {
     const listElement = document.getElementById('post-list');
     const headingElement = document.getElementById('list-heading');
     const subtextElement = document.getElementById('list-subtext');
 
-    if (searchKeyword !== '') {
-      headingElement.textContent = `Hasil Pencarian: "${searchKeyword}"`;
-      subtextElement.textContent = `Ditemukan ${postsToRender.length} artikel yang sesuai:`;
+    const totalItems = activePostsView.length;
+    const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
+    currentPage = Math.min(Math.max(1, currentPage), totalPages);
+
+    if (activeSearchKeyword !== '') {
+      headingElement.textContent = `Hasil Pencarian: "${activeSearchKeyword}"`;
+      subtextElement.textContent = `Ditemukan ${totalItems.toLocaleString('id-ID')} artikel yang sesuai:`;
     } else {
       headingElement.innerHTML = 'Daftar Artikel (Terbaru &rarr; Terlama)';
-      subtextElement.textContent = 'Kumpulan artikel teknis, catatan pengembangan, dan ulasan sistem yang diurutkan dari yang terbaru:';
+      subtextElement.textContent = `Menampilkan ${totalItems.toLocaleString('id-ID')} arsip artikel teknis dan catatan sistem yang diurutkan dari yang terbaru:`;
     }
 
+    updatePaginationControls(totalItems, totalPages);
     listElement.innerHTML = '';
 
-    if (postsToRender.length === 0) {
+    if (totalItems === 0) {
       const emptyLi = document.createElement('li');
-      emptyLi.textContent = `Tidak ditemukan artikel yang cocok dengan kata kunci "${searchKeyword}".`;
+      emptyLi.textContent = `Tidak ditemukan artikel yang cocok dengan kata kunci "${activeSearchKeyword}".`;
       emptyLi.style.fontStyle = 'italic';
       listElement.appendChild(emptyLi);
       return;
     }
 
-    postsToRender.forEach((post, index) => {
-      if (!post || !SAFE_ID_PATTERN.test(String(post.id))) {
-        return;
-      }
+    const startIdx = (currentPage - 1) * PAGE_SIZE;
+    const endIdx = Math.min(startIdx + PAGE_SIZE, totalItems);
+    const fragment = document.createDocumentFragment();
 
+    for (let i = startIdx; i < endIdx; i++) {
+      const post = activePostsView[i];
       const li = document.createElement('li');
       const rowDiv = document.createElement('div');
       rowDiv.className = 'post-item-row';
 
       const dateSpan = document.createElement('span');
       dateSpan.className = 'date-tag';
-      dateSpan.textContent = `[${getPostDate(post)}]`;
+      dateSpan.textContent = `[${post.date}]`;
 
       const titleWrapper = document.createElement('div');
-      titleWrapper.style.minWidth = '0';
+      titleWrapper.className = 'post-title-wrap';
       const link = document.createElement('a');
       link.href = `view.html?id=${encodeURIComponent(post.id)}`;
 
       const boldTitle = document.createElement('b');
-      boldTitle.textContent = getPostTitle(post);
+      boldTitle.textContent = post.title;
       link.appendChild(boldTitle);
       titleWrapper.appendChild(link);
 
-      if (searchKeyword === '' && index === 0) {
+      if (activeSearchKeyword === '' && i === 0) {
         const newBadge = document.createElement('span');
         newBadge.className = 'blink-text';
         newBadge.textContent = ' [TERBARU]';
@@ -202,13 +278,57 @@
       rowDiv.appendChild(dateSpan);
       rowDiv.appendChild(titleWrapper);
       li.appendChild(rowDiv);
-      listElement.appendChild(li);
-    });
+      fragment.appendChild(li);
+    }
+
+    listElement.appendChild(fragment);
+  }
+
+  async function executeChunkedSearch(rawKeyword) {
+    const currentSearchId = ++searchGenerationId;
+    const cleaned = rawKeyword.replace(/\s+/g, ' ').trim();
+
+    if (cleaned === '') {
+      activeSearchKeyword = '';
+      activePostsView = allIndexedPosts;
+      currentPage = 1;
+      renderCurrentPage();
+      return;
+    }
+
+    const needle = normalizeText(cleaned);
+    const subtextElement = document.getElementById('list-subtext');
+    subtextElement.textContent = `Memindai ${allIndexedPosts.length.toLocaleString('id-ID')} arsip...`;
+
+    const matched = [];
+    const total = allIndexedPosts.length;
+
+    for (let i = 0; i < total; i += INDEX_CHUNK_SIZE) {
+      if (currentSearchId !== searchGenerationId) return;
+
+      const end = Math.min(i + INDEX_CHUNK_SIZE, total);
+      for (let j = i; j < end; j++) {
+        if (allIndexedPosts[j]._searchKey.includes(needle)) {
+          matched.push(allIndexedPosts[j]);
+        }
+      }
+
+      if (end < total) {
+        await yieldToMainThread();
+      }
+    }
+
+    if (currentSearchId !== searchGenerationId) return;
+
+    activeSearchKeyword = cleaned;
+    activePostsView = matched;
+    currentPage = 1;
+    renderCurrentPage();
   }
 
   async function initHomePage() {
     const listElement = document.getElementById('post-list');
-    const sidebarListEl = document.getElementById('most-popular-list');
+    const sidebarListEl = document.getElementById('featured-list');
 
     try {
       const response = await fetch('metadata.json', { cache: 'no-cache' });
@@ -221,18 +341,15 @@
         throw new Error('Format daftar artikel tidak valid.');
       }
 
-      cachedPosts = rawPosts
-        .filter((post) => post && SAFE_ID_PATTERN.test(String(post.id)))
-        .sort((a, b) => {
-          const diff = new Date(getPostDate(b)) - new Date(getPostDate(a));
-          return Number.isNaN(diff) ? 0 : diff;
-        });
+      allIndexedPosts = await buildIndexedPostsAsync(rawPosts);
+      activePostsView = allIndexedPosts;
+      currentPage = 1;
 
-      renderPostList(cachedPosts);
-      renderMostPopularSidebar(cachedPosts);
+      renderCurrentPage();
+      renderFeaturedSidebar(allIndexedPosts);
 
     } catch (error) {
-      console.error('[Zine Index Error]:', error);
+      console.error('[Portal Index Error]:', error);
       listElement.innerHTML = '';
       const errorLi = document.createElement('li');
       errorLi.style.color = '#800000';
@@ -243,48 +360,41 @@
     }
   }
 
-  function setupSearchHandlers() {
+  function setupInteractions() {
     const searchForm = document.getElementById('search-form');
     const searchInput = document.getElementById('search-input');
     const resetButton = document.getElementById('reset-btn');
+    const headingEl = document.getElementById('list-heading');
 
-    const runSearch = () => {
-      const rawKeyword = searchInput.value.replace(/\s+/g, ' ').trim();
-      if (rawKeyword === '') {
-        renderPostList(cachedPosts);
-        return;
-      }
-
-      const normalizedKeyword = normalizeText(rawKeyword);
-      const filteredPosts = cachedPosts.filter((post) => {
-        const titleMatch = normalizeText(getPostTitle(post)).includes(normalizedKeyword);
-        const dateMatch = normalizeText(getPostDate(post)).includes(normalizedKeyword);
-        return titleMatch || dateMatch;
-      });
-
-      renderPostList(filteredPosts, rawKeyword);
+    const goToPage = (targetPage) => {
+      currentPage = targetPage;
+      renderCurrentPage();
+      headingEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
     };
+
+    document.getElementById('prev-page-btn').addEventListener('click', () => goToPage(currentPage - 1));
+    document.getElementById('next-page-btn').addEventListener('click', () => goToPage(currentPage + 1));
 
     searchForm.addEventListener('submit', (event) => {
       event.preventDefault();
-      runSearch();
+      executeChunkedSearch(searchInput.value);
     });
 
     searchInput.addEventListener('keydown', (event) => {
       if (event.key === 'Escape') {
         searchInput.value = '';
-        renderPostList(cachedPosts);
+        executeChunkedSearch('');
       }
     });
 
     resetButton.addEventListener('click', () => {
       searchInput.value = '';
-      renderPostList(cachedPosts);
+      executeChunkedSearch('');
       searchInput.focus();
     });
   }
 
-  setupSearchHandlers();
+  setupInteractions();
   initHomePage();
 </script>
 
