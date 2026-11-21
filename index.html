@@ -66,8 +66,8 @@
     <!-- KONTEN UTAMA -->
     <main class="portal-main">
       <div class="readable-measure">
-        <h1 id="list-heading" class="section-heading">Daftar Artikel (Terbaru &rarr; Terlama)</h1>
-        <p id="list-subtext" class="section-subtext">Kumpulan artikel teknis, catatan pengembangan, dan ulasan sistem yang diurutkan dari yang terbaru:</p>
+        <h1 id="list-heading" class="section-heading">Indeks Publikasi</h1>
+        <p id="list-subtext" class="section-subtext">Kumpulan artikel teknis, catatan pengembangan, dan ulasan sistem yang diurutkan dari publikasi terbaru:</p>
         <hr class="thick-rule">
 
         <ul id="post-list" class="classic-post-list">
@@ -227,10 +227,10 @@
 
     if (activeSearchKeyword !== '') {
       headingElement.textContent = `Hasil Pencarian: "${activeSearchKeyword}"`;
-      subtextElement.textContent = `Ditemukan ${totalItems.toLocaleString('id-ID')} artikel yang sesuai:`;
+      subtextElement.textContent = `Ditemukan ${totalItems.toLocaleString('id-ID')} publikasi yang sesuai:`;
     } else {
-      headingElement.innerHTML = 'Daftar Artikel (Terbaru &rarr; Terlama)';
-      subtextElement.textContent = `Menampilkan ${totalItems.toLocaleString('id-ID')} arsip artikel teknis dan catatan sistem yang diurutkan dari yang terbaru:`;
+      headingElement.textContent = 'Indeks Publikasi';
+      subtextElement.textContent = `Menampilkan ${totalItems.toLocaleString('id-ID')} publikasi teknis dan catatan sistem yang diurutkan dari yang terbaru:`;
     }
 
     updatePaginationControls(totalItems, totalPages);
