@@ -411,9 +411,116 @@
   }
 
   /* ========================================================================
-     INSTALASI APLIKASI (PWA) & SERVICE WORKER
+     INSTALASI APLIKASI (PWA) - IKON PNG DINAMIS & SERVICE WORKER
      ======================================================================== */
+  function createClassicRetroPngIcon(size) {
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return '';
+
+    const bevel = Math.max(4, Math.round(size * 0.06));
+    const innerPad = Math.max(10, Math.round(size * 0.14));
+
+    // Latar abu-abu klasik #c0c0c0
+    ctx.fillStyle = '#c0c0c0';
+    ctx.fillRect(0, 0, size, size);
+
+    // Sorotan bevel terang atas & kiri (#ffffff)
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, size, bevel);
+    ctx.fillRect(0, 0, bevel, size);
+
+    // Bayangan bevel gelap bawah & kanan (#808080)
+    ctx.fillStyle = '#808080';
+    ctx.fillRect(0, size - bevel, size, bevel);
+    ctx.fillRect(size - bevel, 0, bevel, size);
+
+    // Kotak utama biru tua #000080
+    ctx.fillStyle = '#000080';
+    ctx.fillRect(innerPad, innerPad, size - innerPad * 2, size - innerPad * 2);
+
+    // Border inset tipis di dalam kotak biru
+    ctx.strokeStyle = '#6060c0';
+    ctx.lineWidth = Math.max(2, Math.round(size * 0.015));
+    ctx.strokeRect(
+      innerPad + 2,
+      innerPad + 2,
+      size - (innerPad + 2) * 2,
+      size - (innerPad + 2) * 2
+    );
+
+    // Monogram huruf "A" kuning terang #ffff00
+    ctx.fillStyle = '#ffff00';
+    ctx.font = `bold ${Math.round(size * 0.56)}px "Courier New", Courier, monospace`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('A', size / 2, size / 2 + Math.round(size * 0.03));
+
+    return canvas.toDataURL('image/png');
+  }
+
+  function injectInstallablePngManifest() {
+    const icon192 = createClassicRetroPngIcon(192);
+    const icon512 = createClassicRetroPngIcon(512);
+
+    const appleTouchEl = document.querySelector('link[rel="apple-touch-icon"]');
+    if (appleTouchEl && icon192) {
+      appleTouchEl.href = icon192;
+    }
+
+    const icons = [];
+    if (icon192) {
+      icons.push({
+        src: icon192,
+        sizes: '192x192',
+        type: 'image/png',
+        purpose: 'any'
+      });
+    }
+    if (icon512) {
+      icons.push({
+        src: icon512,
+        sizes: '512x512',
+        type: 'image/png',
+        purpose: 'any maskable'
+      });
+    }
+
+    if (icons.length === 0) return;
+
+    const baseHref = new URL('./', window.location.href).href;
+    const manifestObj = {
+      id: './index.html',
+      name: 'Arsip Digital — Catatan Teknologi & Dokumentasi Teknis',
+      short_name: 'Arsip Digital',
+      description: 'Arsip digital statis ringan berisi catatan teknologi, rekayasa web, dan dokumentasi teknis.',
+      lang: 'id',
+      start_url: new URL('./index.html', baseHref).href,
+      scope: baseHref,
+      display: 'standalone',
+      display_override: ['standalone', 'minimal-ui'],
+      background_color: '#c0c0c0',
+      theme_color: '#000080',
+      icons
+    };
+
+    const blob = new Blob([JSON.stringify(manifestObj)], { type: 'application/manifest+json' });
+    const manifestUrl = URL.createObjectURL(blob);
+
+    let linkEl = document.querySelector('link[rel="manifest"]');
+    if (!linkEl) {
+      linkEl = document.createElement('link');
+      linkEl.rel = 'manifest';
+      document.head.appendChild(linkEl);
+    }
+    linkEl.href = manifestUrl;
+  }
+
   function setupAppInstallation() {
+    injectInstallablePngManifest();
+
     const isSecureContextForSw =
       'serviceWorker' in navigator &&
       (window.location.protocol === 'https:' ||
@@ -431,7 +538,6 @@
 
     if (isSecureContextForSw) {
       navigator.serviceWorker.addEventListener('controllerchange', () => {
-        // Muat ulang hanya jika sebelumnya sudah ada Service Worker aktif (artinya ini pembaruan)
         if (hadExistingController) {
           triggerPageRefresh();
         }
@@ -468,6 +574,10 @@
     if (isStandalone) {
       if (installBox) installBox.hidden = true;
       return;
+    }
+
+    if (installBtn) {
+      installBtn.textContent = '[ + Pasang Aplikasi ]';
     }
 
     window.addEventListener('beforeinstallprompt', (e) => {
