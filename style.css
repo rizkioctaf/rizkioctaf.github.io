@@ -1,12 +1,13 @@
 /* ==========================================================================
    FILE: style.css
-   DESKRIPSI: Lembar gaya Classic Web 1.0 (Era 1996) - Edisi Final & Sinkron.
+   DESKRIPSI: Lembar gaya Classic Web 1.0 (Era 1996) - Edisi Final & Optimal.
               - Sistem Bevel 3D (outset/inset/groove/ridge) otentik
               - Tipografi 3 peran selaras antara Beranda (index.html) & Bacaan (view.html)
               - Anti-Font-Boosting mobile agar ukuran teks konsisten di seluruh halaman
               - Logo ASCII proporsional via container query (cqw) anti-terpotong
-              - Navigasi atas & bawah artikel selaras (sejajar di desktop, terpusat rapi di layar sempit)
-              - Target sentuh ramah jari (>= 42px pada perangkat layar sentuh)
+              - Bilah navigasi atas sticky 1 baris ramping (~40px) dengan laci Alat Baca
+              - Panel Pengaturan & Navigasi Baca ringkas (compact)
+              - Gaya kotak placeholder Click-to-Load untuk video & audio hemat kuota
    ========================================================================== */
 
 *, *::before, *::after {
@@ -179,37 +180,71 @@ pre.ascii-logo {
   100% { transform: translateX(-100%); }
 }
 
-/* Bar Navigasi Atas (Halaman Baca) - Selaras dengan Navigasi Bawah Artikel */
+/* Bar Navigasi Atas Ramping (1 Baris Tunggal Sticky) */
 .top-nav-bar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
   background-color: var(--bg-desktop);
   font-family: var(--font-ui-classic);
   font-size: 12.5px;
-  padding: 4px 8px;
+  padding: 2px 6px;
   margin-top: 5px;
   border: 2px groove var(--border-light);
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.25);
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   justify-content: space-between;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+}
+
+.top-nav-primary,
+.top-nav-tools {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.label-mobile {
+  display: none;
+}
+
+.nav-progress-badge {
+  font-family: var(--font-mono-retro);
+  font-size: 11px;
+  font-weight: bold;
+  color: var(--navy-classic);
+  background-color: var(--panel-grey);
+  border: 1px inset var(--border-dark);
+  padding: 2px 5px;
+  white-space: nowrap;
+}
+
+.nav-progress-badge[hidden] {
+  display: none;
 }
 
 .nav-bracket-link,
 .nav-bracket-btn {
   display: inline-flex;
   align-items: center;
-  min-height: 36px;
-  padding: 4px 6px;
+  justify-content: center;
+  min-height: 32px;
+  padding: 2px 6px;
   font-family: var(--font-ui-classic);
   font-size: inherit;
   font-weight: bold;
+  white-space: nowrap;
 }
 
 .nav-bracket-btn {
   appearance: none;
   -webkit-appearance: none;
   background: transparent;
-  border: 0;
+  border: 1px solid transparent;
   margin: 0;
   color: var(--link-blue);
   text-decoration: underline;
@@ -217,18 +252,143 @@ pre.ascii-logo {
   cursor: pointer;
 }
 
-.nav-bracket-btn:hover {
-  background-color: #efefef;
+.nav-bracket-btn[hidden] {
+  display: none;
 }
 
-.nav-bracket-btn:active {
+.nav-bracket-btn:hover:not(:disabled) {
+  background-color: #efefef;
+  border-color: var(--border-dark);
+}
+
+.nav-bracket-btn:active:not(:disabled) {
   color: #ff0000;
   background-color: #ffff00;
+}
+
+.nav-bracket-btn:disabled {
+  color: #777777;
+  text-decoration: none;
+  cursor: not-allowed;
+}
+
+.nav-bracket-btn.is-active {
+  background-color: var(--navy-classic);
+  color: #ffff00;
+  text-decoration: none;
 }
 
 .nav-bracket-btn.is-feedback {
   color: var(--accent-red);
   text-decoration: none;
+}
+
+/* Panel Alat Baca & Daftar Isi Terpadu (Collapsible Drawer - Compact) */
+.reader-tools-panel {
+  position: sticky;
+  top: 40px;
+  z-index: 49;
+  background-color: var(--panel-grey);
+  border: 2px outset var(--border-light);
+  box-shadow: 2px 3px 0 rgba(0, 0, 0, 0.35);
+  margin-top: 3px;
+  padding: 5px 8px;
+  font-family: var(--font-ui-classic);
+  font-size: 12px;
+}
+
+.reader-tools-panel[hidden],
+.article-toc-section[hidden] {
+  display: none;
+}
+
+.reader-tools-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: bold;
+  font-size: 11.5px;
+  color: var(--navy-classic);
+  border-bottom: 1px solid var(--border-dark);
+  padding-bottom: 2px;
+  margin-bottom: 5px;
+}
+
+.reader-tools-panel .nav-bracket-btn {
+  min-height: 24px;
+  padding: 1px 5px;
+  font-size: 11.5px;
+}
+
+.reader-tools-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.reader-tool-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 4px;
+  background-color: var(--bg-desktop);
+  border: 1px inset var(--border-dark);
+  padding: 2px 6px;
+}
+
+.reader-tool-label {
+  font-weight: bold;
+  color: var(--ink-black);
+  font-size: 11.5px;
+}
+
+.reader-tool-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.tool-status-text {
+  font-family: var(--font-mono-retro);
+  font-size: 11.5px;
+  font-weight: bold;
+  min-width: 38px;
+  text-align: center;
+  color: var(--navy-classic);
+}
+
+.article-toc-section hr {
+  margin: 6px 0 5px 0;
+}
+
+.article-toc-title {
+  font-weight: bold;
+  color: var(--navy-classic);
+  margin-bottom: 4px;
+  font-size: 11.5px;
+}
+
+ul.article-toc-list {
+  list-style-type: square;
+  padding-left: 16px;
+  margin: 0;
+  max-height: 185px;
+  overflow-y: auto;
+}
+
+ul.article-toc-list li {
+  margin-bottom: 2px;
+  line-height: 1.35;
+}
+
+ul.article-toc-list li.toc-level-2 {
+  margin-left: 12px;
+}
+
+ul.article-toc-list li.toc-level-3 {
+  margin-left: 24px;
+  font-size: 11.5px;
 }
 
 /* Tata Letak Grid Responsif */
@@ -387,6 +547,10 @@ ul.sidebar-featured-list a {
   margin-top: 2px;
 }
 
+.sidebar-install-box[hidden] {
+  display: none;
+}
+
 .sidebar-install-btn {
   width: 100%;
   margin-top: 7px;
@@ -404,6 +568,70 @@ ul.sidebar-featured-list a {
 
 .portal-main-article {
   margin-top: 6px;
+}
+
+/* Mode Warna Kertas Baca (Putih -> Sepia -> Gelap) */
+.portal-main-article.paper-sepia {
+  background-color: #f4ecd8;
+  color: #221c14;
+}
+
+.portal-main-article.paper-sepia #article-body {
+  color: #221c14;
+}
+
+.portal-main-article.paper-dark {
+  background-color: #141414;
+  color: #e4e4e4;
+}
+
+.portal-main-article.paper-dark hr,
+.portal-main-article.paper-dark hr.thick-rule {
+  border-top-color: #555555;
+  border-bottom-color: #2c2c2c;
+}
+
+.portal-main-article.paper-dark #article-body,
+.portal-main-article.paper-dark #article-body h1 {
+  color: #e4e4e4;
+  border-bottom-color: #666666;
+}
+
+.portal-main-article.paper-dark .article-main-title,
+.portal-main-article.paper-dark #article-body h2 {
+  color: #8ab4f8;
+}
+
+.portal-main-article.paper-dark #article-body h3 {
+  color: #f28b82;
+}
+
+.portal-main-article.paper-dark .article-meta-box {
+  background-color: #252518;
+  color: #e4e4e4;
+  border-color: #555555;
+}
+
+.portal-main-article.paper-dark .retro-media-box {
+  background-color: #222222;
+  border-color: #555555;
+  color: #e4e4e4;
+}
+
+.portal-main-article.paper-dark .retro-media-caption {
+  color: #d0d0d0;
+}
+
+.portal-main-article.paper-dark a:link {
+  color: #8ab4f8;
+}
+
+.portal-main-article.paper-dark a:visited {
+  color: #c58af9;
+}
+
+.portal-main-article.paper-dark a:hover {
+  background-color: #2a2a2a;
 }
 
 .readable-measure {
@@ -500,6 +728,7 @@ ul.classic-post-list {
 }
 
 ul.classic-post-list li {
+  contain: content;
   margin-bottom: 8px;
   padding-bottom: 8px;
   border-bottom: 1px dashed #b8b8b8;
@@ -550,7 +779,7 @@ ul.classic-post-list li:last-child {
   flex-shrink: 0;
 }
 
-/* Tipografi & Konten Artikel (Selaras secara optik dengan Beranda di Mobile) */
+/* Tipografi & Konten Artikel */
 .article-meta-box {
   font-family: var(--font-mono-retro);
   font-size: 12px;
@@ -589,11 +818,17 @@ ul.classic-post-list li:last-child {
 #article-body li {
   font-size: inherit;
   line-height: inherit;
-  max-height: 999999px; /* Mencegah mobile font boosting pada paragraf panjang */
+  max-height: 999999px;
 }
 
 #article-body p {
   margin: 0 0 13px 0;
+}
+
+#article-body h1,
+#article-body h2,
+#article-body h3 {
+  scroll-margin-top: 56px;
 }
 
 #article-body h1 {
@@ -649,6 +884,7 @@ ul.classic-post-list li:last-child {
   text-align: center;
   font-family: var(--font-ui-classic);
   font-size: 12.5px;
+  color: var(--ink-black);
   max-width: 100%;
   overflow: hidden;
 }
@@ -669,6 +905,58 @@ ul.classic-post-list li:last-child {
 .retro-media-box audio {
   width: 100%;
   max-width: 480px;
+}
+
+/* Kotak Placeholder Click-to-Load untuk Video & Audio (Hemat Kuota) */
+.retro-media-facade {
+  background-color: #000000;
+  color: #00ff00;
+  border: 2px inset var(--border-dark);
+  padding: clamp(14px, 3vw, 24px) 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.retro-media-facade.is-audio {
+  background-color: var(--panel-grey);
+  color: var(--ink-black);
+  padding: 12px;
+}
+
+.retro-media-facade-badge {
+  font-family: var(--font-mono-retro);
+  font-size: 12px;
+  font-weight: bold;
+  overflow-wrap: anywhere;
+}
+
+.retro-media-facade-hint {
+  font-family: var(--font-ui-classic);
+  font-size: 11.5px;
+  color: #cccccc;
+}
+
+.retro-media-facade.is-audio .retro-media-facade-hint {
+  color: var(--ink-muted);
+}
+
+.retro-media-load-btn {
+  flex: 0 0 auto;
+  min-width: 190px;
+  margin-top: 2px;
+  color: var(--navy-classic);
+}
+
+.portal-main-article.paper-dark .retro-media-facade.is-audio {
+  background-color: #1c1c1c;
+  color: #e4e4e4;
+}
+
+.portal-main-article.paper-dark .retro-media-facade.is-audio .retro-media-facade-hint {
+  color: #aaaaaa;
 }
 
 .retro-media-caption {
@@ -741,16 +1029,24 @@ canvas.retro-chart {
   font-size: 12.5px;
 }
 
-/* Penyelarasan Navigasi Atas & Bawah Artikel di Layar Sempit (Terpusat Rapi) */
+/* Responsif Navigasi Atas & Bawah di Layar Sempit */
+@media (max-width: 520px) {
+  .label-desktop {
+    display: none;
+  }
+
+  .label-mobile {
+    display: inline;
+  }
+}
+
 @media (max-width: 480px) {
-  .top-nav-bar,
   .article-bottom-nav {
     flex-direction: column;
     align-items: stretch;
     text-align: center;
   }
-  .top-nav-bar .nav-bracket-link,
-  .top-nav-bar .nav-bracket-btn,
+
   .article-bottom-nav .nav-bracket-link {
     justify-content: center;
   }
@@ -775,10 +1071,24 @@ canvas.retro-chart {
     min-height: var(--touch-target-min);
   }
 
-  .nav-bracket-link,
-  .nav-bracket-btn {
+  .top-nav-bar .nav-bracket-link,
+  .top-nav-bar .nav-bracket-btn {
+    min-height: 36px;
+    padding: 3px 6px;
+  }
+
+  .reader-tools-panel {
+    top: 44px;
+  }
+
+  .reader-tools-panel .nav-bracket-btn {
+    min-height: 30px;
+    padding: 2px 6px;
+  }
+
+  .article-bottom-nav .nav-bracket-link {
     min-height: var(--touch-target-min);
-    padding: 6px 8px;
+    padding: 5px 8px;
   }
 
   .post-item-row a {

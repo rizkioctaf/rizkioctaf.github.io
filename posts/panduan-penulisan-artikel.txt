@@ -1,0 +1,103 @@
+# Panduan Lengkap Penulisan Artikel & Sintaks Markup ZineParser
+
+Dokumen ini merupakan panduan teknis resmi untuk menyusun berkas artikel berformat teks murni (.txt) agar dapat diterjemahkan secara akurat oleh mesin ZineParser. Seluruh contoh penulisan di dalam artikel ini sekaligus mendemonstrasikan kemampuan tata letak, tipografi, grafik data, serta pemutar media hemat kuota.
+
+---
+
+## 1. Struktur Berkas & Pendaftaran di metadata.json
+
+Setiap artikel wajib disimpan sebagai berkas teks murni ber-ekstensi .txt dengan pengodean UTF-8 di dalam direktori posts/ (contoh: posts/panduan-penulisan-artikel.txt). Agar artikel muncul di halaman beranda dan dapat diakses oleh halaman baca, berkas tersebut harus didaftarkan pada daftar indeks metadata.json.
+
+- **id**: Pengenal unik berbasis huruf kecil, angka, dan tanda hubung (contoh: panduan-penulisan-artikel) yang menjadi parameter alamat URL.
+- **title**: Judul lengkap artikel yang tampil pada daftar beranda serta kepala halaman baca.
+- **date**: Tanggal publikasi dengan format baku YYYY-MM-DD (contoh: 2026-11-23).
+- **file**: Jalur relatif menuju berkas teks artikel di dalam folder posts/.
+- **featured**: Nilai logika (true atau false) untuk menampilkan artikel di kotak Artikel Pilihan pada bilah samping.
+- **summary**: Ringkasan singkat isi artikel untuk mempermudah pencarian kata kunci oleh pembaca.
+
+---
+
+## 2. Sintaks Tajuk Bagian & Daftar Isi Otomatis
+
+Mesin ZineParser mendukung tiga tingkat tajuk bagian yang otomatis dikumpulkan oleh sistem untuk membentuk Daftar Isi interaktif di panel Alat Baca.
+
+- Gunakan satu tanda pagar diikuti spasi (# Judul Bab) untuk tajuk tingkat pertama (H1) dengan garis bawah ganda klasik.
+- Gunakan dua tanda pagar diikuti spasi (## Judul Subbab) untuk tajuk tingkat kedua (H2) berwarna biru tua klasik.
+- Gunakan tiga tanda pagar diikuti spasi (### Judul Rincian) untuk tajuk tingkat ketiga (H3) berwarna merah marun miring.
+
+### Aturan Penulisan Tajuk
+
+Wajib menyisipkan tepat satu spasi setelah tanda pagar. Penulisan tanpa spasi seperti #JudulTanpaSpasi atau penggunaan lebih dari tiga tanda pagar (####) akan diperlakukan sebagai paragraf teks biasa.
+
+---
+
+## 3. Pemformatan Teks Sebaris & Garis Pemisah
+
+Di dalam paragraf maupun item daftar, Anda dapat menerapkan penekanan tipografi sebaris tanpa menyisipkan kode HTML mentah.
+
+- **Teks Tebal**: Apit kata atau frasa dengan dua tanda bintang tanpa spasi di sisi dalam.
+- *Teks Miring*: Apit kata atau frasa dengan satu tanda bintang tanpa spasi di sisi dalam.
+- **Tautan Aman**: Gunakan pola kurung siku dan kurung biasa, seperti [Halaman Utama Portal](index.html), untuk membuat tautan navigasi.
+- **Garis Pemisah**: Tulis minimal tiga tanda hubung (---) pada satu baris kosong tersendiri untuk memisahkan bagian artikel.
+
+---
+
+## 4. Daftar Berpoin Bersarang Tiga Tingkat
+
+Sistem mendukung daftar berpoin hingga tiga tingkat kedalaman (lingkaran penuh, lingkaran kosong, dan kotak) dengan ketahanan otomatis terhadap indentasi spasi maupun tombol Tab.
+
+- Tingkat pertama (Level 0): Diawali tanda hubung dan satu spasi tanpa indentasi di awal baris.
+  - Tingkat kedua (Level 1): Diawali indentasi 2 spasi atau 1 Tab sebelum tanda hubung.
+    - Tingkat ketiga (Level 2): Diawali indentasi 4 spasi atau 2 Tab sebelum tanda hubung.
+      - Tingkat maksimal (Level 3): Diawali indentasi 6 spasi atau 3 Tab sebelum tanda hubung.
+  - Kembali ke tingkat kedua dengan menyesuaikan ulang jumlah spasi awal.
+- Kembali ke tingkat pertama untuk melanjutkan poin utama berikutnya.
+
+---
+
+## 5. Penyisipan Media (Gambar, Audio, dan Video)
+
+Blok media dirender di dalam bingkai klasik lengkap dengan keterangan opsional di bagian bawah. Khusus untuk video dan audio, mesin menerapkan pola muat berdasarkan permintaan (Click-to-Load) sehingga penggunaan kuota awal adalah 0 KB meskipun satu artikel memuat ratusan video.
+
+- **Sintaks Gambar**: Tulis tanda kurung siku berisi image:jalur-berkas.png | Keterangan Gambar pada satu baris tunggal.
+- **Sintaks Audio**: Tulis tanda kurung siku berisi audio:jalur-berkas.mp3 | Keterangan Audio pada satu baris tunggal.
+- **Sintaks Video**: Tulis tanda kurung siku berisi video:jalur-berkas.mp4 | Keterangan Video pada satu baris tunggal.
+
+### Contoh Demonstrasi Media Langsung
+
+Berikut adalah hasil render langsung dari blok gambar, pemutar audio, dan pemutar video hemat kuota:
+
+[image:https://upload.wikimedia.org/wikipedia/commons/3/3a/Cat03.jpg | Contoh gambar foto kucing]
+
+[audio:https://upload.wikimedia.org/wikipedia/commons/c/c8/Example.ogg | Contoh rekaman audio OGG]
+
+[video:https://media.w3.org/2010/05/sintel/trailer_hd.mp4 | Contoh pemutaran video WebM 360p]
+
+---
+
+## 6. Visualisasi Grafik Batang & Grafik Garis
+
+Mesin ZineParser mampu menggambar grafik batang (bar) dan grafik garis (line) secara langsung menggunakan HTML5 Canvas 2D beresolusi tinggi dengan dukungan geser menyamping (horizontal scroll) untuk deret data panjang.
+
+Berikut adalah contoh demonstrasi grafik batang langsung yang dirender oleh mesin parser:
+
+[chart:bar | Perbandingan Ukuran Halaman Web (KB) | Portal Modern:2450, Berita Dinamis:1820, Arsip Klasik:42]
+
+Berikut adalah contoh demonstrasi grafik garis untuk memantau fluktuasi data berkala:
+
+[chart:line | Beban Memori Peramban Selama Rendering (MB) | 100 Baris:12.4, 5000 Baris:14.8, 50000 Baris:18.2, 100000 Baris:21.5]
+
+---
+
+## 7. Catatan Penting Saat Menulis Artikel
+
+Agar proses penguraian berjalan mulus tanpa kesalahan tata letak maupun pemblokiran keamanan, perhatikan delapan ketentuan teknis berikut:
+
+- **Satu Sintaks Blok Wajib Satu Baris Utuh**: Jangan pernah menekan tombol Enter (ganti baris) di tengah penulisan tajuk, grafik, maupun blok media. Jika terpotong ke baris baru, sintaks tidak akan dikenali.
+- **Protokol URL Ketat**: Untuk tautan dan media eksternal, gunakan hanya protokol aman https://. Tautan eksternal dengan http:// biasa atau skema berbahaya otomatis ditolak demi menjaga keamanan peramban.
+- **Jalur Berkas Lokal Bersih**: Untuk aset lokal, gunakan jalur relatif langsung (seperti assets/foto.jpg) tanpa karakter naik direktori (..).
+- **Hindari Karakter Pipa Ganda**: Karakter pipa (|) berfungsi sebagai pemisah kolom parameter pada grafik dan media. Jangan gunakan tanda pipa di dalam judul grafik atau teks keterangan media.
+- **Format Angka Grafik Baku**: Tulis angka pada grafik tanpa pemisah ribuan (tulis 1500000, bukan 1.500.000 atau 1,500,000) karena tanda koma dipakai untuk memisahkan antar-label data. Gunakan titik (.) hanya untuk angka desimal.
+- **Wajib Sisipkan Baris Kosong Antar-Blok**: Berikan satu baris kosong setelah daftar berpoin sebelum menulis paragraf baru agar paragraf tersebut tidak ikut terserap ke dalam daftar.
+- **Hindari Tanda Bintang Tunggal Tak Berpasangan**: Jangan menumpuk tanda bintang secara bersarang dan hindari penggunaan simbol bintang tunggal untuk perkalian di dalam kalimat (gunakan huruf x sebagai pengganti).
+- **Pengodean Berkas UTF-8**: Pastikan editor teks menyimpan berkas .txt dalam format UTF-8 agar seluruh tanda baca dan simbol tampil konsisten di semua perangkat.

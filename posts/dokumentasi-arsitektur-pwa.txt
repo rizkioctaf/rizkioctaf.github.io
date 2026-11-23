@@ -1,0 +1,66 @@
+# Dokumentasi Teknis Mendalam: Arsitektur PWA, Service Worker (sw.js), & Manifest (manifest.json)
+
+Sistem arsip digital ini dirancang sebagai Progressive Web App (PWA) statis penuh. Melalui kolaborasi antara berkas manifest.json, ikon fisik beresolusi standar, dan pekerja layanan sw.js, seluruh portal dapat dipasang langsung ke layar utama ponsel maupun komputer desktop serta tetap berfungsi andal saat koneksi internet terputus (offline).
+
+---
+
+## 1. Anatomi Konfigurasi Aplikasi (manifest.json)
+
+Berkas manifest.json bertindak sebagai identitas resmi aplikasi web agar sistem operasi seluler (Android, iOS, maupun Desktop) dapat mengenali arsip ini sebagai aplikasi mandiri, bukan sekadar penanda situs web biasa.
+
+- **name dan short_name**: Menentukan nama lengkap aplikasi pada layar pembuka (splash screen) serta nama ringkas di bawah ikon layar utama ponsel agar tidak terpotong.
+- **start_url dan scope**: Menggunakan jalur relatif (seperti ./index.html dan ./) sehingga aplikasi tetap dapat diinstal dengan sah baik ketika diletakkan di domain utama maupun di dalam subdirektori hosting statis.
+- **display (standalone)**: Menghilangkan bilah alamat peramban saat aplikasi dibuka dari layar utama sehingga tampilan antarmuka Classic Web 1.0 memenuhi seluruh layar secara utuh.
+- **theme_color dan background_color**: Menyelaraskan warna bilah status sistem operasi dengan warna biru tua klasik (#000080) dan latar abu-abu panel (#c0c0c0) agar transisi pembukaan aplikasi terasa mulus.
+- **icons (icon-192.png dan icon-512.png)**: Menggunakan berkas ikon fisik berformat PNG asli dengan dimensi 192x192 piksel dan 512x512 piksel serta properti purpose any dan maskable agar ikon tampil tajam di seluruh peluncur aplikasi modern.
+
+---
+
+## 2. Strategi Penyimpanan & Sinkronisasi Cache (sw.js)
+
+Berkas sw.js mengendalikan seluruh lalu lintas permintaan jaringan antara peramban dan peladen (server) menggunakan dua strategi penyimpanan yang disesuaikan dengan sifat masing-masing jenis berkas.
+
+### A. Network-First untuk Dokumen Dinamis & Indeks
+
+Strategi ini diterapkan pada berkas indeks metadata.json serta seluruh dokumen artikel teks di dalam direktori posts/ (*.txt):
+
+- **Prioritas Pembaruan**: Saat perangkat terhubung ke internet, sw.js selalu mengambil versi terbaru dari jaringan terlebih dahulu lalu memperbarui salinan di dalam penyimpanan cache.
+- **Cadangan Offline Otomatis**: Apabila jaringan sedang lambat, terputus, atau peladen mengembalikan galat, sw.js langsung menyajikan salinan artikel terakhir yang tersimpan di cache sehingga pembaca tetap dapat membaca tanpa gangguan.
+- **Pencocokan Parameter Query (ignoreSearch)**: Memastikan halaman baca view.html tetap dapat dimuat dari cache meskipun dibuka dengan parameter alamat URL yang berbeda-beda (seperti view.html?id=artikel-a maupun view.html?id=artikel-b).
+
+### B. Stale-While-Revalidate untuk Kerangka Aset Statis
+
+Strategi ini diterapkan pada kerangka utama aplikasi (index.html, view.html, style.css, parser.js, manifest.json, serta ikon PNG):
+
+- **Tampil Seketika**: Peramban langsung merender aset dari cache lokal dalam hitungan milidetik tanpa menunggu respons jaringan.
+- **Pembaruan Senyap di Latar Belakang**: Secara bersamaan, sw.js mengunduh pembaruan aset terbaru dari jaringan di latar belakang untuk disiapkan pada kunjungan berikutnya.
+
+---
+
+## 3. Manajemen Kuota Cache & Pembersihan Otomatis
+
+Untuk mencegah penyimpanan peramban membengkak apabila pembaca membuka ratusan artikel berbeda, sw.js dilengkapi mekanisme pembatasan kapasitas mandiri.
+
+- **Pembatasan Artikel LRU (Least Recently Used)**: Penyimpanan cache khusus artikel dibatasi maksimal 50 berkas teks (.txt). Ketika batas ini terlampaui, entri artikel yang paling lama tidak diakses otomatis dihapus untuk memberi ruang bagi artikel yang baru dibaca.
+- **Pengecualian Berkas Media Besar**: Permintaan HTTP Byte-Range (kode status 206 Partial Content) dari pemutar video maupun audio tidak dipaksa masuk ke dalam penyimpanan cache statis agar kuota penyimpanan perangkat pengguna tidak cepat habis.
+- **Pembersihan Versi Cache Lama (CACHE_VERSION)**: Setiap kali konstanta versi cache dinaikkan pada sw.js, peristiwa activate otomatis menghapus seluruh kontainer cache dari versi terdahulu dan mengambil alih kendali halaman secara langsung melalui clients.claim().
+
+---
+
+## 4. Diagram Siklus Hidup & Perbandingan Kecepatan Muat PWA
+
+Berikut adalah perbandingan waktu pemuatan kerangka antarmuka dan artikel antara akses jaringan pertama kali dengan akses dari penyimpanan cache Service Worker:
+
+[chart:bar | Perbandingan Waktu Muat Aplikasi (Milidetik) | Kunjungan Pertama (Jaringan):185, Kunjungan Ulang (Cache SW):14, Mode Offline Penuh:16]
+
+---
+
+## 5. Catatan Penting Pemeliharaan PWA (sw.js & manifest.json)
+
+Agar fitur instalasi seluler dan pembaruan offline selalu bekerja tanpa kendala, perhatikan lima aturan pemeliharaan berikut:
+
+- **Wajib Naikkan CACHE_VERSION Setiap Pembaruan Kode**: Setiap kali Anda mengubah style.css, parser.js, index.html, atau view.html, ubah nilai konstanta CACHE_VERSION di baris teratas sw.js (misalnya dari v1 ke v2) agar peramban segera membuang cache lama.
+- **Wajib Menggunakan Protokol HTTPS**: Fitur Service Worker dan instalasi PWA hanya diizinkan oleh peramban modern pada situs yang berjalan di atas protokol aman HTTPS (kecuali saat pengujian lokal di localhost).
+- **Jaga Keberadaan Berkas Ikon Fisik**: Pastikan berkas icon-192.png dan icon-512.png benar-benar tersedia di direktori yang dirujuk oleh manifest.json. Ikon vektor SVG atau URI data sering kali ditolak oleh kriteria instalasi Android Chrome.
+- **Jangan Menyimpan Aset yang Tidak Ada di Daftar Precache**: Seluruh jalur berkas yang didaftarkan di dalam daftar aset awal (PRECACHE_ASSETS) pada sw.js wajib eksis secara fisik. Satu saja berkas yang mengembalikan galat 404 akan menggagalkan seluruh proses instalasi Service Worker.
+- **Gunakan Jalur Relatif Konsisten**: Hindari penggunaan garis miring di awal jalur (seperti /style.css) agar aplikasi tetap dapat berjalan normal meskipun diunggah ke subdirektori repositori statis seperti GitHub Pages.

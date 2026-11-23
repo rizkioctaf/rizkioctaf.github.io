@@ -1,0 +1,75 @@
+# Dokumentasi Teknis Mendalam: Mesin Penerjemah Teks & Media (parser.js)
+
+Berkas parser.js berisi objek utama ZineParser yang bertugas menerjemahkan dokumen teks murni (.txt) berskala besar (hingga lebih dari 100.000 baris) menjadi struktur elemen halaman web secara aman, cepat, dan hemat kuota. Mesin ini dirancang khusus tanpa ketergantungan pustaka eksternal agar tetap ringan di peramban seluler maupun komputer desktop.
+
+---
+
+## 1. Arsitektur Time-Sliced Rendering & Generation Token
+
+Mengubah puluhan ribu baris teks menjadi elemen HTML dalam satu kali eksekusi dapat membekukan antarmuka peramban. Untuk mencegah hal tersebut, ZineParser membagi beban kerja menjadi beberapa potongan kecil.
+
+- **Pemrosesan Bertahap per Bingkai (CHUNK_SIZE = 1500)**: Mesin memproses maksimal 1.500 baris teks per satu siklus bingkai animasi (requestAnimationFrame) menggunakan DocumentFragment di memori sebelum ditempelkan ke halaman. Hal ini menjaga waktu eksekusi tetap di bawah 8 milidetik per bingkai sehingga antarmuka tetap responsif.
+- **Pembatalan Otomatis (Generation Token)**: Setiap pemanggilan fungsi render() menaikkan penghitung internal (_currentRenderId). Apabila pembaca berpindah artikel atau menutup halaman sebelum proses selesai, siklus rendering lama otomatis berhenti agar tidak terjadi kebocoran memori maupun tabrakan tampilan.
+- **Pembersihan Karakter Kontrol Awal**: Sebelum diurai, teks mentah dibersihkan dari tanda urutan bait UTF-8 BOM dan karakter kontrol biner tersembunyi tanpa merusak karakter baris baru maupun indentasi Tab.
+- **Pelaporan Progres Real-Time**: Melalui parameter callback onProgress, mesin mengirimkan persentase kemajuan rendering secara berkala ke view.html untuk ditampilkan pada bilah navigasi atas.
+
+---
+
+## 2. Alur Penguraian Sintaks & Struktur Hierarki
+
+Mesin ZineParser mengevaluasi setiap baris teks secara berurutan melalui lima tahap pencocokan pola:
+
+- **Garis Pemisah Horizontal**: Baris yang hanya terdiri dari minimal tiga tanda hubung (---) diubah menjadi elemen pemisah hr.
+- **Tajuk Tiga Tingkat (H1 hingga H3)**: Baris berawalan satu hingga tiga tanda pagar diikuti spasi diubah menjadi elemen h1, h2, atau h3 yang nantinya dipindai otomatis menjadi Daftar Isi.
+- **Daftar Bersarang Tiga Tingkat (Nested List)**: Baris berawalan tanda hubung dan spasi dikelola menggunakan tumpukan referensi (listStack) yang bertahan lintas potongan rendering. Indentasi Tab otomatis dikonversi menjadi dua spasi, dan kedalaman daftar dibatasi maksimal tiga tingkat agar tata letak tetap rapi di layar sempit.
+- **Blok Grafik & Media**: Baris yang diawali karakter kurung siku ([) diperiksa terhadap pola sintaks grafik Canvas maupun blok gambar, audio, dan video.
+- **Paragraf & Pemformatan Sebaris**: Baris teks biasa diubah menjadi elemen paragraf dan dipindai terhadap pola teks tebal, teks miring, serta tautan aman.
+
+---
+
+## 3. Keamanan DOM Murni & Sanitasi URL Ketat
+
+Untuk menghilangkan risiko serangan skrip lintas situs (Cross-Site Scripting / XSS) dari dokumen teks, ZineParser menerapkan aturan konstruksi ketat:
+
+- **Larangan Penggunaan innerHTML**: Seluruh elemen HTML dibangun secara eksklusif menggunakan antarmuka DOM asli seperti document.createElement dan document.createTextNode.
+- **Penyaringan Tautan & Sumber Media (sanitizeMediaUrl)**: Tautan eksternal hanya diizinkan menggunakan protokol aman https://. Skema berbahaya seperti javascript:, vbscript:, file:, data:, maupun jalur protokol relatif (//) langsung ditolak.
+- **Proteksi Traversal Direktori**: Jalur aset lokal wajib berupa jalur relatif bersih tanpa karakter naik direktori (..) maupun karakter backslash.
+
+---
+
+## 4. Optimasi Media Hemat Kuota (Click-to-Load Facade)
+
+Artikel dokumentasi yang panjang sering kali menyertakan puluhan hingga ratusan berkas video atau audio. Jika seluruh elemen pemutar video dirender secara langsung, peramban akan melakukan ratusan permintaan HTTP di latar belakang dan menghabiskan kuota pengguna.
+
+### Mekanisme Kerja Pemutar Sesuai Permintaan
+
+- **Beban Awal 0 KB**: Saat mengurai sintaks video atau audio, ZineParser tidak menyuntikkan elemen pemutar asli ke halaman. Sebagai gantinya, mesin merender kotak placeholder klasik berisi nama berkas dan tombol aksi bevel.
+- **Inisialisasi Saat Diklik**: Elemen video atau audio asli baru diciptakan dan mulai mengunduh aliran data tepat ketika pembaca menekan tombol Muat & Putar.
+- **Pengatur Pemutaran Tunggal (registerActiveMedia)**: Mesin mencatat elemen media yang sedang aktif berputar. Apabila pembaca memutar video atau audio baru, media sebelumnya otomatis dijeda (pause) agar suara tidak bertumpuk dan beban prosesor ponsel tetap ringan.
+- **Pemuatan Gambar Malas (Lazy Loading)**: Blok gambar menggunakan atribut loading="lazy" dan decoding="async" sehingga gambar di bagian bawah artikel baru diunduh saat layar digulir mendekatinya.
+
+---
+
+## 5. Mesin Grafik Canvas 2D & Downsampling Otomatis
+
+Fitur grafik pada parser.js menggambar grafik batang (bar) dan grafik garis (line) langsung di atas elemen HTML5 Canvas 2D tanpa pustaka grafik eksternal.
+
+- **Ketajaman Layar Resolusi Tinggi**: Ukuran kanvas dikalikan dengan rasio piksel perangkat (devicePixelRatio maksimal 2x) agar garis dan teks angka tampil tajam di layar ponsel modern.
+- **Kompaksi Angka & Skala Negatif**: Angka besar pada sumbu vertikal otomatis diringkas menjadi satuan rb, jt, M, atau T. Jika terdapat nilai negatif, sumbu nol digambar di tengah dengan batang negatif berwarna merah marun.
+- **Batas Lebar Aman & Downsampling (MAX_CANVAS_WIDTH = 12000)**: Peramban seluler seperti Safari iOS memiliki batas maksimal lebar elemen kanvas. Apabila deret data terlalu panjang hingga melampaui batas aman 12.000 piksel, ZineParser otomatis mengambil sampel titik data secara merata agar kanvas tidak gagal dirender.
+
+---
+
+## 6. Perbandingan Konsumsi Kuota Awal pada Artikel 100 Video
+
+Berikut adalah perbandingan estimasi penggunaan kuota jaringan saat pertama kali membuka artikel yang memuat 100 blok video:
+
+[chart:bar | Konsumsi Kuota Awal Halaman 100 Video (KB) | Tanpa Optimasi (Auto-Metadata):48500, Preload None Standar:3200, ZineParser Click-to-Load:0]
+
+---
+
+## 7. Catatan Pemeliharaan Berkas parser.js
+
+- **Penyesuaian Ukuran Potongan (CHUNK_SIZE)**: Nilai standar 1.500 baris per bingkai sudah seimbang untuk perangkat seluler kelas menengah. Hindari menaikkan nilai ini terlalu tinggi karena dapat menurunkan kelancaran gulir saat membuka berkas di atas 100.000 baris.
+- **Mode Awakutu (debugMode)**: Ubah properti ZineParser.debugMode menjadi true melalui konsol pengembang apabila Anda ingin melacak nomor baris dan tipe elemen yang diurai secara rinci.
+- **Pembersihan Media Saat Perpindahan Halaman**: Setiap kali render() dipanggil ulang, pastikan referensi media aktif sebelumnya tetap dihentikan dan dilepas sumbernya (removeAttribute src) agar tidak ada audio yang terus berbunyi di latar belakang.

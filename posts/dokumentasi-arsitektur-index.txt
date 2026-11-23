@@ -1,0 +1,82 @@
+# Dokumentasi Teknis Mendalam: Halaman Beranda & Direktori Utama (index.html)
+
+Berkas index.html berfungsi sebagai gerbang utama (portal) sekaligus pusat direktori arsip digital. Halaman ini dirancang mengikuti estetika antarmuka Classic Web 1.0 era 1996 dengan pendekatan rekayasa perangkat lunak modern: tanpa ketergantungan kerangka kerja eksternal, tahan terhadap anomali data, hemat memori saat menampung ribuan artikel, serta mendukung instalasi Progressive Web App (PWA) penuh.
+
+---
+
+## 1. Struktur Antarmuka & Hirarki Tata Letak
+
+Secara visual dan semantik, index.html disusun ke dalam empat zona utama di dalam bingkai portal-shell:
+
+- **Kepala Portal (portal-header)**: Menampilkan logo seni ASCII proporsional berbasis container query (cqw) agar tidak terpotong di layar ponsel sempit, disertai subjudul identitas arsip dan bilah pengumuman berjalan (ticker-box) yang otomatis berhenti saat kursor diarahkan ke atasnya.
+- **Ruang Kerja Dua Kolom (portal-workspace)**: Menggunakan tata letak CSS Grid responsif yang menyesuaikan diri menjadi satu kolom pada layar ponsel dan dua kolom pada layar tablet maupun desktop.
+- **Bilah Samping Kiri (portal-sidebar)**: Bersifat sticky pada desktop dan berisi mesin pencari kata kunci, daftar Artikel Pilihan, indikator status sinkronisasi sistem, serta kotak instalasi aplikasi offline.
+- **Area Direktori Utama (portal-main)**: Wadah kertas putih berbingkai inset yang menampilkan kepala daftar artikel, daftar indeks kronologis berbasis paginasi, serta kontrol navigasi halaman di bagian bawah.
+
+---
+
+## 2. Alur Pemuatan Data & Ketahanan Anomali (metadata.json)
+
+Seluruh daftar artikel tidak ditulis secara statis di dalam HTML, melainkan dimuat secara dinamis dari berkas indeks metadata.json melalui mekanisme pengambilan data yang tahan banting.
+
+### Validasi Skema & Pembersihan Data
+
+Setiap entri di dalam metadata.json melewati tahap penyaringan dan normalisasi sebelum disimpan ke dalam memori aplikasi:
+
+- **Deteksi Soft-404 & Tipe Konten**: Sistem memeriksa header Content-Type maupun isi respons untuk memastikan server benar-benar mengembalikan data JSON yang sah, bukan halaman galat HTML yang menyamar dengan status HTTP 200.
+- **Validasi Tiga Properti Baku**: Sistem memverifikasi keberadaan properti wajib (id, judul, dan tanggal) serta memastikan nilai id hanya berisi karakter aman (huruf kecil, angka, tanda hubung, atau garis bawah) tanpa traversal direktori (..).
+- **Pemetaan Jalur Berkas Otomatis**: Jalur berkas artikel diturunkan secara langsung dari properti id menuju pola posts/id.txt sehingga struktur metadata.json tetap ringkas dan bebas duplikasi.
+- **Pengurutan Kronologis Otomatis**: Seluruh artikel yang lolos validasi diurutkan berdasarkan properti tanggal (YYYY-MM-DD) dari yang terbaru ke yang terlama secara konsisten.
+
+---
+
+## 3. Mesin Pencari Instan & Logika Paginasi
+
+Untuk menjaga performa tetap ringan meskipun arsip berkembang hingga ribuan entri, index.html memisahkan penyimpanan data di memori dengan proses pembuatan elemen DOM.
+
+- **Pencarian Multi-Kolom Tanpa Huruf Besar/Kecil**: Fitur pencarian mencocokkan kata kunci pengguna secara serentak terhadap properti judul, pengenal id, serta tanggal publikasi (tanggal) secara real-time.
+- **Pembatasan Render DOM via Paginasi**: Halaman tidak pernah merender seluruh ribuan artikel sekaligus ke dalam layar. Daftar dibagi per halaman sehingga jumlah simpul DOM selalu kecil dan waktu muat tetap di bawah puluhan milidetik.
+- **Sinkronisasi Parameter URL**: Nomor halaman aktif dan kata kunci pencarian diselaraskan dengan riwayat peramban (history.replaceState) sehingga pembaca dapat menyegarkan halaman atau membagikan tautan hasil pencarian tanpa kehilangan posisi halaman.
+
+---
+
+## 4. Keamanan DOM & Pencegahan Celah XSS
+
+Seluruh daftar artikel pada direktori utama dan daftar Artikel Pilihan pada bilah samping dibangun menggunakan konstruksi DOM API murni (document.createElement dan textContent).
+
+- **Bebas Injeksi HTML**: Karakter khusus di dalam properti judul maupun tanggal artikel diperlakukan murni sebagai simpul teks sehingga mustahil mengeksekusi skrip berbahaya meskipun sumber data mengalami perubahan.
+- **Pengkodean Parameter Tautan**: Setiap tautan menuju halaman baca (view.html) dirakit menggunakan encodeURIComponent pada parameter id untuk mencegah kerusakan struktur URL.
+
+---
+
+## 5. Manajemen Progressive Web App (PWA) & Service Worker
+
+Halaman index.html bertindak sebagai pusat kendali siklus hidup aplikasi offline melalui integrasi dengan manifest.json dan sw.js.
+
+### Registrasi & Pembaruan Otomatis Service Worker
+
+- **Deteksi Pembaruan Latar Belakang**: Saat peramban mendeteksi versi baru dari sw.js, index.html memantau perubahan status instalasi pekerja layanan dan memperbarui indikator status di bilah samping tanpa mengganggu pembaca.
+- **Pembersihan Cache Otomatis**: Ketika versi cache diperbarui, berkas lama dibersihkan secara otomatis sehingga pengguna selalu memperoleh pembaruan tampilan maupun daftar artikel terbaru.
+
+### Alur Instalasi Aplikasi ke Perangkat (setupAppInstallation)
+
+- **Penangkapan Event beforeinstallprompt**: Pada peramban berbasis Chromium (Android dan Desktop), sistem menahan dialog bawaan dan memunculkan tombol instalasi khusus bergaya bevel 3D di dalam bilah samping.
+- **Panduan Perangkat iOS / Safari**: Jika pengguna membuka arsip melalui Safari di iPhone atau iPad yang tidak mendukung prompt instalasi otomatis, sistem menampilkan petunjuk ringkas penggunaan menu Bagikan lalu Tambah ke Layar Utama.
+- **Penyembunyian Otomatis Saat Terinstal**: Apabila halaman sudah dijalankan dalam mode mandiri (display-mode: standalone), kotak tombol instalasi otomatis disembunyikan agar ruang bilah samping tetap bersih.
+
+---
+
+## 6. Diagram Alur Pemrosesan Data di index.html
+
+Berikut adalah gambaran ringkas distribusi beban waktu pemrosesan saat index.html dibuka pertama kali pada koneksi standar:
+
+[chart:bar | Tahapan Pemuatan Awal index.html (Milidetik) | Muat Kerangka HTML:18, Unduh metadata.json:45, Validasi & Urutkan:4, Render Halaman Pertama:9]
+
+---
+
+## 7. Catatan Pemeliharaan Berkas index.html
+
+- **Konsistensi Tautan Aset**: Pastikan pemanggilan style.css, manifest.json, serta ikon icon-192.png dan icon-512.png selalu menggunakan jalur relatif yang sesuai dengan struktur direktori hosting agar instalasi PWA berjalan mulus di root maupun subdirektori.
+- **Keselarasan Nama Berkas & ID**: Pastikan setiap entri baru di metadata.json memiliki berkas fisik yang persis sama dengan nilai id di dalam direktori posts/ (misalnya id dokumentasi-arsitektur-index wajib memiliki berkas posts/dokumentasi-arsitektur-index.txt).
+- **Jangan Menyisipkan Konten Artikel ke index.html**: Biarkan index.html tetap ringan sebagai indeks navigasi dan pencarian, sementara seluruh isi bacaan panjang ditempatkan pada berkas terpisah di dalam folder posts/.
+- **Uji Keterbacaan & Target Sentuh**: Setiap perubahan pada elemen tombol pencarian atau navigasi halaman wajib mempertahankan tinggi minimal 42 piksel pada perangkat layar sentuh agar tetap nyaman digunakan di ponsel.

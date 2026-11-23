@@ -1,0 +1,78 @@
+# Dokumentasi Teknis Mendalam: Halaman Baca Artikel (view.html)
+
+Berkas view.html merupakan ruang baca utama pada arsip digital ini. Halaman ini dirancang agar pembaca dapat menikmati dokumen teks panjang dengan nyaman di layar ponsel maupun komputer desktop, tanpa mengorbankan estetika Classic Web 1.0 era 1996 maupun kecepatan rendering.
+
+---
+
+## 1. Struktur Antarmuka & Tata Letak Ruang Baca
+
+Berbeda dengan halaman beranda yang menggunakan tata letak dua kolom, view.html menerapkan struktur satu kolom terpusat (article-measure) dengan lebar maksimal 72 karakter (72ch) agar mata pembaca tidak mudah lelah saat mengikuti baris kalimat panjang.
+
+- **Bilah Navigasi Atas Ramping (top-nav-bar)**: Bilah satu baris tunggal yang menempel di bagian atas layar (sticky) saat halaman digulir, berisi tautan kembali ke indeks beranda, lencana persentase progres baca, serta tombol pembuka laci Alat Baca.
+- **Panel Laci Alat Baca Terpadu (reader-tools-panel)**: Panel lipat ringkas (collapsible drawer) yang muncul tepat di bawah bilah atas ketika tombol Alat Baca ditekan, memuat pengaturan ukuran huruf, warna kertas, penyalin tautan, dan Daftar Isi otomatis.
+- **Kertas Bacaan Utama (portal-main-article)**: Wadah dokumen utama yang memuat kotak metadata artikel, judul utama, garis pemisah ganda, isi artikel hasil terjemahan ZineParser, serta navigasi artikel sebelumnya dan berikutnya di bagian bawah.
+
+---
+
+## 2. Alur Pemuatan Artikel & Validasi Keamanan Parameter
+
+Saat halaman view.html dibuka, sistem menjalankan rangkaian pemeriksaan keamanan sebelum mengambil berkas teks artikel:
+
+### Penyaringan Parameter URL (?id=...)
+
+- **Validasi Karakter Pengenal**: Sistem mengambil parameter id dari alamat URL menggunakan URLSearchParams dan memastikannya hanya berisi karakter aman (huruf kecil, angka, tanda hubung, atau garis bawah).
+- **Pencegahan Path Traversal**: Permintaan yang mengandung karakter titik ganda (..), garis miring, atau skema berbahaya langsung ditolak sebelum menyentuh jaringan.
+- **Pencocokan Indeks metadata.json**: Sistem mencocokkan nilai id dengan entri di metadata.json untuk memperoleh properti judul dan tanggal publikasi, sekaligus menentukan urutan artikel sebelumnya dan artikel berikutnya.
+- **Deteksi Soft-404 Berkas Teks**: Saat mengunduh berkas posts/id.txt, sistem memeriksa header Content-Type agar halaman galat HTML dari server tidak ikut dirender sebagai isi artikel.
+
+---
+
+## 3. Bilah Alat Baca & Pengaturan Preferensi Pembaca
+
+Panel Alat Baca pada view.html menyediakan kendali kenyamanan membaca secara langsung tanpa memuat ulang halaman, serta menyimpan pilihan pengguna ke dalam penyimpanan lokal peramban (localStorage).
+
+- **Pengaturan Ukuran Teks**: Memungkinkan pembaca memperbesar atau memperkecil ukuran huruf isi artikel secara bertahap (misalnya dari skala 85 persen hingga 140 persen) serta mengembalikannya ke ukuran baku dengan satu klik.
+- **Mode Warna Kertas (Paper Theme)**: Menyediakan tiga pilihan latar kertas bacaan yang ramah mata, yaitu Kertas Putih klasik (#ffffff), Kertas Sepia hangat (#f4ecd8) untuk mengurangi silau, dan Kertas Gelap (#141414) untuk membaca di ruangan redup.
+- **Salin Tautan Artikel**: Menyalin alamat URL lengkap artikel yang sedang dibaca ke papan klip (clipboard) disertai umpan balik visual langsung pada tombol.
+
+---
+
+## 4. Pembentukan Daftar Isi Otomatis & Pelacakan Progres Baca
+
+Untuk memudahkan navigasi pada artikel teknis yang memiliki puluhan bab dan subbab, view.html membangun sistem navigasi internal secara otomatis setelah proses rendering selesai.
+
+### Pemindaian Tajuk (Auto-TOC)
+
+- **Ekstraksi Tajuk H1 hingga H3**: Setelah ZineParser menyelesaikan seluruh potongan rendering, skrip pada view.html memindai seluruh elemen h1, h2, dan h3 di dalam kontainer artikel.
+- **Pemberian Jangkar Unik (ID Anchor)**: Setiap tajuk diberi atribut id unik secara otomatis dan disusun menjadi daftar bertingkat di dalam panel Alat Baca.
+- **Penutupan Laci Otomatis**: Ketika pembaca mengeklik salah satu judul bab di Daftar Isi, halaman menggulir mulus ke bagian tersebut (dengan jarak aman scroll-margin-top agar tidak tertutup bilah atas) dan otomatis menutup laci Alat Baca agar layar kembali lega.
+
+### Pelacakan Posisi & Progres Membaca
+
+- **Lencana Persentase Real-Time**: Pemantau peristiwa gulir (scroll listener) menghitung rasio posisi baca terhadap tinggi total dokumen dan menampilkannya pada bilah atas.
+- **Pemulihan Posisi Baca Terakhir**: Posisi gulir terakhir untuk masing-masing id artikel disimpan secara berkala sehingga pembaca dapat melanjutkan bacaan tepat di bagian terakhir apabila membuka kembali artikel tersebut.
+
+---
+
+## 5. Integrasi Eksekusi dengan Mesin ZineParser
+
+Halaman view.html bertindak sebagai pengendali siklus hidup rendering bagi parser.js:
+
+- **Umpan Balik Progres Rendering**: Saat membuka dokumen sangat besar (di atas 100.000 baris), view.html menerima pembaruan persentase dari callback onProgress milik ZineParser dan menampilkannya secara langsung sebelum dokumen selesai dirender sepenuhnya.
+- **Sinkronisasi Pasca-Render**: Pembentukan Daftar Isi otomatis dan pemulihan posisi gulir terakhir baru dijalankan setelah Promise dari ZineParser.render() selesai sepenuhnya, sehingga seluruh koordinat ketinggian elemen di halaman sudah akurat.
+
+---
+
+## 6. Diagram Alur Siklus Hidup Halaman view.html
+
+Berikut adalah gambaran distribusi waktu eksekusi setiap tahap saat pembaca membuka sebuah artikel di view.html:
+
+[chart:bar | Tahapan Pemuatan Halaman Baca view.html (Milidetik) | Validasi URL & Metadata:12, Unduh Berkas .txt:38, Render Chunk Awal ZineParser:15, Susun Daftar Isi Otomatis:5]
+
+---
+
+## 7. Catatan Pemeliharaan Berkas view.html
+
+- **Jaga Ketinggian Bilah Atas Tetap Satu Baris**: Pastikan tombol-tombol pada top-nav-bar menggunakan label ringkas (termasuk variasi label-desktop dan label-mobile) agar bilah atas tidak pernah meluber menjadi dua baris pada layar ponsel sempit.
+- **Keselarasan Jarak Gulir Tajuk (scroll-margin-top)**: Apabila tinggi top-nav-bar diubah di style.css, sesuaikan nilai scroll-margin-top pada elemen h1, h2, dan h3 agar judul bab tujuan tidak tertutup oleh bilah navigasi sticky.
+- **Jangan Menyimpan Data Sensitif di Penyimpanan Lokal**: Gunakan localStorage hanya untuk menyimpan preferensi tampilan non-sensitif (ukuran huruf, warna kertas, dan posisi gulir bacaan).

@@ -1,0 +1,78 @@
+# Dokumentasi Teknis Mendalam: Sistem Lembar Gaya & Antarmuka Klasik (style.css)
+
+Berkas style.css merupakan fondasi visual seluruh portal arsip digital. Lembar gaya ini dirancang untuk menghidupkan kembali estetika antarmuka sistem operasi dan peramban era 1996 (Classic Web 1.0) secara otentik, sekaligus memanfaatkan standar CSS modern agar tampil tajam, proporsional, hemat ruang layar, dan ramah sentuhan di perangkat seluler maupun komputer desktop.
+
+---
+
+## 1. Sistem Palet Warna & Efek Bevel Tiga Dimensi
+
+Seluruh komponen antarmuka dibangun di atas variabel warna terpusat (:root) tanpa menggunakan gambar latar maupun efek bayangan kabur modern. Kedalaman visual diciptakan sepenuhnya melalui kombinasi bingkai CSS klasik.
+
+- **Palet Warna Baku 1996**: Menggunakan abu-abu desktop klasik (--bg-desktop: #c0c0c0), panel abu-abu hangat (--panel-grey: #d4d0c8), biru tua kepala jendela (--navy-classic: #000080), kertas putih bersih (#ffffff), serta warna tautan standar biru (#0000ff) dan ungu terkunjungi (#800080).
+- **Hierarki Bingkai Bevel 3D**: Bingkai luar utama (portal-shell) dan tombol aksi menggunakan gaya border outset agar tampak menonjol ke depan, sedangkan area kertas bacaan (portal-main), kolom input pencarian, dan kotak pemutar media menggunakan border inset atau ridge agar tampak menjorok ke dalam.
+- **Umpan Balik Tekan Tombol**: Saat tombol ditekan (:active), gaya bingkai berubah seketika dari outset menjadi inset disertai pergeseran padding 1 piksel untuk meniru sensasi tombol fisik.
+
+---
+
+## 2. Tipografi Tiga Peran & Perlindungan Anti-Font-Boosting
+
+Untuk menjamin kenyamanan membaca dokumen panjang sekaligus menjaga identitas teknis arsip, style.css membagi tipografi ke dalam tiga peran huruf yang konsisten antara halaman beranda dan halaman baca:
+
+- **Huruf Serif untuk Badan Bacaan**: Menggunakan Times New Roman dan Georgia dengan ukuran adaptif clamp(15px, 0.45vw + 13.5px, 17px) dan jarak antarbaris 1.62 agar alur bacaan panjang terasa alami di mata.
+- **Huruf Sans-Serif untuk Navigasi & Tajuk**: Menggunakan Verdana dan Tahoma untuk tombol, bilah alat baca, daftar indeks beranda, serta tajuk bagian agar tetap terbaca tajam pada ukuran ringkas.
+- **Huruf Monospace untuk Metadata & Kode**: Menggunakan Courier New untuk lencana tanggal, indikator persentase baca, kotak metadata kuning, serta teks berjalan di bagian atas.
+- **Anti-Font-Boosting Seluler**: Menerapkan text-size-adjust: 100% pada elemen html, body, dan kontainer artikel agar peramban ponsel tidak memperbesar ukuran paragraf secara acak dan merusak proporsi tata letak.
+
+---
+
+## 3. Logo Seni ASCII Responsif Berbasis Container Query
+
+Menampilkan seni teks ASCII di layar ponsel sering kali menyebabkan teks meluber ke samping atau terpotong. Lembar gaya ini menyelesaikan masalah tersebut melalui pendekatan container-type: inline-size pada kepala portal:
+
+- **Skala Proporsional Otomatis (cqw)**: Ukuran huruf pada elemen pre.ascii-logo dihitung secara dinamis menggunakan satuan clamp(7.5px, 2.65cqw, 14px) sehingga seluruh lebar karakter ASCII selalu pas mengikuti lebar bingkai portal tanpa memunculkan bilah gulir horizontal.
+- **Cadangan Peramban Lama**: Dilengkapi aturan @supports not (font-size: 1cqw) yang otomatis beralih menggunakan satuan lebar layar (vw) apabila dibuka pada peramban versi lama.
+
+---
+
+## 4. Bilah Navigasi Atas Sticky & Panel Laci Alat Baca Ringkas
+
+Pada halaman baca (view.html), ruang vertikal layar ponsel dimaksimalkan agar pembaca dapat fokus pada teks artikel:
+
+- **Bilah Navigasi Satu Baris (top-nav-bar)**: Menempel di tepi atas layar (position: sticky) dengan tinggi ringkas, memuat navigasi beranda, lencana progres baca, dan tombol pembuka laci Alat Baca. Pada layar di bawah 520 piksel, label panjang otomatis beralih ke versi singkat melalui kelas label-desktop dan label-mobile.
+- **Panel Laci Terpadu (reader-tools-panel)**: Muncul tepat di bawah bilah atas ketika diaktifkan. Seluruh baris pengaturan (Ukuran Teks, Warna Kertas, Tautan, dan Daftar Isi) dirancang padat dengan padding minimal dan tinggi tombol 24 piksel di desktop serta 30 piksel di layar sentuh agar tidak menutupi area baca.
+
+---
+
+## 5. Mode Warna Kertas Baca & Komponen Media Hemat Kuota
+
+Lembar gaya menyediakan tiga variasi suasana kertas bacaan yang dikendalikan melalui penambahan kelas pada wadah artikel:
+
+- **Kertas Putih Klasik**: Latar putih (#ffffff) dengan tinta hitam pekat (#111111) untuk kontras maksimal di ruangan terang.
+- **Kertas Sepia (paper-sepia)**: Latar krem hangat (#f4ecd8) dengan tinta cokelat gelap (#221c14) untuk mengurangi kelelahan mata saat membaca lama.
+- **Kertas Gelap (paper-dark)**: Latar hitam arang (#141414) dengan tinta abu-abu terang (#e4e4e4), penyesuaian warna tautan biru lembut (#8ab4f8), serta penyesuaian warna bingkai kotak metadata dan kotak media agar tidak menyilaukan di ruangan gelap.
+- **Kotak Placeholder Media (retro-media-facade)**: Mengatur tampilan kotak video berlatar hitam dengan teks fosfor hijau (#00ff00) serta kotak audio berlatar abu-abu panel yang menampung tombol muat sesuai permintaan dari parser.js.
+
+---
+
+## 6. Ergonomi Perangkat Layar Sentuh & Aksesibilitas
+
+Meskipun mengusung gaya visual tahun 1996, interaksi pengguna tetap mematuhi standar ergonomi perangkat modern:
+
+- **Target Sentuh Ramah Jari**: Melalui deteksi layar sempit maupun pointer kasar (@media (pointer: coarse)), tinggi minimal tombol navigasi, kotak pencarian, dan tautan paginasi diperbesar menjadi 42 piksel (--touch-target-min) agar mudah ditekan tanpa salah sentuh.
+- **Dukungan Pengurangan Gerakan (prefers-reduced-motion)**: Apabila pengguna mengaktifkan pengaturan pengurangan animasi di sistem operasinya, animasi pengumuman berjalan (ticker-track), teks berkedip (blink-text), dan gulir halus otomatis dinonaktifkan.
+
+---
+
+## 7. Distribusi Aturan Gaya di Dalam style.css
+
+Berikut adalah gambaran proporsi pembagian kelompok aturan CSS berdasarkan fungsi antarmuka di dalam berkas style.css:
+
+[chart:bar | Komposisi Modul Aturan di style.css (Persentase) | Fondasi & Tipografi:22, Navigasi & Laci Baca:24, Tata Letak & Bilah Sisi:20, Artikel & Tema Kertas:18, Media & Grafik Canvas:16]
+
+---
+
+## 8. Catatan Pemeliharaan Berkas style.css
+
+- **Hindari Penambahan Pustaka CSS Eksternal**: Pertahankan style.css sebagai satu-satunya lembar gaya mandiri tanpa kerangka kerja tambahan agar waktu muat awal tetap instan dan sesuai dengan daftar precache di sw.js.
+- **Jaga Nilai z-index Bilah Atas dan Laci**: Bilah navigasi atas menggunakan z-index: 50 dan panel laci Alat Baca menggunakan z-index: 49. Jangan memberikan nilai z-index lebih tinggi pada elemen konten artikel agar isi tulisan tidak menimpa bilah navigasi saat digulir.
+- **Uji Kontras Warna Tema Gelap**: Setiap kali menambahkan kelas komponen baru di dalam artikel, pastikan aturan penyesuaian warnanya juga ditambahkan di bawah pemilih .portal-main-article.paper-dark agar tetap terbaca jelas pada mode malam.

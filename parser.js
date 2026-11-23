@@ -6,6 +6,8 @@
  *              sehingga tidak pernah membekukan Main Thread / UI browser.
  *            - Pembatalan otomatis (Generation Token) jika render dipanggil ulang.
  *            - Downsampling otomatis & batas lebar kanvas aman lintas browser.
+ *            - Click-to-Load Facade untuk Video & Audio (0 KB unduhan latar
+ *              belakang meskipun artikel berisi ratusan video/audio).
  *            - Sanitasi URL ketat selaras CSP & anti-XSS via DOM API murni.
  * ==========================================================================
  */
@@ -13,12 +15,81 @@
 const ZineParser = {
   debugMode: false,
   _currentRenderId: 0,
+  _activeMediaEl: null,
   CHUNK_SIZE: 1500, // Jumlah baris diproses per frame (~4-8ms per frame)
   MAX_CANVAS_WIDTH: 12000, // Batas aman dimensi kanvas di Safari iOS / Chrome
 
   logDebug(lineNumber, type, detail) {
     if (this.debugMode) {
       console.log(`[ZineParser Baris ${lineNumber}] Tipe: ${type} ->`, detail);
+    }
+  },
+
+  /**
+   * Memastikan hanya 1 media (video/audio) yang diputar dalam satu waktu
+   * agar penggunaan CPU/jaringan hemat dan suara tidak bertumpuk.
+   */
+  registerActiveMedia(mediaEl) {
+    if (this._activeMediaEl && this._activeMediaEl !== mediaEl && !this._activeMediaEl.paused) {
+      try {
+        this._activeMediaEl.pause();
+      } catch {}
+    }
+    this._activeMediaEl = mediaEl;
+  },
+
+  /**
+   * Mengurai format sebaris aman (**tebal**, *miring*, [label](url)) ke DOM murni
+   * tanpa menggunakan innerHTML sehingga bebas dari celah XSS.
+   */
+  appendFormattedText(parentEl, text) {
+    const str = String(text || '');
+    const tokenRegex = /(\*\*[^*]+\*\*|\*[^*]+\*|\[[^\]]+\]\([^)]+\))/g;
+    let lastIndex = 0;
+    let match;
+
+    while ((match = tokenRegex.exec(str)) !== null) {
+      if (match.index > lastIndex) {
+        parentEl.appendChild(document.createTextNode(str.slice(lastIndex, match.index)));
+      }
+
+      const token = match[0];
+
+      if (token.startsWith('**') && token.endsWith('**') && token.length > 4) {
+        const strong = document.createElement('strong');
+        strong.textContent = token.slice(2, -2);
+        parentEl.appendChild(strong);
+      } else if (token.startsWith('*') && token.endsWith('*') && token.length > 2) {
+        const em = document.createElement('em');
+        em.textContent = token.slice(1, -1);
+        parentEl.appendChild(em);
+      } else if (token.startsWith('[')) {
+        const linkMatch = /^\[([^\]]+)\]\(([^)]+)\)$/.exec(token);
+        if (linkMatch) {
+          const label = linkMatch[1];
+          const safeHref = this.sanitizeMediaUrl(linkMatch[2]);
+          if (safeHref) {
+            const anchor = document.createElement('a');
+            anchor.href = safeHref;
+            anchor.textContent = label;
+            if (/^https:\/\//i.test(safeHref)) {
+              anchor.target = '_blank';
+              anchor.rel = 'noopener noreferrer';
+            }
+            parentEl.appendChild(anchor);
+          } else {
+            parentEl.appendChild(document.createTextNode(label));
+          }
+        } else {
+          parentEl.appendChild(document.createTextNode(token));
+        }
+      }
+
+      lastIndex = tokenRegex.lastIndex;
+    }
+
+    if (lastIndex < str.length) {
+      parentEl.appendChild(document.createTextNode(str.slice(lastIndex)));
     }
   },
 
@@ -34,6 +105,16 @@ const ZineParser = {
     if (!container) {
       console.error('[ZineParser Error]: Elemen kontainer target tidak ditemukan.');
       return Promise.resolve();
+    }
+
+    // Hentikan media yang sedang berjalan dari artikel sebelumnya jika ada
+    if (this._activeMediaEl) {
+      try {
+        this._activeMediaEl.pause();
+        this._activeMediaEl.removeAttribute('src');
+        this._activeMediaEl.load();
+      } catch {}
+      this._activeMediaEl = null;
     }
 
     // Naikkan token generasi untuk membatalkan render sebelumnya jika masih berjalan
@@ -56,13 +137,13 @@ const ZineParser = {
     };
 
     const headingRegex = /^(#{1,3})\s+(.+)$/;
+    const hrRegex = /^---+$/;
     const listRegex = /^(\s*)-\s+(.+)$/;
     const chartRegex = /^\[chart:(bar|line)\s*\|\s*([^|]+)\|\s*([^\]]+)\]$/i;
     const mediaRegex = /^\[(image|audio|video):([^|\]]+)(?:\|\s*([^\]]+))?\]$/i;
 
     return new Promise((resolve) => {
       const processChunk = () => {
-        // Hentikan jika ada pemanggilan render baru atau kontainer sudah dilepas dari DOM
         if (renderId !== this._currentRenderId || !container.isConnected) {
           resolve();
           return;
@@ -71,8 +152,6 @@ const ZineParser = {
         const fragment = document.createDocumentFragment();
         const end = Math.min(cursor + this.CHUNK_SIZE, totalLines);
 
-        // Jika masih di dalam list dari chunk sebelumnya, arahkan penambahan ke list aktif
-        // kecuali level kembali ke 0 (yang akan membuat <ul> baru di fragment)
         for (; cursor < end; cursor++) {
           const lineNumber = cursor + 1;
           const rawLine = lines[cursor];
@@ -83,13 +162,24 @@ const ZineParser = {
             continue;
           }
 
+          // 0. Garis Pemisah Horizontal (---)
+          if (hrRegex.test(trimmedLine)) {
+            closeActiveList();
+            this.logDebug(lineNumber, 'HR', trimmedLine);
+            const hr = document.createElement('hr');
+            fragment.appendChild(hr);
+            continue;
+          }
+
           // 1. Heading (h1 - h3)
           const headingMatch = trimmedLine.match(headingRegex);
           if (headingMatch) {
             closeActiveList();
             const level = headingMatch[1].length;
+            const headingText = headingMatch[2].trim();
+            this.logDebug(lineNumber, `H${level}`, headingText);
             const headingEl = document.createElement(`h${level}`);
-            headingEl.textContent = headingMatch[2].trim();
+            headingEl.textContent = headingText;
             fragment.appendChild(headingEl);
             continue;
           }
@@ -108,6 +198,7 @@ const ZineParser = {
               const maxAllowedLevel = Math.min(3, listStack.length);
               const targetLevel = Math.min(maxAllowedLevel, requestedLevel);
 
+              this.logDebug(lineNumber, `LIST_L${targetLevel}`, itemText);
               this.appendNestedListItem(fragment, listStack, targetLevel, itemText);
               continue;
             }
@@ -115,13 +206,16 @@ const ZineParser = {
 
           closeActiveList();
 
-          // 3. Blok Grafik Canvas
+          // 3. Blok Grafik Canvas & Media
           if (trimmedLine.charCodeAt(0) === 91 /* '[' */) {
             const chartMatch = trimmedLine.match(chartRegex);
             if (chartMatch) {
+              const chartType = chartMatch[1].toLowerCase();
+              const chartTitle = chartMatch[2].trim();
+              this.logDebug(lineNumber, `CHART_${chartType.toUpperCase()}`, chartTitle);
               const chartElement = this.buildChartBlock(
-                chartMatch[1].toLowerCase(),
-                chartMatch[2].trim(),
+                chartType,
+                chartTitle,
                 chartMatch[3].trim(),
                 lineNumber
               );
@@ -132,10 +226,14 @@ const ZineParser = {
             // 4. Blok Media
             const mediaMatch = trimmedLine.match(mediaRegex);
             if (mediaMatch) {
+              const mediaType = mediaMatch[1].toLowerCase();
+              const mediaSrc = mediaMatch[2].trim();
+              const mediaCaption = mediaMatch[3] ? mediaMatch[3].trim() : '';
+              this.logDebug(lineNumber, `MEDIA_${mediaType.toUpperCase()}`, mediaSrc);
               const mediaElement = this.buildMediaBlock(
-                mediaMatch[1].toLowerCase(),
-                mediaMatch[2].trim(),
-                mediaMatch[3] ? mediaMatch[3].trim() : ''
+                mediaType,
+                mediaSrc,
+                mediaCaption
               );
               fragment.appendChild(mediaElement);
               continue;
@@ -144,7 +242,7 @@ const ZineParser = {
 
           // 5. Paragraf Standar
           const p = document.createElement('p');
-          p.textContent = trimmedLine;
+          this.appendFormattedText(p, trimmedLine);
           fragment.appendChild(p);
         }
 
@@ -161,7 +259,6 @@ const ZineParser = {
         }
       };
 
-      // Jalankan chunk pertama segera agar konten awal langsung terlihat
       processChunk();
     });
   },
@@ -197,7 +294,7 @@ const ZineParser = {
     }
 
     const li = document.createElement('li');
-    li.textContent = text;
+    this.appendFormattedText(li, text);
     listStack[level].appendChild(li);
   },
 
@@ -254,7 +351,6 @@ const ZineParser = {
       return wrapper;
     }
 
-    // Jika titik data sangat masif, lakukan downsampling agar tidak melebihi batas kanvas browser
     const maxPoints = Math.floor((this.MAX_CANVAS_WIDTH - 88) / 80);
     let wasSampled = false;
     if (labels.length > maxPoints) {
@@ -295,6 +391,8 @@ const ZineParser = {
     canvas.className = 'retro-chart';
     canvas.style.width = `${logicalWidth}px`;
     canvas.style.height = `${logicalHeight}px`;
+    canvas.setAttribute('role', 'img');
+    canvas.setAttribute('aria-label', `Grafik ${type} ${title}`);
 
     scrollContainer.appendChild(canvas);
     wrapper.appendChild(titleDiv);
@@ -324,10 +422,10 @@ const ZineParser = {
       if (values[i] < rawMin) rawMin = values[i];
       if (values[i] > rawMax) rawMax = values[i];
     }
-    const rawRange = rawMax - rawMin || 1;
+    const rawRange = rawMax - rawMin || Math.abs(rawMax) || Math.abs(rawMin) || 1;
 
-    const minData = rawMin < 0 ? rawMin - rawRange * 0.1 : 0;
-    const maxData = rawMax > 0 ? rawMax + rawRange * 0.1 : (rawMin === 0 ? 1 : 0);
+    const minData = rawMin < 0 ? rawMin - rawRange * 0.14 : 0;
+    const maxData = rawMax > 0 ? rawMax + rawRange * 0.14 : (rawMin < 0 ? rawRange * 0.08 : 1);
     const range = maxData - minData || 1;
 
     const gridSteps = 4;
@@ -467,6 +565,25 @@ const ZineParser = {
     return null;
   },
 
+  /**
+   * Mengekstrak nama berkas yang ringkas untuk ditampilkan di tombol pemuat media
+   */
+  extractMediaFilename(safeSrc) {
+    try {
+      const cleanPath = safeSrc.split('?')[0].split('#')[0];
+      const segment = cleanPath.split('/').pop();
+      return segment ? decodeURIComponent(segment) : safeSrc;
+    } catch {
+      return safeSrc;
+    }
+  },
+
+  /**
+   * Membangun kotak media:
+   * - Image: memakai loading="lazy" + decoding="async"
+   * - Video & Audio: memakai Click-to-Load Facade (0 KB unduhan latar belakang)
+   *   sehingga artikel dengan ratusan video tetap instan dan hemat kuota.
+   */
   buildMediaBlock(type, src, caption) {
     const box = document.createElement('div');
     box.className = 'retro-media-box';
@@ -482,30 +599,68 @@ const ZineParser = {
       img.src = safeSrc;
       img.alt = caption || 'Gambar Artikel';
       img.loading = 'lazy';
+      img.decoding = 'async';
       img.referrerPolicy = 'no-referrer';
       img.onerror = () => {
         img.replaceWith(this.createMediaErrorNote('Gambar tidak dapat dimuat.'));
       };
       box.appendChild(img);
-    } else if (type === 'audio') {
-      const audio = document.createElement('audio');
-      audio.controls = true;
-      audio.preload = 'metadata';
-      audio.src = safeSrc;
-      audio.onerror = () => {
-        audio.replaceWith(this.createMediaErrorNote('Audio tidak dapat dimuat.'));
-      };
-      box.appendChild(audio);
-    } else if (type === 'video') {
-      const video = document.createElement('video');
-      video.controls = true;
-      video.preload = 'metadata';
-      video.playsInline = true;
-      video.src = safeSrc;
-      video.onerror = () => {
-        video.replaceWith(this.createMediaErrorNote('Video tidak dapat dimuat.'));
-      };
-      box.appendChild(video);
+    } else if (type === 'audio' || type === 'video') {
+      const isVideo = type === 'video';
+      const fileName = this.extractMediaFilename(safeSrc);
+
+      const facade = document.createElement('div');
+      facade.className = isVideo ? 'retro-media-facade is-video' : 'retro-media-facade is-audio';
+
+      const badge = document.createElement('div');
+      badge.className = 'retro-media-facade-badge';
+      badge.textContent = isVideo
+        ? `[ BERKAS VIDEO: ${fileName} ]`
+        : `[ BERKAS AUDIO: ${fileName} ]`;
+
+      const hint = document.createElement('div');
+      hint.className = 'retro-media-facade-hint';
+      hint.textContent = 'Media belum diunduh otomatis untuk menghemat kuota data.';
+
+      const loadBtn = document.createElement('button');
+      loadBtn.type = 'button';
+      loadBtn.className = 'classic-btn retro-media-load-btn';
+      loadBtn.textContent = isVideo ? '[ > Muat & Putar Video ]' : '[ > Muat & Putar Audio ]';
+
+      loadBtn.addEventListener('click', () => {
+        const mediaEl = document.createElement(isVideo ? 'video' : 'audio');
+        mediaEl.controls = true;
+        mediaEl.preload = 'auto';
+        if (isVideo) {
+          mediaEl.playsInline = true;
+        }
+
+        mediaEl.addEventListener('play', () => {
+          this.registerActiveMedia(mediaEl);
+        });
+
+        mediaEl.onerror = () => {
+          mediaEl.replaceWith(
+            this.createMediaErrorNote(isVideo ? 'Video tidak dapat dimuat.' : 'Audio tidak dapat dimuat.')
+          );
+        };
+
+        mediaEl.src = safeSrc;
+        facade.replaceWith(mediaEl);
+
+        this.registerActiveMedia(mediaEl);
+        const playPromise = mediaEl.play();
+        if (playPromise && typeof playPromise.catch === 'function') {
+          playPromise.catch(() => {
+            // Biarkan kontrol pemutar tampil jika browser menahan autoplay
+          });
+        }
+      });
+
+      facade.appendChild(badge);
+      facade.appendChild(hint);
+      facade.appendChild(loadBtn);
+      box.appendChild(facade);
     }
 
     if (caption !== '') {
