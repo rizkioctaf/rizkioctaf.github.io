@@ -1,13 +1,14 @@
 /* ==========================================================================
    FILE: style.css
    DESKRIPSI: Lembar gaya Classic Web 1.0 (Era 1996) - Edisi Final & Optimal.
-              - Sistem Bevel 3D (outset/inset/groove/ridge) otentik
-              - Tipografi 3 peran selaras antara Beranda (index.html) & Bacaan (view.html)
-              - Anti-Font-Boosting mobile agar ukuran teks konsisten di seluruh halaman
-              - Logo ASCII proporsional via container query (cqw) anti-terpotong
-              - Bilah navigasi atas sticky 1 baris ramping (~40px) dengan laci Alat Baca
-              - Panel Pengaturan & Navigasi Baca ringkas (compact)
-              - Gaya kotak placeholder Click-to-Load untuk video & audio hemat kuota
+- Sistem Bevel 3D (outset/inset/groove/ridge) otentik
+- Tipografi 3 peran selaras antara Beranda (index.html) & Bacaan (view.html)
+- Anti-Font-Boosting mobile agar ukuran teks konsisten di seluruh halaman
+- Logo ASCII proporsional via container query (cqw) anti-terpotong
+- Bilah navigasi atas sticky 1 baris ramping (~40px) dengan laci Alat Baca
+- Panel Pengaturan & Navigasi Baca ringkas (compact)
+- Gaya kotak placeholder Click-to-Load untuk video & audio hemat kuota
+- Gaya kartu lampiran & unduhan langsung untuk berkas (.txt, .zip, .rar, dll.)
    ========================================================================== */
 
 *, *::before, *::after {
@@ -967,6 +968,132 @@ ul.classic-post-list li:last-child {
   overflow-wrap: anywhere;
 }
 
+/* Kartu Lampiran Berkas & Unduhan Langsung (.txt, .zip, .rar, .pdf, dll.) */
+.retro-file-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 16px 0;
+  padding: 10px 12px;
+  background-color: var(--panel-grey);
+  border: 2px ridge var(--border-light);
+  font-family: var(--font-ui-classic);
+  text-align: left;
+}
+
+.retro-file-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1 1 220px;
+}
+
+.retro-file-badge {
+  display: inline-block;
+  padding: 4px 6px;
+  background-color: var(--navy-classic);
+  color: #ffff00;
+  font-family: var(--font-mono-retro);
+  font-size: 12px;
+  font-weight: bold;
+  border: 1px inset var(--border-dark);
+  flex-shrink: 0;
+}
+
+.retro-file-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.retro-file-name {
+  font-size: 13px;
+  color: var(--ink-black);
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.retro-file-sub {
+  font-size: 11px;
+  color: var(--ink-muted);
+  font-family: var(--font-mono-retro);
+  overflow-wrap: anywhere;
+}
+
+.retro-file-download-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 6px 12px;
+  background-color: var(--bg-desktop);
+  color: var(--navy-classic);
+  text-decoration: none;
+  font-family: var(--font-ui-classic);
+  font-size: 12px;
+  font-weight: bold;
+  border: 2px outset var(--border-light);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.retro-file-download-btn:link,
+.retro-file-download-btn:visited {
+  color: var(--navy-classic);
+  text-decoration: none;
+}
+
+.retro-file-download-btn:hover {
+  background-color: #dcdcdc;
+}
+
+.retro-file-download-btn:active {
+  color: #ff0000;
+  background-color: #ffff00;
+  border: 2px inset var(--border-dark);
+  padding: 7px 11px 5px 13px;
+}
+
+.portal-main-article.paper-dark .retro-file-card {
+  background-color: #222222;
+  border-color: #555555;
+}
+
+.portal-main-article.paper-dark .retro-file-name {
+  color: #e4e4e4;
+}
+
+.portal-main-article.paper-dark .retro-file-sub {
+  color: #b0b0b0;
+}
+
+.portal-main-article.paper-dark .retro-file-download-btn {
+  background-color: #333333;
+  color: #8ab4f8;
+  border-color: #666666;
+}
+
+.portal-main-article.paper-dark .retro-file-download-btn:hover {
+  background-color: #3e3e3e;
+}
+
+/* Pesan Galat / Sanitasi Media */
+.retro-media-error {
+  margin: 12px 0;
+  padding: 8px 10px;
+  background-color: #ffe6e6;
+  color: var(--accent-red);
+  border: 1px solid #cc0000;
+  font-family: var(--font-mono-retro);
+  font-size: 12px;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
 /* Pembungkus Scroll Horizontal untuk Grafik */
 .retro-chart-scroll {
   width: 100%;
@@ -1038,6 +1165,11 @@ canvas.retro-chart {
   .label-mobile {
     display: inline;
   }
+
+  .retro-file-download-btn {
+    width: 100%;
+    min-height: var(--touch-target-min);
+  }
 }
 
 @media (max-width: 480px) {
@@ -1089,6 +1221,10 @@ canvas.retro-chart {
   .article-bottom-nav .nav-bracket-link {
     min-height: var(--touch-target-min);
     padding: 5px 8px;
+  }
+
+  .retro-file-download-btn {
+    min-height: var(--touch-target-min);
   }
 
   .post-item-row a {

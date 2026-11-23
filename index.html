@@ -13,10 +13,10 @@
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
   <link rel="apple-touch-icon" href="icon-192.png">
-  <title>ARSIP DIGITAL — Catatan Teknologi, Rekayasa Web &amp; Artikel Pilihan</title>
+  <title>Arsip Digital — Portal Dokumentasi &amp; Catatan Teknis</title>
   <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body id="top">
 
 <div class="portal-shell">
   <!-- HEADER BANNER -->
@@ -28,566 +28,476 @@
     <div class="portal-subtitle">ARSIP DIGITAL &bull; CATATAN TEKNOLOGI, REKAYASA WEB &amp; DOKUMENTASI TEKNIS</div>
   </header>
 
-  <!-- TICKER PENGUMUMAN -->
-  <div class="ticker-box" aria-label="Pengumuman Situs">
-    <div class="ticker-track">
-      +++ PUBLIKASI TERBARU TELAH TERSEDIA &bull; KUMPULAN ARTIKEL TEKNOLOGI, INFRASTRUKTUR WEB &amp; PANDUAN TEKNIS +++
-    </div>
+  <!-- TICKER PENGUMUMAN KLASIK -->
+  <div class="ticker-box" role="region" aria-label="Pengumuman Portal">
+    <span class="ticker-track" id="portal-ticker-text">
+      SELAMAT DATANG DI ARSIP DIGITAL (EDISI CLASSIC WEB 1.0) &bull; DOKUMEN TEKS RINGAN, CEPAT &amp; BEBAS PELACAKAN &bull; GUNAKAN KOLOM PENCARIAN UNTUK MENYARING JUDUL ATAU TANGGAL &bull;
+    </span>
   </div>
 
-  <!-- WORKSPACE UTAMA -->
+  <!-- AREA KERJA UTAMA: SIDEBAR KIRI + INDEKS KANAN -->
   <div class="portal-workspace">
-    
     <!-- SIDEBAR KIRI -->
-    <aside class="portal-sidebar" aria-label="Navigasi dan Pencarian">
-      <span class="sidebar-section-title">:: PENCARIAN ARTIKEL ::</span>
-      <form id="search-form" class="classic-search-form" autocomplete="off">
-        <input 
-          type="search" 
-          id="search-input" 
-          class="classic-input" 
-          placeholder="Cari judul atau tahun..."
-          maxlength="60"
-          aria-label="Kata kunci pencarian artikel"
-        >
-        <div class="classic-btn-group">
-          <button type="submit" class="classic-btn">Cari</button>
-          <button type="button" id="reset-btn" class="classic-btn" title="Tampilkan Semua Artikel">Semua</button>
-        </div>
-      </form>
+    <aside class="portal-sidebar" aria-label="Pencarian dan Artikel Pilihan">
+      <!-- 1. Pencarian Arsip -->
+      <section aria-labelledby="sidebar-search-heading">
+        <span id="sidebar-search-heading" class="sidebar-section-title">:: CARI DOKUMEN ::</span>
+        <form id="search-form" class="classic-search-form" role="search">
+          <label for="search-input" class="sidebar-note">Kata kunci judul, ID, atau tahun:</label>
+          <input
+            type="search"
+            id="search-input"
+            class="classic-input"
+            placeholder="Ketik kata kunci..."
+            autocomplete="off"
+            spellcheck="false"
+          >
+          <div class="classic-btn-group">
+            <button type="submit" class="classic-btn">[ Cari ]</button>
+            <button type="button" id="search-reset-btn" class="classic-btn">[ Reset ]</button>
+          </div>
+        </form>
+      </section>
 
       <hr>
 
-      <!-- ARTIKEL PILIHAN -->
-      <span class="sidebar-section-title">:: ARTIKEL PILIHAN ::</span>
-      <ul id="featured-list" class="sidebar-featured-list">
-        <li><i>Memuat daftar artikel...</i></li>
-      </ul>
-      
-      <hr>
-      
-      <span class="sidebar-section-title">:: STATUS PORTAL ::</span>
-      <span class="status-badge">[AKTIF] PUBLIKASI DARING</span>
-      <span class="sidebar-note">Diperbarui berkala dalam format halaman teks ringkas tanpa pelacak pengunjung.</span>
+      <!-- 2. Artikel Pilihan dari metadata.json ("tag": "artikel-pilihan") -->
+      <section aria-labelledby="sidebar-featured-heading">
+        <span id="sidebar-featured-heading" class="sidebar-section-title">:: ARTIKEL PILIHAN ::</span>
+        <ul id="featured-posts-list" class="sidebar-featured-list">
+          <li>Memuat daftar pilihan...</li>
+        </ul>
+      </section>
 
-      <!-- KOTAK INSTALASI APLIKASI -->
-      <div id="install-box" class="sidebar-install-box" hidden>
+      <!-- Tombol Instalasi PWA (Hanya muncul jika peramban mendukung instalasi) -->
+      <div id="pwa-install-box" class="sidebar-install-box" hidden>
         <hr>
-        <span class="sidebar-section-title">:: APLIKASI PERANGKAT ::</span>
-        <span id="install-note" class="sidebar-note">Pasang Arsip Digital sebagai aplikasi mandiri untuk akses cepat dan pembacaan luring.</span>
-        <button type="button" id="install-app-btn" class="classic-btn sidebar-install-btn">[ + Pasang Aplikasi ]</button>
+        <button type="button" id="pwa-install-btn" class="classic-btn sidebar-install-btn">
+          [ Pasang Aplikasi Offline ]
+        </button>
       </div>
     </aside>
 
-    <!-- KONTEN UTAMA -->
-    <main class="portal-main">
+    <!-- KONTEN UTAMA: DAFTAR INDEKS ARTIKEL -->
+    <main id="daftar-artikel" class="portal-main">
       <div class="readable-measure">
-        <h1 id="list-heading" class="section-heading" tabindex="-1">Indeks Publikasi</h1>
-        <p id="list-subtext" class="section-subtext">Kumpulan artikel teknis, catatan pengembangan, dan ulasan sistem yang diurutkan dari publikasi terbaru:</p>
+        <h1 class="section-heading">INDEKS DOKUMEN &amp; ARTIKEL ARSIP</h1>
+        <p id="list-summary-text" class="section-subtext">
+          Memuat indeks dokumen dari arsip...
+        </p>
+
         <hr class="thick-rule">
 
-        <ul id="post-list" class="classic-post-list" aria-live="polite">
-          <li><i>Memuat daftar artikel...</i></li>
+        <!-- Daftar Artikel Utama -->
+        <ul id="posts-list" class="classic-post-list" aria-live="polite">
+          <li>Memuat daftar artikel...</li>
         </ul>
 
-        <!-- NAVIGASI PAGINASI TUNGGAL DI BAWAH -->
-        <nav id="pagination-bar" class="pagination-bar" aria-label="Navigasi Halaman Artikel" hidden>
-          <button type="button" id="prev-page-btn" class="classic-btn pagination-btn">&lt;&lt; Sebelumnya</button>
-          <span id="page-info" class="pagination-info">Halaman 1 dari 1 (0 artikel)</span>
-          <button type="button" id="next-page-btn" class="classic-btn pagination-btn">Berikutnya &gt;&gt;</button>
+        <!-- Bilah Paginasi Bawah -->
+        <nav id="pagination-bar" class="pagination-bar" aria-label="Navigasi Halaman Indeks" hidden>
+          <button type="button" id="prev-page-btn" class="classic-btn pagination-btn">
+            &lt;&lt; Sebelumnya
+          </button>
+          <span id="pagination-info" class="pagination-info">Halaman 1 dari 1</span>
+          <button type="button" id="next-page-btn" class="classic-btn pagination-btn">
+            Berikutnya &gt;&gt;
+          </button>
         </nav>
 
         <hr class="thick-rule">
-        <small class="list-footnote">Seluruh artikel disajikan dalam format teks statis yang ringan agar cepat dibuka dan nyaman dibaca di berbagai perangkat.</small>
+        <span class="list-footnote">
+          Petunjuk: Klik judul artikel untuk membuka ruang baca lengkap dengan pengaturan ukuran huruf, tema kertas, dan daftar isi otomatis.
+        </span>
       </div>
     </main>
   </div>
 
   <!-- FOOTER -->
   <footer class="portal-footer">
-    Surel Redaksi: <a href="mailto:redaksi@arsipdigital.id">redaksi@arsipdigital.id</a><br>
-    &copy; 2026 Arsip Digital &bull; Hak Cipta Dilindungi Undang-Undang.
+    Arsip Digital &bull; Antarmuka Klasik 1996 &bull; Tanpa Pelacakan &bull; <a href="#top">[ Kembali ke Atas &uarr; ]</a>
   </footer>
 </div>
 
 <script>
-  const FEATURED_POST_IDS = [
-    'zine-002',
-    'zine-001'
-  ];
+  (function () {
+    'use strict';
 
-  const PAGE_SIZE = 14;
-  const INDEX_CHUNK_SIZE = 40000;
-  const SEARCH_DEBOUNCE_MS = 180;
-  const SAFE_ID_PATTERN = /^[a-zA-Z0-9_-]+$/;
+    const SAFE_ID_PATTERN = /^[a-zA-Z0-9_-]+$/;
+    const STORAGE_READ_PREFIX = 'arsip_read_pos_';
+    const ITEMS_PER_PAGE = 15;
+    const MAX_FEATURED_ITEMS = 5;
 
-  let allIndexedPosts = [];
-  let activePostsView = [];
-  let currentPage = 1;
-  let activeSearchKeyword = '';
-  let searchGenerationId = 0;
-  let searchDebounceTimer = null;
-
-  function yieldToMainThread() {
-    return new Promise((resolve) => setTimeout(resolve, 0));
-  }
-
-  function normalizeText(str) {
-    return String(str || '').toLowerCase().trim();
-  }
-
-  /**
-   * Mengubah string tanggal ke angka epoch secara tahan banting agar pengurutan
-   * tetap akurat meskipun format tanggal di metadata.json sedikit bervariasi.
-   */
-  function parseDateTimestamp(rawDate) {
-    const cleaned = String(rawDate || '').trim();
-    if (!cleaned) return 0;
-
-    // Normalisasi format YYYY-M-D menjadi YYYY-MM-DD
-    const isoMatch = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(cleaned);
-    if (isoMatch) {
-      const year = Number(isoMatch[1]);
-      const month = Number(isoMatch[2]) - 1;
-      const day = Number(isoMatch[3]);
-      const utcTime = Date.UTC(year, month, day);
-      return Number.isFinite(utcTime) ? utcTime : 0;
-    }
-
-    const parsed = Date.parse(cleaned);
-    return Number.isFinite(parsed) ? parsed : 0;
-  }
-
-  async function buildIndexedPostsAsync(rawPosts) {
-    const total = rawPosts.length;
-    const indexed = new Array(total);
-    const seenIds = new Set();
-    let validCount = 0;
-
-    for (let i = 0; i < total; i += INDEX_CHUNK_SIZE) {
-      const end = Math.min(i + INDEX_CHUNK_SIZE, total);
-      for (let j = i; j < end; j++) {
-        const post = rawPosts[j];
-        if (!post || typeof post !== 'object') continue;
-
-        const id = String(post.id || '').trim();
-        if (!SAFE_ID_PATTERN.test(id) || seenIds.has(id)) continue;
-        seenIds.add(id);
-
-        const title = String(post.judul || post.title || '(Artikel Tanpa Judul)').trim();
-        const date = String(post.tanggal || post.date || '1970-01-01').trim();
-        const timestamp = parseDateTimestamp(date);
-
-        indexed[validCount++] = {
-          id,
-          title,
-          date,
-          _timestamp: timestamp,
-          _searchKey: `${title.toLowerCase()} ${date.toLowerCase()} ${id.toLowerCase()}`
-        };
-      }
-      if (end < total) {
-        await yieldToMainThread();
-      }
-    }
-
-    indexed.length = validCount;
-
-    indexed.sort((a, b) => {
-      if (b._timestamp !== a._timestamp) {
-        return b._timestamp - a._timestamp;
-      }
-      if (a.date > b.date) return -1;
-      if (a.date < b.date) return 1;
-      return 0;
-    });
-
-    return indexed;
-  }
-
-  function renderFeaturedSidebar(allPosts) {
-    const sidebarListEl = document.getElementById('featured-list');
-    if (!sidebarListEl) return;
-    sidebarListEl.innerHTML = '';
-
-    const uniqueIds = [...new Set(FEATURED_POST_IDS)].filter((id) => SAFE_ID_PATTERN.test(String(id)));
-    if (uniqueIds.length === 0) {
-      sidebarListEl.innerHTML = '<li>Belum ada artikel pilihan.</li>';
-      return;
-    }
-
-    const targetSet = new Set(uniqueIds);
-    const foundMap = new Map();
-    for (let i = 0; i < allPosts.length && foundMap.size < targetSet.size; i++) {
-      if (targetSet.has(allPosts[i].id)) {
-        foundMap.set(allPosts[i].id, allPosts[i]);
-      }
-    }
-
-    const fragment = document.createDocumentFragment();
-    uniqueIds.forEach((id) => {
-      const post = foundMap.get(id);
-      if (!post) return;
-
-      const li = document.createElement('li');
-      const link = document.createElement('a');
-      link.href = `view.html?id=${encodeURIComponent(post.id)}`;
-      link.textContent = post.title;
-
-      const dateSmall = document.createElement('span');
-      dateSmall.className = 'sidebar-item-date';
-      dateSmall.textContent = `[${post.date}]`;
-
-      li.appendChild(link);
-      li.appendChild(dateSmall);
-      fragment.appendChild(li);
-    });
-
-    if (fragment.childNodes.length === 0) {
-      sidebarListEl.innerHTML = '<li>Belum ada artikel pilihan.</li>';
-    } else {
-      sidebarListEl.appendChild(fragment);
-    }
-  }
-
-  function updatePaginationControls(totalItems, totalPages) {
-    const paginationBar = document.getElementById('pagination-bar');
-    if (!paginationBar) return;
-
-    const showBar = totalItems > PAGE_SIZE;
-    paginationBar.hidden = !showBar;
-    if (!showBar) return;
-
-    document.getElementById('page-info').textContent =
-      `Halaman ${currentPage.toLocaleString('id-ID')} dari ${totalPages.toLocaleString('id-ID')} (${totalItems.toLocaleString('id-ID')} artikel)`;
-
-    document.getElementById('prev-page-btn').disabled = currentPage <= 1;
-    document.getElementById('next-page-btn').disabled = currentPage >= totalPages;
-  }
-
-  function renderCurrentPage() {
-    const listElement = document.getElementById('post-list');
-    const headingElement = document.getElementById('list-heading');
-    const subtextElement = document.getElementById('list-subtext');
-    if (!listElement || !headingElement || !subtextElement) return;
-
-    const totalItems = activePostsView.length;
-    const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
-    currentPage = Math.min(Math.max(1, currentPage), totalPages);
-
-    if (activeSearchKeyword !== '') {
-      headingElement.textContent = `Hasil Pencarian: "${activeSearchKeyword}"`;
-      subtextElement.textContent = `Ditemukan ${totalItems.toLocaleString('id-ID')} publikasi yang sesuai:`;
-    } else {
-      headingElement.textContent = 'Indeks Publikasi';
-      subtextElement.textContent = `Menampilkan ${totalItems.toLocaleString('id-ID')} publikasi teknis dan catatan sistem yang diurutkan dari yang terbaru:`;
-    }
-
-    updatePaginationControls(totalItems, totalPages);
-    listElement.innerHTML = '';
-
-    if (totalItems === 0) {
-      const emptyLi = document.createElement('li');
-      emptyLi.textContent = activeSearchKeyword !== ''
-        ? `Tidak ditemukan artikel yang cocok dengan kata kunci "${activeSearchKeyword}".`
-        : 'Belum ada publikasi yang tersedia saat ini.';
-      emptyLi.style.fontStyle = 'italic';
-      listElement.appendChild(emptyLi);
-      return;
-    }
-
-    const startIdx = (currentPage - 1) * PAGE_SIZE;
-    const endIdx = Math.min(startIdx + PAGE_SIZE, totalItems);
-    const fragment = document.createDocumentFragment();
-
-    for (let i = startIdx; i < endIdx; i++) {
-      const post = activePostsView[i];
-      const li = document.createElement('li');
-      const rowDiv = document.createElement('div');
-      rowDiv.className = 'post-item-row';
-
-      const dateSpan = document.createElement('span');
-      dateSpan.className = 'date-tag';
-      dateSpan.textContent = `[${post.date}]`;
-
-      const titleWrapper = document.createElement('div');
-      titleWrapper.className = 'post-title-wrap';
-      const link = document.createElement('a');
-      link.href = `view.html?id=${encodeURIComponent(post.id)}`;
-
-      const boldTitle = document.createElement('b');
-      boldTitle.textContent = post.title;
-      link.appendChild(boldTitle);
-      titleWrapper.appendChild(link);
-
-      if (activeSearchKeyword === '' && i === 0) {
-        const newBadge = document.createElement('span');
-        newBadge.className = 'blink-text';
-        newBadge.textContent = ' [TERBARU]';
-        titleWrapper.appendChild(newBadge);
-      }
-
-      rowDiv.appendChild(dateSpan);
-      rowDiv.appendChild(titleWrapper);
-      li.appendChild(rowDiv);
-      fragment.appendChild(li);
-    }
-
-    listElement.appendChild(fragment);
-  }
-
-  async function executeChunkedSearch(rawKeyword) {
-    const currentSearchId = ++searchGenerationId;
-    const cleaned = String(rawKeyword || '').replace(/\s+/g, ' ').trim();
-
-    if (cleaned === '') {
-      activeSearchKeyword = '';
-      activePostsView = allIndexedPosts;
-      currentPage = 1;
-      renderCurrentPage();
-      return;
-    }
-
-    const needle = normalizeText(cleaned);
-    const subtextElement = document.getElementById('list-subtext');
-    if (subtextElement && allIndexedPosts.length > INDEX_CHUNK_SIZE) {
-      subtextElement.textContent = `Memindai ${allIndexedPosts.length.toLocaleString('id-ID')} arsip...`;
-    }
-
-    const matched = [];
-    const total = allIndexedPosts.length;
-
-    for (let i = 0; i < total; i += INDEX_CHUNK_SIZE) {
-      if (currentSearchId !== searchGenerationId) return;
-
-      const end = Math.min(i + INDEX_CHUNK_SIZE, total);
-      for (let j = i; j < end; j++) {
-        if (allIndexedPosts[j]._searchKey.includes(needle)) {
-          matched.push(allIndexedPosts[j]);
-        }
-      }
-
-      if (end < total) {
-        await yieldToMainThread();
-      }
-    }
-
-    if (currentSearchId !== searchGenerationId) return;
-
-    activeSearchKeyword = cleaned;
-    activePostsView = matched;
-    currentPage = 1;
-    renderCurrentPage();
-  }
-
-  async function initHomePage() {
-    const listElement = document.getElementById('post-list');
-    const sidebarListEl = document.getElementById('featured-list');
-
-    try {
-      const response = await fetch('metadata.json', { cache: 'no-cache' });
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: Daftar artikel tidak dapat diakses.`);
-      }
-
-      const contentType = (response.headers.get('content-type') || '').toLowerCase();
-      if (contentType.includes('text/html')) {
-        throw new Error('Respons server tidak valid (bukan JSON).');
-      }
-
-      const rawPosts = await response.json();
-      if (!Array.isArray(rawPosts)) {
-        throw new Error('Format daftar artikel tidak valid.');
-      }
-
-      allIndexedPosts = await buildIndexedPostsAsync(rawPosts);
-      activePostsView = allIndexedPosts;
-      currentPage = 1;
-
-      renderCurrentPage();
-      renderFeaturedSidebar(allIndexedPosts);
-
-    } catch (error) {
-      console.error('[Portal Index Error]:', error);
-      if (listElement) {
-        listElement.innerHTML = '';
-        const errorLi = document.createElement('li');
-        errorLi.style.color = '#800000';
-        errorLi.textContent = 'Daftar artikel sedang tidak tersedia. Silakan muat ulang halaman beberapa saat lagi.';
-        listElement.appendChild(errorLi);
-      }
-      if (sidebarListEl) {
-        sidebarListEl.innerHTML = '<li><i>Tidak tersedia.</i></li>';
-      }
-    } finally {
-      scheduleServiceWorkerRegistration();
-    }
-  }
-
-  function setupInteractions() {
+    // Elemen DOM Utama
+    const tickerTextEl = document.getElementById('portal-ticker-text');
     const searchForm = document.getElementById('search-form');
     const searchInput = document.getElementById('search-input');
-    const resetButton = document.getElementById('reset-btn');
-    const headingEl = document.getElementById('list-heading');
+    const searchResetBtn = document.getElementById('search-reset-btn');
+    const featuredListEl = document.getElementById('featured-posts-list');
+    const listSummaryEl = document.getElementById('list-summary-text');
+    const postsListEl = document.getElementById('posts-list');
+    const paginationBarEl = document.getElementById('pagination-bar');
+    const prevPageBtn = document.getElementById('prev-page-btn');
+    const nextPageBtn = document.getElementById('next-page-btn');
+    const paginationInfoEl = document.getElementById('pagination-info');
+    const pwaInstallBox = document.getElementById('pwa-install-box');
+    const pwaInstallBtn = document.getElementById('pwa-install-btn');
 
-    const goToPage = (targetPage) => {
-      currentPage = targetPage;
-      renderCurrentPage();
-      if (headingEl) {
-        headingEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        headingEl.focus({ preventScroll: true });
-      }
-    };
-
-    document.getElementById('prev-page-btn').addEventListener('click', () => goToPage(currentPage - 1));
-    document.getElementById('next-page-btn').addEventListener('click', () => goToPage(currentPage + 1));
-
-    searchForm.addEventListener('submit', (event) => {
-      event.preventDefault();
-      clearTimeout(searchDebounceTimer);
-      executeChunkedSearch(searchInput.value);
-    });
-
-    searchInput.addEventListener('input', () => {
-      clearTimeout(searchDebounceTimer);
-      searchDebounceTimer = setTimeout(() => {
-        executeChunkedSearch(searchInput.value);
-      }, SEARCH_DEBOUNCE_MS);
-    });
-
-    searchInput.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape') {
-        clearTimeout(searchDebounceTimer);
-        searchInput.value = '';
-        executeChunkedSearch('');
-      }
-    });
-
-    resetButton.addEventListener('click', () => {
-      clearTimeout(searchDebounceTimer);
-      searchInput.value = '';
-      executeChunkedSearch('');
-      searchInput.focus();
-    });
-  }
-
-  /* ========================================================================
-     INSTALASI APLIKASI (PWA) & SINKRONISASI SERVICE WORKER TERJADWAL
-     ======================================================================== */
-  let swRegistrationScheduled = false;
-
-  function scheduleServiceWorkerRegistration() {
-    if (swRegistrationScheduled) return;
-    swRegistrationScheduled = true;
-
-    if (!('serviceWorker' in navigator) || !window.isSecureContext) return;
-
-    const registerSw = async () => {
-      try {
-        const registration = await navigator.serviceWorker.register('./sw.js', {
-          updateViaCache: 'none'
-        });
-        await registration.update();
-      } catch (err) {
-        console.warn('[SW Registration]:', err);
-      }
-    };
-
-    if ('requestIdleCallback' in window) {
-      window.requestIdleCallback(() => registerSw(), { timeout: 2500 });
-    } else {
-      setTimeout(registerSw, 1200);
-    }
-  }
-
-  function setupAppInstallation() {
-    const isSecureContextForSw = 'serviceWorker' in navigator && window.isSecureContext;
-
-    let isRefreshingForUpdate = false;
-    let hadExistingController = Boolean(navigator.serviceWorker && navigator.serviceWorker.controller);
-
-    const triggerPageRefresh = () => {
-      if (isRefreshingForUpdate) return;
-      isRefreshingForUpdate = true;
-      window.location.reload();
-    };
-
-    if (isSecureContextForSw) {
-      navigator.serviceWorker.addEventListener('controllerchange', () => {
-        if (hadExistingController) {
-          triggerPageRefresh();
-        }
-        hadExistingController = true;
-      });
-
-      navigator.serviceWorker.addEventListener('message', (event) => {
-        if (event.data && event.data.type === 'SW_UPDATED' && hadExistingController) {
-          triggerPageRefresh();
-        }
-      });
-    }
-
-    const installBox = document.getElementById('install-box');
-    const installNote = document.getElementById('install-note');
-    const installBtn = document.getElementById('install-app-btn');
+    let allPosts = [];
+    let filteredPosts = [];
+    let currentPage = 1;
     let deferredInstallPrompt = null;
 
-    const isStandalone =
-      window.matchMedia('(display-mode: standalone)').matches ||
-      window.navigator.standalone === true;
+    /* ======================================================================
+       1. SERVICE WORKER & INSTALASI PWA (PROGRESSIVE WEB APP)
+       ====================================================================== */
+    let swRegistrationScheduled = false;
 
-    if (isStandalone) {
-      if (installBox) installBox.hidden = true;
-      return;
+    function setupServiceWorker() {
+      if (swRegistrationScheduled) return;
+      swRegistrationScheduled = true;
+
+      if (!('serviceWorker' in navigator) || !window.isSecureContext) return;
+
+      const registerSw = async () => {
+        try {
+          const registration = await navigator.serviceWorker.register('./sw.js', {
+            updateViaCache: 'none'
+          });
+          await registration.update();
+        } catch (err) {
+          console.warn('[SW Registration]:', err);
+        }
+      };
+
+      if ('requestIdleCallback' in window) {
+        window.requestIdleCallback(() => registerSw(), { timeout: 2500 });
+      } else {
+        setTimeout(registerSw, 1200);
+      }
     }
 
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredInstallPrompt = e;
-      if (installBox) installBox.hidden = false;
-      if (installBtn) {
-        installBtn.hidden = false;
-        installBtn.disabled = false;
-      }
-    });
+    function setupAppInstallation() {
+      window.addEventListener('beforeinstallprompt', (event) => {
+        event.preventDefault();
+        deferredInstallPrompt = event;
+        if (pwaInstallBox) {
+          pwaInstallBox.hidden = false;
+        }
+      });
 
-    if (installBtn) {
-      installBtn.addEventListener('click', async () => {
-        if (!deferredInstallPrompt) return;
-        installBtn.disabled = true;
-        try {
+      if (pwaInstallBtn) {
+        pwaInstallBtn.addEventListener('click', async () => {
+          if (!deferredInstallPrompt) return;
           deferredInstallPrompt.prompt();
-          const { outcome } = await deferredInstallPrompt.userChoice;
+          try {
+            await deferredInstallPrompt.userChoice;
+          } catch (_) {}
           deferredInstallPrompt = null;
-
-          if (outcome === 'accepted') {
-            if (installBox) installBox.hidden = true;
-          } else {
-            installBtn.disabled = false;
+          if (pwaInstallBox) {
+            pwaInstallBox.hidden = true;
           }
-        } catch {
-          installBtn.disabled = false;
+        });
+      }
+
+      window.addEventListener('appinstalled', () => {
+        deferredInstallPrompt = null;
+        if (pwaInstallBox) {
+          pwaInstallBox.hidden = true;
         }
       });
     }
 
-    window.addEventListener('appinstalled', () => {
-      deferredInstallPrompt = null;
-      if (installBox) installBox.hidden = true;
-    });
-
-    const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-    if (isIos && installBox && installNote && installBtn) {
-      installBox.hidden = false;
-      installBtn.hidden = true;
-      installNote.textContent =
-        'Di Safari iOS: ketuk tombol Bagikan (ikon kotak panah atas), lalu pilih "Tambah ke Layar Utama".';
+    /* ======================================================================
+       2. PEMERIKSAAN TAG ARTIKEL PILIHAN & STATUS BACA LOKAL
+       ====================================================================== */
+    function isFeaturedArticle(post) {
+      if (!post || !post.tag) return false;
+      if (Array.isArray(post.tag)) {
+        return post.tag.some(
+          (t) => typeof t === 'string' && t.trim().toLowerCase() === 'artikel-pilihan'
+        );
+      }
+      if (typeof post.tag === 'string') {
+        return post.tag.trim().toLowerCase() === 'artikel-pilihan';
+      }
+      return false;
     }
-  }
 
-  setupInteractions();
-  setupAppInstallation();
-  initHomePage();
+    function hasSavedReadingProgress(articleId) {
+      try {
+        const val = parseInt(localStorage.getItem(STORAGE_READ_PREFIX + articleId) || '0', 10);
+        return Number.isFinite(val) && val > 120;
+      } catch {
+        return false;
+      }
+    }
+
+    /* ======================================================================
+       3. RENDER SIDEBAR ":: ARTIKEL PILIHAN ::"
+       - Prioritas 1: Artikel dengan "tag": "artikel-pilihan"
+       - Prioritas 2 (Fallback): Artikel biasa terbaru jika belum ada tag pilihan
+       ====================================================================== */
+    function renderSidebarFeaturedArticles(sortedPosts) {
+      if (!featuredListEl) return;
+      featuredListEl.innerHTML = '';
+
+      const taggedFeatured = sortedPosts.filter(isFeaturedArticle);
+      const itemsToShow = (taggedFeatured.length > 0 ? taggedFeatured : sortedPosts).slice(
+        0,
+        MAX_FEATURED_ITEMS
+      );
+
+      if (itemsToShow.length === 0) {
+        const emptyLi = document.createElement('li');
+        emptyLi.textContent = 'Belum ada dokumen tersedia.';
+        featuredListEl.appendChild(emptyLi);
+        return;
+      }
+
+      const fragment = document.createDocumentFragment();
+
+      itemsToShow.forEach((post) => {
+        const li = document.createElement('li');
+
+        const link = document.createElement('a');
+        link.href = `view.html?id=${encodeURIComponent(post.id)}`;
+        link.textContent = post.judul;
+
+        const dateSpan = document.createElement('span');
+        dateSpan.className = 'sidebar-item-date';
+        dateSpan.textContent = `[${post.tanggal}]`;
+
+        li.appendChild(link);
+        li.appendChild(dateSpan);
+        fragment.appendChild(li);
+      });
+
+      featuredListEl.appendChild(fragment);
+    }
+
+    /* ======================================================================
+       4. RENDER DAFTAR INDEKS UTAMA & PAGINASI
+       ====================================================================== */
+    function renderMainPostList() {
+      postsListEl.innerHTML = '';
+
+      const totalItems = filteredPosts.length;
+      const query = (searchInput ? searchInput.value : '').trim();
+
+      if (totalItems === 0) {
+        paginationBarEl.hidden = true;
+        listSummaryEl.textContent = query
+          ? `Tidak ditemukan dokumen yang cocok dengan kata kunci "${query}".`
+          : 'Belum ada dokumen yang diterbitkan di dalam arsip.';
+
+        const emptyLi = document.createElement('li');
+        emptyLi.textContent = query
+          ? 'Coba gunakan kata kunci lain atau tekan tombol [ Reset ].'
+          : 'Daftar arsip masih kosong.';
+        postsListEl.appendChild(emptyLi);
+        return;
+      }
+
+      const totalPages = Math.max(1, Math.ceil(totalItems / ITEMS_PER_PAGE));
+      if (currentPage > totalPages) currentPage = totalPages;
+      if (currentPage < 1) currentPage = 1;
+
+      const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+      const endIndex = Math.min(startIndex + ITEMS_PER_PAGE, totalItems);
+      const pageSlice = filteredPosts.slice(startIndex, endIndex);
+
+      listSummaryEl.textContent = query
+        ? `Menampilkan ${startIndex + 1}–${endIndex} dari ${totalItems} hasil pencarian untuk "${query}".`
+        : `Menampilkan ${startIndex + 1}–${endIndex} dari total ${totalItems} dokumen terarsip (diurutkan dari terbaru).`;
+
+      const fragment = document.createDocumentFragment();
+
+      pageSlice.forEach((post, idxOnPage) => {
+        const li = document.createElement('li');
+        const row = document.createElement('div');
+        row.className = 'post-item-row';
+
+        const dateSpan = document.createElement('span');
+        dateSpan.className = 'date-tag';
+        dateSpan.textContent = `[${post.tanggal}]`;
+
+        const titleWrap = document.createElement('div');
+        titleWrap.className = 'post-title-wrap';
+
+        const link = document.createElement('a');
+        link.href = `view.html?id=${encodeURIComponent(post.id)}`;
+        link.textContent = post.judul;
+        titleWrap.appendChild(link);
+
+        // Tandai artikel paling baru (indeks 0 tanpa filter pencarian)
+        if (!query && currentPage === 1 && idxOnPage === 0) {
+          const newBadge = document.createElement('span');
+          newBadge.className = 'blink-text';
+          newBadge.textContent = ' [BARU!]';
+          titleWrap.appendChild(newBadge);
+        }
+
+        // Tandai artikel yang memiliki posisi baca tersimpan di localStorage
+        if (hasSavedReadingProgress(post.id)) {
+          const resumeBadge = document.createElement('span');
+          resumeBadge.className = 'sidebar-item-date';
+          resumeBadge.style.display = 'inline';
+          resumeBadge.textContent = ' [LANJUTKAN BACA]';
+          titleWrap.appendChild(resumeBadge);
+        }
+
+        row.appendChild(dateSpan);
+        row.appendChild(titleWrap);
+        li.appendChild(row);
+        fragment.appendChild(li);
+      });
+
+      postsListEl.appendChild(fragment);
+
+      if (totalPages > 1) {
+        paginationBarEl.hidden = false;
+        paginationInfoEl.textContent = `Halaman ${currentPage} dari ${totalPages}`;
+        prevPageBtn.disabled = currentPage <= 1;
+        nextPageBtn.disabled = currentPage >= totalPages;
+      } else {
+        paginationBarEl.hidden = true;
+      }
+    }
+
+    function applySearchFilter(rawKeyword) {
+      const keyword = rawKeyword.trim().toLowerCase();
+      currentPage = 1;
+
+      if (!keyword) {
+        filteredPosts = allPosts.slice();
+      } else {
+        filteredPosts = allPosts.filter((post) => {
+          return (
+            post.judul.toLowerCase().includes(keyword) ||
+            post.id.toLowerCase().includes(keyword) ||
+            post.tanggal.toLowerCase().includes(keyword)
+          );
+        });
+      }
+
+      renderMainPostList();
+    }
+
+    /* ======================================================================
+       5. INISIALISASI EVENT PENCARIAN, PAGINASI & MUAT metadata.json
+       ====================================================================== */
+    if (searchForm) {
+      searchForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        applySearchFilter(searchInput.value);
+      });
+    }
+
+    if (searchInput) {
+      searchInput.addEventListener('input', () => {
+        applySearchFilter(searchInput.value);
+      });
+    }
+
+    if (searchResetBtn) {
+      searchResetBtn.addEventListener('click', () => {
+        searchInput.value = '';
+        applySearchFilter('');
+        searchInput.focus();
+      });
+    }
+
+    if (prevPageBtn) {
+      prevPageBtn.addEventListener('click', () => {
+        if (currentPage > 1) {
+          currentPage--;
+          renderMainPostList();
+          document.getElementById('daftar-artikel').scrollIntoView({ behavior: 'smooth' });
+        }
+      });
+    }
+
+    if (nextPageBtn) {
+      nextPageBtn.addEventListener('click', () => {
+        const totalPages = Math.ceil(filteredPosts.length / ITEMS_PER_PAGE);
+        if (currentPage < totalPages) {
+          currentPage++;
+          renderMainPostList();
+          document.getElementById('daftar-artikel').scrollIntoView({ behavior: 'smooth' });
+        }
+      });
+    }
+
+    async function initIndexPage() {
+      setupAppInstallation();
+
+      try {
+        const response = await fetch('metadata.json', { cache: 'no-cache' });
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: Gagal memuat metadata.json.`);
+        }
+
+        const contentType = (response.headers.get('content-type') || '').toLowerCase();
+        if (contentType.includes('text/html')) {
+          throw new Error('Server mengembalikan HTML alih-alih metadata.json.');
+        }
+
+        const rawData = await response.json();
+        if (!Array.isArray(rawData)) {
+          throw new Error('Format metadata.json harus berupa array JSON.');
+        }
+
+        allPosts = rawData
+          .filter(
+            (item) =>
+              item &&
+              typeof item.id === 'string' &&
+              SAFE_ID_PATTERN.test(item.id.trim())
+          )
+          .map((item) => ({
+            id: item.id.trim(),
+            judul: String(item.judul || item.title || '(Artikel Tanpa Judul)').trim(),
+            tanggal: String(item.tanggal || item.date || '-').trim(),
+            tag: item.tag || ''
+          }))
+          .sort((a, b) => b.tanggal.localeCompare(a.tanggal));
+
+        filteredPosts = allPosts.slice();
+
+        if (tickerTextEl && allPosts.length > 0) {
+          const latest = allPosts[0];
+          tickerTextEl.textContent =
+            `ARSIP DIGITAL AKTIF (${allPosts.length} DOKUMEN) \u2022 TERBARU: "${latest.judul.toUpperCase()}" [${latest.tanggal}] \u2022 FORMAT TEKS RINGAN & BEBAS PELACAKAN \u2022 `;
+        }
+
+        // 1. Isi sidebar ":: ARTIKEL PILIHAN ::" (tag "artikel-pilihan", fallback artikel biasa)
+        renderSidebarFeaturedArticles(allPosts);
+
+        // 2. Isi daftar indeks utama (seluruh artikel bertag maupun biasa)
+        renderMainPostList();
+      } catch (err) {
+        console.error('[Portal Index Error]:', err);
+        listSummaryEl.textContent = 'Gagal memuat indeks dokumen.';
+        postsListEl.innerHTML = '';
+
+        const errLi = document.createElement('li');
+        errLi.style.color = '#800000';
+        errLi.textContent = `Terjadi kesalahan saat membaca metadata.json: ${err.message}`;
+        postsListEl.appendChild(errLi);
+
+        if (featuredListEl) {
+          featuredListEl.innerHTML = '';
+          const featErrLi = document.createElement('li');
+          featErrLi.textContent = 'Daftar pilihan tidak tersedia.';
+          featuredListEl.appendChild(featErrLi);
+        }
+      } finally {
+        setupServiceWorker();
+      }
+    }
+
+    initIndexPage();
+  })();
 </script>
 
 </body>

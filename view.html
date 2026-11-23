@@ -123,6 +123,44 @@
 
   let currentArticleTitle = '';
 
+  /* ========================================================================
+     SOLUSI 1: HAPUS OTOMATIS BARIS '#' PERTAMA JIKA SAMA/DUPLIKAT
+     ======================================================================== */
+  function normalizeHeadingForCompare(str) {
+    return String(str || '')
+      .toLowerCase()
+      .replace(/[*_`~]/g, '')
+      .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function stripDuplicateLeadingH1(rawText, metadataTitle) {
+    if (typeof rawText !== 'string') return '';
+    const cleanText = rawText.replace(/^\uFEFF/, '');
+
+    // Mencocokkan baris kosong awal (jika ada) diikuti satu baris "# Judul..."
+    const leadingH1Match = cleanText.match(/^((?:\s*\r?\n)*)#\s+([^\r\n]+)(?:\r\n|\r|\n)*/);
+    if (!leadingH1Match) return cleanText;
+
+    const h1Text = leadingH1Match[2].trim();
+    const normH1 = normalizeHeadingForCompare(h1Text);
+    const normMeta = normalizeHeadingForCompare(metadataTitle);
+
+    const isDuplicate =
+      normH1.length > 0 &&
+      normMeta.length > 0 &&
+      (normH1 === normMeta ||
+        (normH1.length >= 8 && normMeta.includes(normH1)) ||
+        (normMeta.length >= 8 && normH1.includes(normMeta)));
+
+    if (isDuplicate) {
+      return cleanText.slice(leadingH1Match[0].length);
+    }
+
+    return cleanText;
+  }
+
   function fallbackCopyText(text) {
     const textArea = document.createElement('textarea');
     textArea.value = text;
@@ -643,18 +681,33 @@
         throw new Error('Komponen pembaca artikel gagal dimuat.');
       }
 
-      const scrollMemory = initReadingPositionMemory(artikelId);
+      // Hapus baris '#' pertama jika sama/duplikat dengan judul dari metadata.json
+      const processedText = stripDuplicateLeadingH1(rawText, judul);
 
-      await ZineParser.render(rawText, bodyEl, (percent) => {
+      const scrollMemory = initReadingPositionMemory(artikelId);
+      let isFinalized = false;
+
+      const finalizeArticleRender = () => {
+        if (isFinalized) return;
+        isFinalized = true;
+        if (progressSpan.isConnected) {
+          progressSpan.remove();
+        }
+        buildArticleTableOfContents();
+        scrollMemory.tryRestore(true, 100);
+      };
+
+      await ZineParser.render(processedText, bodyEl, (percent) => {
         if (percent < 100) {
           progressSpan.textContent = `MEMUAT ISI: ${percent}%`;
           scrollMemory.tryRestore(false, percent);
         } else {
-          progressSpan.remove();
-          buildArticleTableOfContents();
-          scrollMemory.tryRestore(true, 100);
+          finalizeArticleRender();
         }
       });
+
+      // Pengaman jika Promise render() selesai tanpa memicu callback 100%
+      finalizeArticleRender();
 
     } catch (error) {
       showSafeError(
