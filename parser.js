@@ -2,7 +2,7 @@
  * ==========================================================================
  * FILE: parser.js
  * DESKRIPSI: Mesin Penerjemah Dokumen Teks & Media (ZineParser)
- * Edisi Lengkap & Final — Selaras 100% dengan view.html & style.css (1996)
+ * Edisi Lengkap & Final — Selaras 100% dengan index.html, view.html & style.css
  *
  * Fitur Lengkap:
  * 1. Time-Sliced Rendering (1.500 baris/frame) via requestAnimationFrame
@@ -13,7 +13,8 @@
  * 6. Click-to-Load Media Facade (0 KB beban awal) untuk Video & Audio
  * 7. Pengatur Pemutaran Media Tunggal & pembersihan sumber saat pindah halaman
  * 8. Kartu Lampiran & Unduhan Langsung (.txt, .zip, .rar, .7z, .pdf, dll.)
- * 9. Grafik Batang & Garis Canvas 2D (DPR 2x, nilai negatif, & downsampling)
+ * 9. Grafik Batang & Garis Canvas 2D (DPR 2x, nilai negatif, downsampling,
+ *    serta adaptasi otomatis tema kertas Putih / Sepia / Gelap)
  * 10. Daftar bersarang 3 tingkat lintas chunk, tajuk H1-H3, & format sebaris
  * ==========================================================================
  */
@@ -26,6 +27,8 @@ const ZineParser = {
 
   _currentRenderId: 0,
   _activeMediaElement: null,
+  _chartRenderers: [],
+  _themeObserverAttached: false,
 
   // Daftar ekstensi berkas lampiran yang diizinkan untuk unduhan langsung
   ALLOWED_FILE_EXTENSIONS: [
@@ -33,6 +36,10 @@ const ZineParser = {
     'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx',
     'csv', 'json', 'xml', 'md', 'epub'
   ],
+
+  IMAGE_EXTENSIONS: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp'],
+  VIDEO_EXTENSIONS: ['mp4', 'webm', 'ogv', 'mov'],
+  AUDIO_EXTENSIONS: ['mp3', 'ogg', 'wav', 'm4a', 'flac', 'aac'],
 
   /**
    * Membersihkan karakter BOM UTF-8 dan karakter kontrol biner tersembunyi
@@ -184,7 +191,7 @@ const ZineParser = {
     downloadBtn.href = safeUrl;
     downloadBtn.setAttribute('download', fileName);
     downloadBtn.setAttribute('rel', 'noopener noreferrer');
-    downloadBtn.textContent = `Unduh Berkas (.${ext})`;
+    downloadBtn.textContent = `[ Unduh Berkas (.${ext}) ]`;
 
     wrapper.appendChild(infoRow);
     wrapper.appendChild(downloadBtn);
@@ -268,7 +275,8 @@ const ZineParser = {
     const loadBtn = document.createElement('button');
     loadBtn.type = 'button';
     loadBtn.className = 'classic-btn retro-media-load-btn';
-    loadBtn.textContent = type === 'video' ? 'Muat & Putar Video' : 'Muat & Putar Audio';
+    loadBtn.textContent =
+      type === 'video' ? '[ Muat & Putar Video ]' : '[ Muat & Putar Audio ]';
 
     loadBtn.addEventListener('click', () => {
       const mediaEl = document.createElement(type === 'video' ? 'video' : 'audio');
@@ -323,6 +331,75 @@ const ZineParser = {
     if (abs >= 1e6) return `${sign}${(abs / 1e6).toFixed(1).replace(/\.0$/, '')}jt`;
     if (abs >= 1e3) return `${sign}${(abs / 1e3).toFixed(1).replace(/\.0$/, '')}rb`;
     return `${num}`;
+  },
+
+  /**
+   * Mengambil palet warna grafik berdasarkan tema kertas aktif (Putih / Sepia / Gelap).
+   */
+  getChartPalette() {
+    const paperEl = document.querySelector('.portal-main-article');
+    if (paperEl && paperEl.classList.contains('paper-dark')) {
+      return {
+        bg: '#181818',
+        grid: '#333333',
+        axis: '#cccccc',
+        yLabel: '#bbbbbb',
+        xLabel: '#dddddd',
+        valLabel: '#ffffff',
+        posBar: '#5c9ce6',
+        negBar: '#e06666',
+        barBorder: '#e4e4e4',
+        lineStroke: '#8ab4f8',
+        posDot: '#4dd0e1',
+        negDot: '#f28b82'
+      };
+    }
+    if (paperEl && paperEl.classList.contains('paper-sepia')) {
+      return {
+        bg: '#fbf6ea',
+        grid: '#dfd4be',
+        axis: '#221c14',
+        yLabel: '#4a3f31',
+        xLabel: '#221c14',
+        valLabel: '#1a140d',
+        posBar: '#000080',
+        negBar: '#800000',
+        barBorder: '#221c14',
+        lineStroke: '#000080',
+        posDot: '#006666',
+        negDot: '#800000'
+      };
+    }
+    return {
+      bg: '#ffffff',
+      grid: '#dcdcdc',
+      axis: '#000000',
+      yLabel: '#333333',
+      xLabel: '#222222',
+      valLabel: '#000000',
+      posBar: '#000080',
+      negBar: '#800000',
+      barBorder: '#000000',
+      lineStroke: '#000080',
+      posDot: '#008080',
+      negDot: '#800000'
+    };
+  },
+
+  /**
+   * Memasang pengamat perubahan kelas tema kertas (.paper-sepia / .paper-dark)
+   * agar kanvas grafik otomatis digambar ulang mengikuti warna kertas.
+   */
+  ensureThemeObserver() {
+    if (this._themeObserverAttached || typeof MutationObserver === 'undefined') return;
+    const paperEl = document.querySelector('.portal-main-article');
+    if (!paperEl) return;
+
+    this._themeObserverAttached = true;
+    const observer = new MutationObserver(() => {
+      this._chartRenderers = this._chartRenderers.filter((fn) => fn());
+    });
+    observer.observe(paperEl, { attributes: true, attributeFilter: ['class'] });
   },
 
   /**
@@ -388,121 +465,135 @@ const ZineParser = {
     canvas.style.width = `${logicalWidth}px`;
     canvas.style.height = `${logicalHeight}px`;
 
-    const ctx = canvas.getContext('2d');
-    ctx.scale(dpr, dpr);
+    const drawCanvas = () => {
+      const palette = this.getChartPalette();
+      scrollBox.style.backgroundColor = palette.bg;
+      canvas.style.backgroundColor = palette.bg;
 
-    // Latar belakang kanvas putih bersih
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, logicalWidth, logicalHeight);
+      const ctx = canvas.getContext('2d');
+      ctx.save();
+      ctx.scale(dpr, dpr);
 
-    const plotW = logicalWidth - padLeft - padRight;
-    const plotH = logicalHeight - padTop - padBottom;
+      // Latar belakang kanvas sesuai tema kertas
+      ctx.fillStyle = palette.bg;
+      ctx.fillRect(0, 0, logicalWidth, logicalHeight);
 
-    const values = displayData.map((d) => d.value);
-    const maxVal = Math.max(0, ...values);
-    const minVal = Math.min(0, ...values);
-    const range = maxVal - minVal || 1;
-    const zeroY = padTop + (maxVal / range) * plotH;
+      const plotW = logicalWidth - padLeft - padRight;
+      const plotH = logicalHeight - padTop - padBottom;
 
-    // Garis kisi horizontal & label nilai sumbu Y
-    ctx.strokeStyle = '#dcdcdc';
-    ctx.lineWidth = 1;
-    ctx.font = '11px "Courier New", monospace';
-    ctx.fillStyle = '#333333';
-    ctx.textAlign = 'right';
-    ctx.textBaseline = 'middle';
+      const values = displayData.map((d) => d.value);
+      const maxVal = Math.max(0, ...values);
+      const minVal = Math.min(0, ...values);
+      const range = maxVal - minVal || 1;
+      const zeroY = padTop + (maxVal / range) * plotH;
 
-    const gridSteps = 4;
-    for (let i = 0; i <= gridSteps; i++) {
-      const ratio = i / gridSteps;
-      const y = padTop + ratio * plotH;
-      const valAtLine = maxVal - ratio * range;
+      // Garis kisi horizontal & label nilai sumbu Y
+      ctx.strokeStyle = palette.grid;
+      ctx.lineWidth = 1;
+      ctx.font = '11px "Courier New", monospace';
+      ctx.fillStyle = palette.yLabel;
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'middle';
 
-      ctx.beginPath();
-      ctx.moveTo(padLeft, y);
-      ctx.lineTo(logicalWidth - padRight, y);
-      ctx.stroke();
+      const gridSteps = 4;
+      for (let i = 0; i <= gridSteps; i++) {
+        const ratio = i / gridSteps;
+        const y = padTop + ratio * plotH;
+        const valAtLine = maxVal - ratio * range;
 
-      ctx.fillText(
-        this.formatCompactNumber(Math.round(valAtLine * 100) / 100),
-        padLeft - 8,
-        y
-      );
-    }
+        ctx.beginPath();
+        ctx.moveTo(padLeft, y);
+        ctx.lineTo(logicalWidth - padRight, y);
+        ctx.stroke();
 
-    // Garis sumbu nol (X)
-    ctx.strokeStyle = '#000000';
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.moveTo(padLeft, zeroY);
-    ctx.lineTo(logicalWidth - padRight, zeroY);
-    ctx.stroke();
-
-    // Garis sumbu vertikal (Y)
-    ctx.beginPath();
-    ctx.moveTo(padLeft, padTop);
-    ctx.lineTo(padLeft, padTop + plotH);
-    ctx.stroke();
-
-    const slotW = plotW / displayData.length;
-    const points = [];
-
-    displayData.forEach((item, index) => {
-      const centerX = padLeft + slotW * index + slotW / 2;
-      const valY = padTop + ((maxVal - item.value) / range) * plotH;
-      points.push({ x: centerX, y: valY, item });
-
-      if (chartType === 'bar') {
-        const barW = Math.min(42, slotW * 0.62);
-        const barX = centerX - barW / 2;
-        const barY = Math.min(zeroY, valY);
-        const barH = Math.max(2, Math.abs(valY - zeroY));
-
-        ctx.fillStyle = item.value < 0 ? '#800000' : '#000080';
-        ctx.fillRect(barX, barY, barW, barH);
-
-        ctx.strokeStyle = '#000000';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(barX, barY, barW, barH);
+        ctx.fillText(
+          this.formatCompactNumber(Math.round(valAtLine * 100) / 100),
+          padLeft - 8,
+          y
+        );
       }
 
-      // Label nilai angka di atas/bawah titik data
-      ctx.fillStyle = '#000000';
-      ctx.font = 'bold 11px "Courier New", monospace';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = item.value < 0 ? 'top' : 'bottom';
-      const labelOffsetY = item.value < 0 ? valY + 4 : valY - 4;
-      ctx.fillText(this.formatCompactNumber(item.value), centerX, labelOffsetY);
-
-      // Label kategori sumbu X
-      ctx.fillStyle = '#222222';
-      ctx.font = '11px Verdana, sans-serif';
-      ctx.textBaseline = 'top';
-      const shortLabel =
-        item.label.length > 12 ? `${item.label.slice(0, 11)}…` : item.label;
-      ctx.fillText(shortLabel, centerX, padTop + plotH + 10);
-    });
-
-    if (chartType === 'line' && points.length > 0) {
-      ctx.strokeStyle = '#000080';
-      ctx.lineWidth = 2.5;
+      // Garis sumbu nol (X)
+      ctx.strokeStyle = palette.axis;
+      ctx.lineWidth = 1.5;
       ctx.beginPath();
-      points.forEach((pt, idx) => {
-        if (idx === 0) ctx.moveTo(pt.x, pt.y);
-        else ctx.lineTo(pt.x, pt.y);
-      });
+      ctx.moveTo(padLeft, zeroY);
+      ctx.lineTo(logicalWidth - padRight, zeroY);
       ctx.stroke();
 
-      points.forEach((pt) => {
-        ctx.fillStyle = pt.item.value < 0 ? '#800000' : '#008080';
-        ctx.beginPath();
-        ctx.arc(pt.x, pt.y, 4, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = '#000000';
-        ctx.lineWidth = 1;
-        ctx.stroke();
+      // Garis sumbu vertikal (Y)
+      ctx.beginPath();
+      ctx.moveTo(padLeft, padTop);
+      ctx.lineTo(padLeft, padTop + plotH);
+      ctx.stroke();
+
+      const slotW = plotW / displayData.length;
+      const points = [];
+
+      displayData.forEach((item, index) => {
+        const centerX = padLeft + slotW * index + slotW / 2;
+        const valY = padTop + ((maxVal - item.value) / range) * plotH;
+        points.push({ x: centerX, y: valY, item });
+
+        if (chartType === 'bar') {
+          const barW = Math.min(42, slotW * 0.62);
+          const barX = centerX - barW / 2;
+          const barY = Math.min(zeroY, valY);
+          const barH = Math.max(2, Math.abs(valY - zeroY));
+
+          ctx.fillStyle = item.value < 0 ? palette.negBar : palette.posBar;
+          ctx.fillRect(barX, barY, barW, barH);
+
+          ctx.strokeStyle = palette.barBorder;
+          ctx.lineWidth = 1;
+          ctx.strokeRect(barX, barY, barW, barH);
+        }
+
+        // Label nilai angka di atas/bawah titik data
+        ctx.fillStyle = palette.valLabel;
+        ctx.font = 'bold 11px "Courier New", monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = item.value < 0 ? 'top' : 'bottom';
+        const labelOffsetY = item.value < 0 ? valY + 4 : valY - 4;
+        ctx.fillText(this.formatCompactNumber(item.value), centerX, labelOffsetY);
+
+        // Label kategori sumbu X
+        ctx.fillStyle = palette.xLabel;
+        ctx.font = '11px Verdana, sans-serif';
+        ctx.textBaseline = 'top';
+        const shortLabel =
+          item.label.length > 12 ? `${item.label.slice(0, 11)}…` : item.label;
+        ctx.fillText(shortLabel, centerX, padTop + plotH + 10);
       });
-    }
+
+      if (chartType === 'line' && points.length > 0) {
+        ctx.strokeStyle = palette.lineStroke;
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        points.forEach((pt, idx) => {
+          if (idx === 0) ctx.moveTo(pt.x, pt.y);
+          else ctx.lineTo(pt.x, pt.y);
+        });
+        ctx.stroke();
+
+        points.forEach((pt) => {
+          ctx.fillStyle = pt.item.value < 0 ? palette.negDot : palette.posDot;
+          ctx.beginPath();
+          ctx.arc(pt.x, pt.y, 4, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = palette.barBorder;
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        });
+      }
+
+      ctx.restore();
+      return canvas.isConnected;
+    };
+
+    drawCanvas();
+    this.ensureThemeObserver();
+    this._chartRenderers.push(drawCanvas);
 
     scrollBox.appendChild(canvas);
     wrapper.appendChild(scrollBox);
@@ -592,6 +683,7 @@ const ZineParser = {
     if (!container) return Promise.resolve();
 
     this.stopAllMedia();
+    this._chartRenderers = [];
     const renderId = ++this._currentRenderId;
     container.textContent = '';
 
@@ -613,11 +705,7 @@ const ZineParser = {
       listStack = [];
     };
 
-    const fileExtPattern = this.ALLOWED_FILE_EXTENSIONS.join('|');
-    const genericFileMediaRegex = new RegExp(
-      `^\\[media:\\s*([^|\\]]+?\\.(?:${fileExtPattern}))(?:\\s*\\|\\s*([^\\]]+))?\\]$`,
-      'i'
-    );
+    const genericMediaRegex = /^\[media:\s*([^|\]]+?)(?:\s*\|\s*([^\]]+))?\]$/i;
 
     return new Promise((resolve) => {
       const processChunk = () => {
@@ -728,13 +816,25 @@ const ZineParser = {
             continue;
           }
 
-          // 7. Deteksi otomatis berkas dokumen/arsip di dalam sintaks [media:jalur.rar]
-          const genericFileMatch = trimmed.match(genericFileMediaRegex);
-          if (genericFileMatch) {
+          // 7. Deteksi otomatis jenis media pada sintaks generik [media:jalur.ext | Keterangan]
+          const genericMediaMatch = trimmed.match(genericMediaRegex);
+          if (genericMediaMatch) {
             closeAllLists();
-            const rawUrl = genericFileMatch[1].trim();
-            const caption = genericFileMatch[2] ? genericFileMatch[2].trim() : '';
-            fragment.appendChild(this.createFileDownloadCard(rawUrl, caption));
+            const rawUrl = genericMediaMatch[1].trim();
+            const caption = genericMediaMatch[2] ? genericMediaMatch[2].trim() : '';
+            const cleanPath = rawUrl.split('?')[0].split('#')[0];
+            const extMatch = cleanPath.match(/\.([a-z0-9]+)$/i);
+            const ext = extMatch ? extMatch[1].toLowerCase() : '';
+
+            if (this.IMAGE_EXTENSIONS.includes(ext)) {
+              fragment.appendChild(this.createImageBlock(rawUrl, caption));
+            } else if (this.VIDEO_EXTENSIONS.includes(ext)) {
+              fragment.appendChild(this.createMediaFacade('video', rawUrl, caption));
+            } else if (this.AUDIO_EXTENSIONS.includes(ext)) {
+              fragment.appendChild(this.createMediaFacade('audio', rawUrl, caption));
+            } else {
+              fragment.appendChild(this.createFileDownloadCard(rawUrl, caption));
+            }
             continue;
           }
 

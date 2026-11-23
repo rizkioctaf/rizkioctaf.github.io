@@ -31,9 +31,9 @@
   <!-- NAVIGASI ATAS RAMPING (1 BARIS TUNGGAL STICKY) -->
   <nav class="top-nav-bar" aria-label="Navigasi dan Alat Baca Artikel">
     <div class="top-nav-primary">
-      <a href="index.html" class="nav-bracket-link" title="Kembali ke Daftar Artikel">
-        <span class="label-desktop">[ &lt;&lt; Kembali ke Daftar Artikel ]</span>
-        <span class="label-mobile">[ &lt;&lt; Kembali ke Daftar ]</span>
+      <a href="index.html" class="nav-bracket-link" title="Kembali ke Indeks Dokumen">
+        <span class="label-desktop">[ &lt;&lt; Kembali ke Indeks Dokumen ]</span>
+        <span class="label-mobile">[ &lt;&lt; Indeks ]</span>
       </a>
       <span id="read-progress-indicator" class="nav-progress-badge" aria-live="off" hidden>Pos: 0%</span>
     </div>
@@ -86,22 +86,22 @@
   <!-- ISI ARTIKEL -->
   <main class="portal-main portal-main-article">
     <article class="readable-measure article-measure">
-      
+
       <div id="article-meta" class="article-meta-box">
         Memuat informasi artikel...
       </div>
-      
+
       <h1 id="article-title" class="article-main-title">
         Memuat Artikel...
       </h1>
-      
+
       <hr class="thick-rule">
 
-      <div id="article-body"></div>
+      <div id="article-body" aria-live="polite"></div>
 
       <hr class="thick-rule">
       <nav class="article-bottom-nav" aria-label="Navigasi Bawah Artikel">
-        <a href="index.html" class="nav-bracket-link">[ &lt;&lt; Kembali ke Daftar Artikel ]</a>
+        <a href="index.html" class="nav-bracket-link">[ &lt;&lt; Kembali ke Indeks Dokumen ]</a>
         <a href="#top" class="nav-bracket-link">[ Kembali ke Atas &uarr; ]</a>
       </nav>
     </article>
@@ -233,11 +233,10 @@
     titleEl.style.color = '#800000';
 
     bodyEl.innerHTML = '';
-    const msgP = document.createElement('p');
-    msgP.style.fontFamily = 'var(--font-serif-body)';
-    msgP.style.color = '#800000';
-    msgP.textContent = publicMessage;
-    bodyEl.appendChild(msgP);
+    const errBox = document.createElement('div');
+    errBox.className = 'retro-media-error';
+    errBox.textContent = publicMessage;
+    bodyEl.appendChild(errBox);
   }
 
   /* ========================================================================
@@ -632,7 +631,7 @@
       titleEl.textContent = judul;
 
       metaEl.innerHTML = '';
-      
+
       const dateSpan = document.createElement('span');
       const dateBold = document.createElement('b');
       dateBold.textContent = 'DIPUBLIKASIKAN: ';

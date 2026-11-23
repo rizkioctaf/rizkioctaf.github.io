@@ -4,13 +4,14 @@
   "short_name": "Arsip Digital",
   "description": "Arsip digital statis ringan berisi catatan teknologi, rekayasa web, dan dokumentasi teknis.",
   "lang": "id",
+  "dir": "ltr",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui"],
   "orientation": "any",
   "background_color": "#c0c0c0",
-  "theme_color": "#c0c0c0",
+  "theme_color": "#000080",
   "categories": ["education", "books", "news"],
   "icons": [
     {
@@ -23,7 +24,28 @@
       "src": "./icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Indeks Dokumen Arsip",
+      "short_name": "Indeks Arsip",
+      "description": "Buka daftar lengkap dokumen dan artikel arsip",
+      "url": "./index.html#daftar-artikel",
+      "icons": [
+        {
+          "src": "./icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
     }
   ]
 }

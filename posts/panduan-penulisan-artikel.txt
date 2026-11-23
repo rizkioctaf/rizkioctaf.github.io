@@ -1,103 +1,120 @@
 # Panduan Lengkap Penulisan Artikel & Sintaks Markup ZineParser
 
-Dokumen ini merupakan panduan teknis resmi untuk menyusun berkas artikel berformat teks murni (.txt) agar dapat diterjemahkan secara akurat oleh mesin ZineParser. Seluruh contoh penulisan di dalam artikel ini sekaligus mendemonstrasikan kemampuan tata letak, tipografi, grafik data, serta pemutar media hemat kuota.
+Dokumen ini merupakan panduan resmi format penulisan artikel berformat teks biasa (`.txt`) pada portal **Arsip Digital**. Seluruh sintaks dirancang agar ringan, mudah dibaca sebagai teks mentah, serta dapat diterjemahkan secara otomatis oleh mesin pembaca (`ZineParser`).
 
 ---
 
-## 1. Struktur Berkas & Pendaftaran di metadata.json
+## 1. Struktur Dasar & Judul Artikel
 
-Setiap artikel wajib disimpan sebagai berkas teks murni ber-ekstensi .txt dengan pengodean UTF-8 di dalam direktori posts/ (contoh: posts/panduan-penulisan-artikel.txt). Agar artikel muncul di halaman beranda dan dapat diakses oleh halaman baca, berkas tersebut harus didaftarkan pada daftar indeks metadata.json.
+- Judul utama artikel diambil dari kolom `judul` pada berkas `metadata.json`.
+- Jika baris pertama berkas `.txt` diawali dengan `# Judul yang Sama dengan metadata.json`, sistem akan menghapusnya secara otomatis agar judul tidak tampil ganda.
+- Gunakan garis pemisah `---` pada baris tersendiri untuk memisahkan antarbagian pembahasan.
 
-- **id**: Pengenal unik berbasis huruf kecil, angka, dan tanda hubung (contoh: panduan-penulisan-artikel) yang menjadi parameter alamat URL.
-- **title**: Judul lengkap artikel yang tampil pada daftar beranda serta kepala halaman baca.
-- **date**: Tanggal publikasi dengan format baku YYYY-MM-DD (contoh: 2026-11-23).
-- **file**: Jalur relatif menuju berkas teks artikel di dalam folder posts/.
-- **featured**: Nilai logika (true atau false) untuk menampilkan artikel di kotak Artikel Pilihan pada bilah samping.
-- **summary**: Ringkasan singkat isi artikel untuk mempermudah pencarian kata kunci oleh pembaca.
+### Tingkatan Sub-Judul
 
----
-
-## 2. Sintaks Tajuk Bagian & Daftar Isi Otomatis
-
-Mesin ZineParser mendukung tiga tingkat tajuk bagian yang otomatis dikumpulkan oleh sistem untuk membentuk Daftar Isi interaktif di panel Alat Baca.
-
-- Gunakan satu tanda pagar diikuti spasi (# Judul Bab) untuk tajuk tingkat pertama (H1) dengan garis bawah ganda klasik.
-- Gunakan dua tanda pagar diikuti spasi (## Judul Subbab) untuk tajuk tingkat kedua (H2) berwarna biru tua klasik.
-- Gunakan tiga tanda pagar diikuti spasi (### Judul Rincian) untuk tajuk tingkat ketiga (H3) berwarna merah marun miring.
-
-### Aturan Penulisan Tajuk
-
-Wajib menyisipkan tepat satu spasi setelah tanda pagar. Penulisan tanpa spasi seperti #JudulTanpaSpasi atau penggunaan lebih dari tiga tanda pagar (####) akan diperlakukan sebagai paragraf teks biasa.
+- `# Tajuk Utama Bagian` — untuk bab utama di dalam isi artikel.
+- `## Sub-Tajuk Bagian` — untuk sub-bab pembahasan.
+- `### Sub-Tajuk Kecil` — untuk rincian topik atau catatan khusus.
 
 ---
 
-## 3. Pemformatan Teks Sebaris & Garis Pemisah
+## 2. Pemformatan Teks Sebaris & Daftar
 
-Di dalam paragraf maupun item daftar, Anda dapat menerapkan penekanan tipografi sebaris tanpa menyisipkan kode HTML mentah.
+- **Teks tebal**: apit teks dengan dua tanda bintang, contoh: `**teks penting**`.
+- *Teks miring*: apit teks dengan satu tanda bintang, contoh: `*istilah teknis*`.
+- Tautan biasa dalam paragraf: gunakan `[Teks Tautan](https://contoh.org/halaman)`.
 
-- **Teks Tebal**: Apit kata atau frasa dengan dua tanda bintang tanpa spasi di sisi dalam.
-- *Teks Miring*: Apit kata atau frasa dengan satu tanda bintang tanpa spasi di sisi dalam.
-- **Tautan Aman**: Gunakan pola kurung siku dan kurung biasa, seperti [Halaman Utama Portal](index.html), untuk membuat tautan navigasi.
-- **Garis Pemisah**: Tulis minimal tiga tanda hubung (---) pada satu baris kosong tersendiri untuk memisahkan bagian artikel.
+### Daftar Bersarang (Maksimal 3 Tingkat)
 
----
+Gunakan tanda hubung `- ` di awal baris, dan tambahkan 2 spasi untuk setiap tingkat sub-daftar:
 
-## 4. Daftar Berpoin Bersarang Tiga Tingkat
-
-Sistem mendukung daftar berpoin hingga tiga tingkat kedalaman (lingkaran penuh, lingkaran kosong, dan kotak) dengan ketahanan otomatis terhadap indentasi spasi maupun tombol Tab.
-
-- Tingkat pertama (Level 0): Diawali tanda hubung dan satu spasi tanpa indentasi di awal baris.
-  - Tingkat kedua (Level 1): Diawali indentasi 2 spasi atau 1 Tab sebelum tanda hubung.
-    - Tingkat ketiga (Level 2): Diawali indentasi 4 spasi atau 2 Tab sebelum tanda hubung.
-      - Tingkat maksimal (Level 3): Diawali indentasi 6 spasi atau 3 Tab sebelum tanda hubung.
-  - Kembali ke tingkat kedua dengan menyesuaikan ulang jumlah spasi awal.
-- Kembali ke tingkat pertama untuk melanjutkan poin utama berikutnya.
+- Tingkat 1: Pokok bahasan utama
+  - Tingkat 2: Rincian turunan pertama
+    - Tingkat 3: Detail spesifik turunan kedua
 
 ---
 
-## 5. Penyisipan Media (Gambar, Audio, dan Video)
+## 3. Panduan Menambahkan Berkas Lampiran & Media Eksternal
 
-Blok media dirender di dalam bingkai klasik lengkap dengan keterangan opsional di bagian bawah. Khusus untuk video dan audio, mesin menerapkan pola muat berdasarkan permintaan (Click-to-Load) sehingga penggunaan kuota awal adalah 0 KB meskipun satu artikel memuat ratusan video.
+Portal mendukung penyematan berkas unduhan maupun media yang disimpan di **folder lokal proyek** maupun di **server eksternal** (wajib menggunakan protokol `https://`).
 
-- **Sintaks Gambar**: Tulis tanda kurung siku berisi image:jalur-berkas.png | Keterangan Gambar pada satu baris tunggal.
-- **Sintaks Audio**: Tulis tanda kurung siku berisi audio:jalur-berkas.mp3 | Keterangan Audio pada satu baris tunggal.
-- **Sintaks Video**: Tulis tanda kurung siku berisi video:jalur-berkas.mp4 | Keterangan Video pada satu baris tunggal.
+### A. Format Sintaks Lampiran Berkas
 
-### Contoh Demonstrasi Media Langsung
+Gunakan salah satu dari tiga format berikut pada baris tersendiri:
 
-Berikut adalah hasil render langsung dari blok gambar, pemutar audio, dan pemutar video hemat kuota:
+- `[file:jalur-atau-url | Keterangan Berkas]`
+- `[berkas:jalur-atau-url | Keterangan Berkas]`
+- `[media:jalur-atau-url | Keterangan Berkas]`
 
-[image:https://upload.wikimedia.org/wikipedia/commons/3/3a/Cat03.jpg | Contoh gambar foto kucing]
+Keterangan setelah tanda pipa `|` bersifat opsional, namun sangat disarankan agar pembaca mengetahui isi berkas sebelum mengunduhnya.
+
+### B. Ekstensi Berkas yang Didukung Otomatis
+
+Mesin pembaca akan otomatis menampilkan **Kartu Unduhan Berkas (0 KB beban awal)** dengan lencana jenis berkas untuk ekstensi berikut:
+
+- **Arsip Kompresi**: `.zip`, `.rar`, `.7z`, `.tar`, `.gz`
+- **Dokumen Teks & Data**: `.txt`, `.md`, `.csv`, `.json`, `.xml`
+- **Dokumen Kantor & E-Book**: `.pdf`, `.doc`, `.docx`, `.xls`, `.xlsx`, `.ppt`, `.pptx`, `.epub`
+
+### C. Aturan Keamanan URL & Jalur Berkas
+
+1. **Tautan Eksternal Wajib HTTPS**: Alamat eksternal harus diawali dengan `https://` (tautan `http://`, `javascript:`, `data:`, atau `//` akan ditolak otomatis demi keamanan pembaca).
+2. **Jalur Lokal Relatif**: Gunakan garis miring maju `/`, misalnya `assets/lampiran/kode-sumber.zip`. Dilarang menggunakan `..` atau tanda backslash `\`.
+3. **Tautan Unduhan Langsung**: Untuk sumber eksternal, pastikan URL mengarah langsung ke berkas mentah (*direct file URL* seperti `raw.githubusercontent.com` atau peladen berkas statis), bukan halaman pratinjau HTML.
+
+---
+
+## 4. Contoh Nyata Lampiran Eksternal (Dapat Dicoba Langsung)
+
+Salin dan tempel baris-baris di bawah ini ke dalam salah satu berkas artikel `posts/*.txt` Anda untuk menguji kartu unduhan berkas dan media eksternal secara langsung:
+
+### Contoh 1: Lampiran Berkas Teks Eksternal (.txt)
+
+[file:https://www.w3.org/TR/PNG/iso_8859-1.txt | Tabel Standar Karakter ISO 8859-1 (W3C - Teks Mentah)]
+
+[berkas:https://www.rfc-editor.org/rfc/rfc1945.txt | Spesifikasi Resmi Protokol HTTP/1.0 (RFC 1945 - Teks Mentah)]
+
+### Contoh 2: Lampiran Arsip Kompresi (.zip dan .rar)
+
+[file:https://github.com/mdn/beginner-html-site/archive/refs/heads/gh-pages.zip | Paket Kode Sumber Situs HTML Klasik (Arsip ZIP)]
+
+[berkas:assets/arsip/paket-utilitas-dos.rar | Kumpulan Utilitas Baris Perintah Ringan (Contoh Jalur Lokal RAR)]
+
+[media:assets/arsip/cadangan-skrip.7z | Arsip Skrip Otomasi Cadangan (Contoh Sintaks Generik 7Z)]
+
+### Contoh 3: Lampiran Dokumen PDF & Data Terstruktur (.pdf, .json, .csv)
+
+[file:https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf | Contoh Dokumen PDF Standar W3C]
+
+[file:https://raw.githubusercontent.com/mdn/learning-area/main/javascript/oojs/json/superheroes.json | Contoh Berkas Data JSON Terstruktur]
+
+---
+
+## 5. Panduan Media Gambar, Video, Audio & Grafik
+
+### A. Gambar Lokal & Eksternal HTTPS
+
+[img:https://upload.wikimedia.org/wikipedia/commons/3/3a/Cat03.jpg | Contoh gambar foto kucing]
+
+### B. Video & Audio Hemat Kuota (Click-to-Load 0 KB)
+
+Media video dan audio tidak diunduh saat halaman dibuka, melainkan baru dimuat ketika pembaca menekan tombol **[ Muat & Putar ... ]**:
 
 [audio:https://upload.wikimedia.org/wikipedia/commons/c/c8/Example.ogg | Contoh rekaman audio OGG]
 
 [video:https://media.w3.org/2010/05/sintel/trailer_hd.mp4 | Contoh pemutaran video WebM 360p]
+### C. Grafik Data Canvas 2D Bawaan
+
+Gunakan format `[chart:bar|Judul Grafik|Label1:Nilai1,Label2:Nilai2]` atau `[chart:line|...]`:
+
+[chart:bar|Pertumbuhan Dokumen Arsip (2022 - 2026)|2022:14,2023:28,2024:45,2025:63,2026:82]
+
+[chart:line|Selisih Beban Transfer Data (KB)|Jan:-12,Feb:5,Mar:18,Apr:32,Mei:47]
 
 ---
 
-## 6. Visualisasi Grafik Batang & Grafik Garis
+## 6. Daftar Periksa Sebelum Publikasi
 
-Mesin ZineParser mampu menggambar grafik batang (bar) dan grafik garis (line) secara langsung menggunakan HTML5 Canvas 2D beresolusi tinggi dengan dukungan geser menyamping (horizontal scroll) untuk deret data panjang.
-
-Berikut adalah contoh demonstrasi grafik batang langsung yang dirender oleh mesin parser:
-
-[chart:bar | Perbandingan Ukuran Halaman Web (KB) | Portal Modern:2450, Berita Dinamis:1820, Arsip Klasik:42]
-
-Berikut adalah contoh demonstrasi grafik garis untuk memantau fluktuasi data berkala:
-
-[chart:line | Beban Memori Peramban Selama Rendering (MB) | 100 Baris:12.4, 5000 Baris:14.8, 50000 Baris:18.2, 100000 Baris:21.5]
-
----
-
-## 7. Catatan Penting Saat Menulis Artikel
-
-Agar proses penguraian berjalan mulus tanpa kesalahan tata letak maupun pemblokiran keamanan, perhatikan delapan ketentuan teknis berikut:
-
-- **Satu Sintaks Blok Wajib Satu Baris Utuh**: Jangan pernah menekan tombol Enter (ganti baris) di tengah penulisan tajuk, grafik, maupun blok media. Jika terpotong ke baris baru, sintaks tidak akan dikenali.
-- **Protokol URL Ketat**: Untuk tautan dan media eksternal, gunakan hanya protokol aman https://. Tautan eksternal dengan http:// biasa atau skema berbahaya otomatis ditolak demi menjaga keamanan peramban.
-- **Jalur Berkas Lokal Bersih**: Untuk aset lokal, gunakan jalur relatif langsung (seperti assets/foto.jpg) tanpa karakter naik direktori (..).
-- **Hindari Karakter Pipa Ganda**: Karakter pipa (|) berfungsi sebagai pemisah kolom parameter pada grafik dan media. Jangan gunakan tanda pipa di dalam judul grafik atau teks keterangan media.
-- **Format Angka Grafik Baku**: Tulis angka pada grafik tanpa pemisah ribuan (tulis 1500000, bukan 1.500.000 atau 1,500,000) karena tanda koma dipakai untuk memisahkan antar-label data. Gunakan titik (.) hanya untuk angka desimal.
-- **Wajib Sisipkan Baris Kosong Antar-Blok**: Berikan satu baris kosong setelah daftar berpoin sebelum menulis paragraf baru agar paragraf tersebut tidak ikut terserap ke dalam daftar.
-- **Hindari Tanda Bintang Tunggal Tak Berpasangan**: Jangan menumpuk tanda bintang secara bersarang dan hindari penggunaan simbol bintang tunggal untuk perkalian di dalam kalimat (gunakan huruf x sebagai pengganti).
-- **Pengodean Berkas UTF-8**: Pastikan editor teks menyimpan berkas .txt dalam format UTF-8 agar seluruh tanda baca dan simbol tampil konsisten di semua perangkat.
+1. Pastikan `id` artikel pada `metadata.json` hanya menggunakan huruf, angka, tanda hubung `-`, atau garis bawah `_`.
+2. Pastikan nama berkas di folder `posts/` sama persis dengan `id` tersebut dan berekstensi `.txt` (UTF-8).
+3. Pastikan setiap baris sintaks `[file:...]`, `[img:...]`, `[video:...]`, `[audio:...]`, dan `[chart:...]` ditulis pada **baris tersendiri** tanpa diapit tanda kutip atau pemformatan tebal.
