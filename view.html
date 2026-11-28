@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; media-src 'self' https:; manifest-src 'self'; worker-src 'self';">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' https: data:; media-src 'self' https:; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'self';">
   <meta name="referrer" content="no-referrer">
   <meta name="theme-color" content="#000080">
   <meta name="mobile-web-app-capable" content="yes">
@@ -21,15 +21,16 @@
 <div class="portal-shell">
   <!-- HEADER BANNER -->
   <header class="portal-header">
-<pre class="ascii-logo" aria-hidden="true">   _   ___  ___ ___ ___   ___ ___ ___ ___ _____ _   _    
-  /_\ | _ \/ __|_ _| _ \ |   \_ _/ __|_ _|_   _/_\ | |   
- / _ \|   /\__ \| ||  _/ | |) | | (_ || |  | |/ _ \| |__ 
-/_/ \_\_|_\|___/___|_|   |___/___\___|___| |_/_/ \_\____|</pre>
+    <pre class="ascii-logo" aria-hidden="true">
+ _  _  ___  __  __ __   __ _  _    ___  ___  ___  
+| \| |/ _ \|  \/  |\ \ / /| \| |  / _ \| _ \|   \ 
+| .` | (_) | |\/| | \ V / | .` | | (_) |   /| |) |
+|_|\_|\___/|_|  |_|  |_|  |_|\_|  \___/|_|_\|___/ </pre>
     <div class="portal-subtitle">ARSIP DIGITAL &bull; CATATAN TEKNOLOGI, REKAYASA WEB &amp; DOKUMENTASI TEKNIS</div>
   </header>
 
   <!-- NAVIGASI ATAS RAMPING (1 BARIS TUNGGAL STICKY) -->
-  <nav class="top-nav-bar" aria-label="Navigasi dan Alat Baca Artikel">
+  <nav class="top-nav-bar" aria-label="Navigasi dan Daftar Isi Artikel">
     <div class="top-nav-primary">
       <a href="index.html" class="nav-bracket-link" title="Kembali ke Indeks Dokumen">
         <span class="label-desktop">[ &lt;&lt; Kembali ke Indeks Dokumen ]</span>
@@ -39,46 +40,19 @@
     </div>
 
     <div class="top-nav-tools">
-      <button type="button" id="tools-toggle-btn" class="nav-bracket-btn" aria-expanded="false" aria-controls="reader-tools-panel">[ Alat Baca &#9662; ]</button>
+      <button type="button" id="tools-toggle-btn" class="nav-bracket-btn" aria-expanded="false" aria-controls="reader-tools-panel" hidden>[ Daftar Isi &#9662; ]</button>
     </div>
   </nav>
 
-  <!-- PANEL ALAT BACA & DAFTAR ISI (MUNCUL SAAT DIKLIK) -->
+  <!-- PANEL DAFTAR ISI (MUNCUL SAAT DIKLIK) -->
   <div id="reader-tools-panel" class="reader-tools-panel" hidden>
     <div class="reader-tools-header">
-      <span>:: PENGATURAN &amp; NAVIGASI BACA ::</span>
+      <span>:: NAVIGASI DAFTAR ISI ::</span>
       <button type="button" id="tools-close-btn" class="nav-bracket-btn">[ Tutup x ]</button>
-    </div>
-
-    <div class="reader-tools-grid" role="group" aria-label="Alat Bantu Membaca">
-      <div class="reader-tool-row">
-        <span class="reader-tool-label">Ukuran Teks:</span>
-        <div class="reader-tool-actions">
-          <button type="button" id="font-dec-btn" class="nav-bracket-btn" title="Perkecil Ukuran Teks">[ A- ]</button>
-          <span id="font-scale-value" class="tool-status-text">100%</span>
-          <button type="button" id="font-inc-btn" class="nav-bracket-btn" title="Perbesar Ukuran Teks">[ A+ ]</button>
-        </div>
-      </div>
-
-      <div class="reader-tool-row">
-        <span class="reader-tool-label">Warna Kertas:</span>
-        <div class="reader-tool-actions">
-          <button type="button" id="paper-mode-btn" class="nav-bracket-btn" title="Ubah Warna Kertas Baca">[ Putih ]</button>
-        </div>
-      </div>
-
-      <div class="reader-tool-row">
-        <span class="reader-tool-label">Tautan:</span>
-        <div class="reader-tool-actions">
-          <button type="button" id="share-btn" class="nav-bracket-btn nav-share-btn" title="Bagikan tautan artikel ini">[ Bagikan Artikel ]</button>
-        </div>
-      </div>
     </div>
 
     <!-- BAGIAN DAFTAR ISI OTOMATIS DI DALAM PANEL -->
     <div id="article-toc-section" class="article-toc-section" hidden>
-      <hr>
-      <div class="article-toc-title">:: DAFTAR ISI ARTIKEL ::</div>
       <ul id="article-toc-list" class="article-toc-list"></ul>
     </div>
   </div>
@@ -121,10 +95,8 @@
   const HISTORY_KEY = 'arsip_read_history';
   const MAX_HISTORY_ITEMS = 30;
 
-  let currentArticleTitle = '';
-
   /* ========================================================================
-     SOLUSI 1: HAPUS OTOMATIS BARIS '#' PERTAMA JIKA SAMA/DUPLIKAT
+     HAPUS OTOMATIS BARIS '#' PERTAMA JIKA SAMA/DUPLIKAT
      ======================================================================== */
   function normalizeHeadingForCompare(str) {
     return String(str || '')
@@ -161,64 +133,6 @@
     return cleanText;
   }
 
-  function fallbackCopyText(text) {
-    const textArea = document.createElement('textarea');
-    textArea.value = text;
-    textArea.setAttribute('readonly', '');
-    textArea.style.position = 'fixed';
-    textArea.style.opacity = '0';
-    document.body.appendChild(textArea);
-    textArea.select();
-    let copied = false;
-    try {
-      copied = document.execCommand('copy');
-    } catch {
-      copied = false;
-    }
-    document.body.removeChild(textArea);
-    return copied;
-  }
-
-  async function handleShareArticle(buttonEl) {
-    const shareUrl = window.location.href;
-    const shareTitle = currentArticleTitle || document.title;
-
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: shareTitle,
-          text: `${shareTitle} — Arsip Digital`,
-          url: shareUrl
-        });
-        return;
-      } catch (err) {
-        if (err && err.name === 'AbortError') return;
-      }
-    }
-
-    let copied = false;
-    if (navigator.clipboard && window.isSecureContext) {
-      try {
-        await navigator.clipboard.writeText(shareUrl);
-        copied = true;
-      } catch {
-        copied = fallbackCopyText(shareUrl);
-      }
-    } else {
-      copied = fallbackCopyText(shareUrl);
-    }
-
-    const originalLabel = '[ Bagikan Artikel ]';
-    buttonEl.textContent = copied ? '[ Tautan Disalin! ]' : '[ Salin URL di Bilah Alamat ]';
-    buttonEl.classList.add('is-feedback');
-
-    clearTimeout(buttonEl._feedbackTimer);
-    buttonEl._feedbackTimer = setTimeout(() => {
-      buttonEl.textContent = originalLabel;
-      buttonEl.classList.remove('is-feedback');
-    }, 2200);
-  }
-
   function showSafeError(publicTitle, publicMessage, internalDebugInfo = '') {
     if (internalDebugInfo) {
       console.error(`[Portal View Security/Error]: ${internalDebugInfo}`);
@@ -240,36 +154,21 @@
   }
 
   /* ========================================================================
-     PANEL ALAT BACA TERPADU (COLLAPSIBLE DRAWER)
+     PANEL NAVIGASI DAFTAR ISI (COLLAPSIBLE DRAWER)
      ======================================================================== */
   let closeReaderToolsDrawer = () => {};
 
   function initReaderToolbar() {
-    const FONT_KEY = 'arsip_font_scale';
-    const PAPER_KEY = 'arsip_paper_mode';
-    const SCALES = [90, 100, 110, 120, 130];
-    const PAPER_MODES = [
-      { id: 'white', label: '[ Putih ]', className: '' },
-      { id: 'sepia', label: '[ Sepia ]', className: 'paper-sepia' },
-      { id: 'dark', label: '[ Gelap ]', className: 'paper-dark' }
-    ];
-
     const toggleBtn = document.getElementById('tools-toggle-btn');
     const closeBtn = document.getElementById('tools-close-btn');
     const panelEl = document.getElementById('reader-tools-panel');
-    const bodyEl = document.getElementById('article-body');
-    const mainEl = document.querySelector('.portal-main-article');
-    const decBtn = document.getElementById('font-dec-btn');
-    const incBtn = document.getElementById('font-inc-btn');
-    const scaleTextEl = document.getElementById('font-scale-value');
-    const paperBtn = document.getElementById('paper-mode-btn');
 
     const setDrawerState = (willOpen) => {
-      if (!panelEl || !toggleBtn) return;
+      if (!panelEl || !toggleBtn || toggleBtn.hidden) return;
       panelEl.hidden = !willOpen;
       toggleBtn.setAttribute('aria-expanded', String(willOpen));
       toggleBtn.classList.toggle('is-active', willOpen);
-      toggleBtn.innerHTML = willOpen ? '[ Alat Baca &#9652; ]' : '[ Alat Baca &#9662; ]';
+      toggleBtn.innerHTML = willOpen ? '[ Daftar Isi &#9652; ]' : '[ Daftar Isi &#9662; ]';
     };
 
     closeReaderToolsDrawer = () => setDrawerState(false);
@@ -297,80 +196,22 @@
         setDrawerState(false);
       }
     });
-
-    // 1. Pengatur Ukuran Huruf
-    let currentScale = 100;
-    try {
-      const savedScale = parseInt(localStorage.getItem(FONT_KEY) || '100', 10);
-      if (SCALES.includes(savedScale)) currentScale = savedScale;
-    } catch {}
-
-    const applyFontScale = (scale) => {
-      currentScale = scale;
-      if (bodyEl) {
-        bodyEl.style.fontSize = scale === 100 ? '' : `${scale}%`;
-      }
-      if (scaleTextEl) scaleTextEl.textContent = `${scale}%`;
-      if (decBtn) decBtn.disabled = scale <= SCALES[0];
-      if (incBtn) incBtn.disabled = scale >= SCALES[SCALES.length - 1];
-      try {
-        localStorage.setItem(FONT_KEY, String(scale));
-      } catch {}
-    };
-
-    applyFontScale(currentScale);
-
-    if (decBtn) {
-      decBtn.addEventListener('click', () => {
-        const idx = SCALES.indexOf(currentScale);
-        if (idx > 0) applyFontScale(SCALES[idx - 1]);
-      });
-    }
-
-    if (incBtn) {
-      incBtn.addEventListener('click', () => {
-        const idx = SCALES.indexOf(currentScale);
-        if (idx >= 0 && idx < SCALES.length - 1) applyFontScale(SCALES[idx + 1]);
-      });
-    }
-
-    // 2. Pengatur Warna Kertas Baca
-    let paperIdx = 0;
-    try {
-      const savedPaper = localStorage.getItem(PAPER_KEY);
-      const foundIdx = PAPER_MODES.findIndex((m) => m.id === savedPaper);
-      if (foundIdx >= 0) paperIdx = foundIdx;
-    } catch {}
-
-    const applyPaperMode = (idx) => {
-      paperIdx = idx % PAPER_MODES.length;
-      const mode = PAPER_MODES[paperIdx];
-      if (mainEl) {
-        mainEl.classList.remove('paper-sepia', 'paper-dark');
-        if (mode.className) mainEl.classList.add(mode.className);
-      }
-      if (paperBtn) paperBtn.textContent = mode.label;
-      try {
-        localStorage.setItem(PAPER_KEY, mode.id);
-      } catch {}
-    };
-
-    applyPaperMode(paperIdx);
-
-    if (paperBtn) {
-      paperBtn.addEventListener('click', () => applyPaperMode(paperIdx + 1));
-    }
   }
 
   function buildArticleTableOfContents() {
     const bodyEl = document.getElementById('article-body');
+    const toggleBtn = document.getElementById('tools-toggle-btn');
     const tocSection = document.getElementById('article-toc-section');
     const tocList = document.getElementById('article-toc-list');
 
     if (!bodyEl || !tocSection || !tocList) return;
 
     const headings = bodyEl.querySelectorAll('h1, h2, h3');
-    if (headings.length < 2) return;
+    if (headings.length < 2) {
+      if (toggleBtn) toggleBtn.hidden = true;
+      tocSection.hidden = true;
+      return;
+    }
 
     tocList.innerHTML = '';
     const fragment = document.createDocumentFragment();
@@ -395,6 +236,10 @@
 
     tocList.appendChild(fragment);
     tocSection.hidden = false;
+    if (toggleBtn) {
+      toggleBtn.hidden = false;
+      toggleBtn.innerHTML = '[ Daftar Isi &#9662; ]';
+    }
   }
 
   /* ========================================================================
@@ -575,11 +420,6 @@
   async function loadArticlePage() {
     initReaderToolbar();
 
-    const shareBtn = document.getElementById('share-btn');
-    if (shareBtn) {
-      shareBtn.addEventListener('click', () => handleShareArticle(shareBtn));
-    }
-
     const urlParams = new URLSearchParams(window.location.search);
     const rawId = urlParams.get('id');
 
@@ -626,7 +466,6 @@
       const tanggal = String(post.tanggal || post.date || '-').trim();
       const artikelId = String(post.id).trim();
 
-      currentArticleTitle = judul;
       document.title = `${judul} — Arsip Digital`;
       titleEl.textContent = judul;
 

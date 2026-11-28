@@ -21,7 +21,8 @@ const SHELL_ASSETS = [
   './parser.js',
   './manifest.json',
   './icon-192.png',
-  './icon-512.png'
+  './icon-512.png',
+  './font/Inconsolata.ttf'
 ];
 
 const STREAMING_MEDIA_EXT = /\.(mp4|webm|ogv|mov|mp3|ogg|wav|m4a|flac|aac)$/i;

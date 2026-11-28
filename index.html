@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#000080">
   <meta name="description" content="Arsip digital statis ringan berisi catatan teknologi, rekayasa web, dan dokumentasi teknis.">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self'; img-src 'self' data:; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'self';">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' https: data:; media-src 'self' https:; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'self';">
   <title>Arsip Digital — Catatan Teknologi &amp; Dokumentasi Teknis</title>
   <link rel="manifest" href="./manifest.json">
   <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
@@ -17,12 +17,11 @@
   <div class="portal-shell">
     <!-- Header Banner Klasik 1996 -->
     <header class="portal-header">
-      <pre class="ascii-logo" aria-label="ARSIP DIGITAL">
-  ___  ____  ____  ___  ____    ____  ___  ___  ___  _____  ___  __   
- / _ \ | _ \/ ___||_ _||  _ \  |  _ \|_ _|/ __||_ _||_   _|/ _ \ | |  
-| |_| ||   /\___ \ | | | |_) | | | | || || |  _ | |   | | | |_| || |  
-|  _  || |\ \ ___) || | |  __/  | |_| || || |_| || |   | | |  _  || |__
-|_| |_||_| \_\|____/|___||_|     |____/|___|\____||___|  |_| |_| |_||____|</pre>
+      <pre class="ascii-logo" aria-label="NOMYN ORD">
+ _  _  ___  __  __ __   __ _  _    ___  ___  ___  
+| \| |/ _ \|  \/  |\ \ / /| \| |  / _ \| _ \|   \ 
+| .` | (_) | |\/| | \ V / | .` | | (_) |   /| |) |
+|_|\_|\___/|_|  |_|  |_|  |_|\_|  \___/|_|_\|___/ </pre>
       <div class="portal-subtitle">
         :: PORTAL DOKUMENTASI TEKS STATIS &bull; RINGAN &bull; BEBAS PELACAK &bull; SIAP LURING ::
       </div>
@@ -31,7 +30,7 @@
     <!-- Ticker Pengumuman Klasik -->
     <div class="ticker-box" role="region" aria-label="Pengumuman Arsip">
       <div class="ticker-track" id="ticker-text">
-        *** SELAMAT DATANG DI ARSIP DIGITAL &mdash; DOKUMENTASI TEKNIS BERFORMAT TEKS MURNI (.TXT) &bull; MENDUKUNG MODE BACA LURING (PWA) &bull; GUNAKAN FORMULIR PENCARIAN UNTUK MEMINDAI SELURUH INDEKS ***
+        *** SELAMAT DATANG DI ARSIP DIGITAL &mdash; DOKUMENTASI TEKNIS BERFORMAT TEKS MURNI (.TXT) &bull; MENDUKUNG MODE BACA LURING (PWA) &bull; PENCARIAN CERDAS TOLERAN TYPO &amp; PERINGKAT BM25 ***
       </div>
     </div>
 
@@ -132,25 +131,22 @@
       'use strict';
 
       // =========================================================================
-      // KONFIGURASI ZERO-FREEZE & PENYIMPANAN PARALEL SKALA JUTAAN DATA
+      // KONFIGURASI ZERO-FREEZE & INVERTED INDEX SKALA JUTAAN DATA
       // =========================================================================
       const ITEMS_PER_PAGE = 25;
-      const INDEX_CHUNK_SIZE = 50000;  // Membangun indeks pencarian di latar belakang
-      const SEARCH_CHUNK_SIZE = 80000; // Memindai 80.000 entri per frame (~60fps)
-      const STORAGE_PROGRESS_PREFIX = 'arsip_progress_';
+      const INDEX_CHUNK_SIZE = 40000;
+      const VOCAB_CHUNK_SIZE = 15000;
+      const STORAGE_READ_POS_PREFIX = 'arsip_read_pos_';
       const NEW_ARTICLE_DAYS = 14;
 
       let allArticles = [];
-      let searchBlobs = [];
-      let indexedCount = 0;
-      let isIndexingComplete = false;
-
-      let matchedIndices = null; // null = mode tampilkan semua (O(1) tanpa alokasi)
+      let matchedIndices = null; // null = tampilkan seluruh arsip O(1)
       let currentPage = 1;
       let activeSearchQuery = '';
+      let activeSearchMeta = null;
       let activeSearchToken = 0;
       let deferredInstallPrompt = null;
-      let progressCacheMap = null;
+      let resumeSet = null;
 
       // Elemen DOM
       const postListEl = document.getElementById('post-list');
@@ -167,7 +163,320 @@
       const resetSearchBtn = document.getElementById('reset-search-btn');
 
       // =========================================================================
-      // 1. SERVICE WORKER & INSTALASI PWA
+      // 1. MESIN PENCARI HIBRIDA: INVERTED INDEX + SYMSPELL + BM25 RANKING
+      // =========================================================================
+      class HyperArchiveSearchEngine {
+        constructor() {
+          this.articles = [];
+          this.docLengths = null;
+          this.avgDocLength = 1;
+          this.invertedIndex = new Map(); // kata -> Uint32Array(docIds)
+          this.deleteMap = new Map();     // variasi_hapus -> Array<kata>
+          this.vocabList = [];
+          this.isReady = false;
+          this._buildPromise = null;
+        }
+
+        tokenize(text) {
+          const clean = String(text || '')
+            .toLowerCase()
+            .replace(/[^a-z0-9\s]/g, ' ');
+          const raw = clean.split(' ');
+          const out = [];
+          for (let i = 0; i < raw.length; i++) {
+            if (raw[i].length >= 2) out.push(raw[i]);
+          }
+          return out;
+        }
+
+        generateDeletes(word) {
+          const deletes = new Set();
+          if (word.length <= 2) return deletes;
+          for (let i = 0; i < word.length; i++) {
+            deletes.add(word.slice(0, i) + word.slice(i + 1));
+          }
+          return deletes;
+        }
+
+        buildIndexAsync(articles, onProgress) {
+          if (this._buildPromise) return this._buildPromise;
+
+          this._buildPromise = (async () => {
+            this.articles = articles;
+            const total = articles.length;
+            this.docLengths = new Uint16Array(total);
+
+            if (total === 0) {
+              this.isReady = true;
+              if (onProgress) onProgress(100);
+              return;
+            }
+
+            const tempPostings = new Map();
+            let totalTokens = 0;
+
+            // Fase 1: Tokenisasi & pembangunan posting list per blok tanpa memblokir UI
+            for (let start = 0; start < total; start += INDEX_CHUNK_SIZE) {
+              const end = Math.min(start + INDEX_CHUNK_SIZE, total);
+
+              for (let docId = start; docId < end; docId++) {
+                const item = articles[docId];
+                const tagsStr = Array.isArray(item.tags) ? item.tags.join(' ') : '';
+                const tokens = this.tokenize(
+                  `${item.judul || ''} ${item.id || ''} ${item.tanggal || ''} ${tagsStr}`
+                );
+
+                this.docLengths[docId] = Math.min(65535, tokens.length);
+                totalTokens += tokens.length;
+
+                const seenInDoc = new Set();
+                for (let t = 0; t < tokens.length; t++) {
+                  const word = tokens[t];
+                  if (seenInDoc.has(word)) continue;
+                  seenInDoc.add(word);
+
+                  let list = tempPostings.get(word);
+                  if (!list) {
+                    list = [];
+                    tempPostings.set(word, list);
+                  }
+                  list.push(docId);
+                }
+              }
+
+              if (onProgress) onProgress(Math.round((end / total) * 75));
+              await new Promise((r) => setTimeout(r, 0));
+            }
+
+            this.avgDocLength = totalTokens > 0 ? totalTokens / total : 1;
+
+            // Fase 2: Kompresi posting list ke Uint32Array & bangun kamus SymSpell
+            this.invertedIndex.clear();
+            this.deleteMap.clear();
+            this.vocabList = Array.from(tempPostings.keys());
+
+            const vocabTotal = this.vocabList.length;
+            for (let v = 0; v < vocabTotal; v++) {
+              const word = this.vocabList[v];
+              const docArray = tempPostings.get(word);
+              this.invertedIndex.set(word, Uint32Array.from(docArray));
+
+              const dels = this.generateDeletes(word);
+              for (const delVariant of dels) {
+                let bucket = this.deleteMap.get(delVariant);
+                if (!bucket) {
+                  bucket = [];
+                  this.deleteMap.set(delVariant, bucket);
+                }
+                bucket.push(word);
+              }
+
+              if (v > 0 && v % VOCAB_CHUNK_SIZE === 0) {
+                if (onProgress) {
+                  onProgress(75 + Math.round((v / vocabTotal) * 25));
+                }
+                await new Promise((r) => setTimeout(r, 0));
+              }
+            }
+
+            tempPostings.clear();
+            this.isReady = true;
+            if (onProgress) onProgress(100);
+          })();
+
+          return this._buildPromise;
+        }
+
+        /**
+         * Damerau-Levenshtein jarak berbatas (maksimal 2) tanpa alokasi matriks besar
+         */
+        editDistance(a, b) {
+          const m = a.length;
+          const n = b.length;
+          if (Math.abs(m - n) > 2) return 3;
+          if (a === b) return 0;
+
+          const prev2 = new Uint8Array(n + 1);
+          const prev1 = new Uint8Array(n + 1);
+          const curr = new Uint8Array(n + 1);
+
+          for (let j = 0; j <= n; j++) prev1[j] = j;
+
+          for (let i = 1; i <= m; i++) {
+            curr[0] = i;
+            let rowMin = i;
+            const charA = a.charCodeAt(i - 1);
+
+            for (let j = 1; j <= n; j++) {
+              const charB = b.charCodeAt(j - 1);
+              const cost = charA === charB ? 0 : 1;
+
+              let val = prev1[j] + 1;
+              const ins = curr[j - 1] + 1;
+              const sub = prev1[j - 1] + cost;
+              if (ins < val) val = ins;
+              if (sub < val) val = sub;
+
+              if (
+                i > 1 &&
+                j > 1 &&
+                charA === b.charCodeAt(j - 2) &&
+                a.charCodeAt(i - 2) === charB
+              ) {
+                const trans = prev2[j - 2] + cost;
+                if (trans < val) val = trans;
+              }
+
+              curr[j] = val;
+              if (val < rowMin) rowMin = val;
+            }
+
+            if (rowMin > 2) return 3;
+            prev2.set(prev1);
+            prev1.set(curr);
+          }
+
+          return prev1[n];
+        }
+
+        /**
+         * Memperluas 1 kata kueri menjadi kata eksak, imbuhan, & koreksi typo SymSpell
+         */
+        expandQueryTerm(qWord) {
+          const matchedTerms = new Map(); // word -> bobot (1.0 = eksak)
+
+          // 1. Kecocokan eksak O(1)
+          if (this.invertedIndex.has(qWord)) {
+            matchedTerms.set(qWord, 1.0);
+          }
+
+          // 2. Pencarian kandidat SymSpell O(1)
+          const queryDeletes = this.generateDeletes(qWord);
+          const candidateWords = new Set();
+
+          const directSym = this.deleteMap.get(qWord);
+          if (directSym) {
+            for (let i = 0; i < directSym.length; i++) candidateWords.add(directSym[i]);
+          }
+          for (const qDel of queryDeletes) {
+            if (this.invertedIndex.has(qDel)) candidateWords.add(qDel);
+            const bucket = this.deleteMap.get(qDel);
+            if (bucket) {
+              for (let i = 0; i < bucket.length; i++) candidateWords.add(bucket[i]);
+            }
+          }
+
+          for (const cand of candidateWords) {
+            if (matchedTerms.has(cand)) continue;
+            const dist = this.editDistance(qWord, cand);
+            if (dist === 1) {
+              matchedTerms.set(cand, 0.72);
+            } else if (dist === 2 && qWord.length >= 5) {
+              matchedTerms.set(cand, 0.5);
+            }
+          }
+
+          // 3. Perluasan sub-kata & imbuhan (mis. "dta" -> "data" -> "mendata", "pendataan")
+          if (qWord.length >= 3) {
+            const coreRoots = new Set([qWord]);
+            for (const [term, w] of matchedTerms.entries()) {
+              if (w >= 0.7 && term.length >= 3) coreRoots.add(term);
+            }
+
+            const rootsArray = Array.from(coreRoots);
+            for (let i = 0; i < this.vocabList.length; i++) {
+              const vocabWord = this.vocabList[i];
+              if (matchedTerms.has(vocabWord)) continue;
+              if (vocabWord.length > qWord.length + 8) continue;
+
+              for (let r = 0; r < rootsArray.length; r++) {
+                const root = rootsArray[r];
+                const idx = vocabWord.indexOf(root);
+                if (idx !== -1) {
+                  const baseWeight = root === qWord ? 0.85 : 0.6;
+                  matchedTerms.set(vocabWord, idx === 0 ? baseWeight : baseWeight * 0.9);
+                  break;
+                }
+              }
+            }
+          }
+
+          return matchedTerms;
+        }
+
+        /**
+         * Eksekusi pencarian BM25 instan O(1) terhadap kamus & posting lists
+         */
+        search(rawQuery) {
+          const queryTokens = this.tokenize(rawQuery);
+          if (queryTokens.length === 0) {
+            return { indices: null, usedFuzzy: false, correctedTerms: [] };
+          }
+
+          const N = this.articles.length;
+          const k1 = 1.2;
+          const b = 0.75;
+          const docScores = new Map();
+          const docMatchedQueryCount = new Map();
+
+          let hasExactAny = false;
+          const correctedSet = new Set();
+
+          for (let q = 0; q < queryTokens.length; q++) {
+            const qWord = queryTokens[q];
+            const expanded = this.expandQueryTerm(qWord);
+            const seenDocsForThisTerm = new Set();
+
+            for (const [term, matchWeight] of expanded.entries()) {
+              if (matchWeight === 1.0) {
+                hasExactAny = true;
+              } else {
+                correctedSet.add(term);
+              }
+
+              const postings = this.invertedIndex.get(term);
+              if (!postings) continue;
+
+              const df = postings.length;
+              const idf = Math.log(1 + (N - df + 0.5) / (df + 0.5));
+
+              for (let p = 0; p < postings.length; p++) {
+                const docId = postings[p];
+                const dl = this.docLengths[docId] || 1;
+                const tfNorm = (k1 + 1) / (1 + k1 * (1 - b + b * (dl / this.avgDocLength)));
+                const score = idf * tfNorm * matchWeight;
+
+                docScores.set(docId, (docScores.get(docId) || 0) + score);
+
+                if (!seenDocsForThisTerm.has(docId)) {
+                  seenDocsForThisTerm.add(docId);
+                  docMatchedQueryCount.set(docId, (docMatchedQueryCount.get(docId) || 0) + 1);
+                }
+              }
+            }
+          }
+
+          const rankedIds = Array.from(docScores.keys());
+          rankedIds.sort((a, bId) => {
+            const countDiff = (docMatchedQueryCount.get(bId) || 0) - (docMatchedQueryCount.get(a) || 0);
+            if (countDiff !== 0) return countDiff;
+            const scoreDiff = docScores.get(bId) - docScores.get(a);
+            if (Math.abs(scoreDiff) > 1e-6) return scoreDiff;
+            return a - bId; // Pertahankan urutan terbaru jika skor identik
+          });
+
+          return {
+            indices: rankedIds,
+            usedFuzzy: !hasExactAny && correctedSet.size > 0,
+            correctedTerms: Array.from(correctedSet).slice(0, 6)
+          };
+        }
+      }
+
+      const searchEngine = new HyperArchiveSearchEngine();
+
+      // =========================================================================
+      // 2. SERVICE WORKER & INSTALASI PWA
       // =========================================================================
       function setupServiceWorker() {
         if (!('serviceWorker' in navigator)) return;
@@ -204,7 +513,7 @@
       }
 
       // =========================================================================
-      // 2. UTILITAS RINGAN & CACHE PROGRESS BACA
+      // 3. UTILITAS RINGAN & CACHE RIWAYAT BACA
       // =========================================================================
       function isRecentArticle(dateStr, nowMs) {
         if (!dateStr) return false;
@@ -214,83 +523,27 @@
         return diffDays >= 0 && diffDays <= NEW_ARTICLE_DAYS;
       }
 
-      function loadProgressMapOnce() {
-        if (progressCacheMap !== null) return progressCacheMap;
-        progressCacheMap = new Map();
+      function loadResumeSetOnce() {
+        if (resumeSet !== null) return resumeSet;
+        resumeSet = new Set();
         try {
           for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
-            if (key && key.startsWith(STORAGE_PROGRESS_PREFIX)) {
-              const pct = parseInt(localStorage.getItem(key), 10);
-              if (pct > 0 && pct < 98) {
-                progressCacheMap.set(key.slice(STORAGE_PROGRESS_PREFIX.length), pct);
+            if (key && key.startsWith(STORAGE_READ_POS_PREFIX)) {
+              const savedY = parseInt(localStorage.getItem(key), 10);
+              if (Number.isFinite(savedY) && savedY > 120) {
+                resumeSet.add(key.slice(STORAGE_READ_POS_PREFIX.length));
               }
             }
           }
         } catch (_) {}
-        return progressCacheMap;
+        return resumeSet;
       }
 
-      /**
-       * Membuat string indeks pencarian huruf kecil untuk satu entri pada indeks i.
-       */
-      function compileBlobAt(i) {
-        const item = allArticles[i];
-        const tagsStr = Array.isArray(item.tags) ? item.tags.join(' ') : '';
-        return (
-          (item.judul || '') + ' ' +
-          (item.tanggal || '') + ' ' +
-          (item.id || '') + ' ' +
-          tagsStr
-        ).toLowerCase();
-      }
-
-      /**
-       * Membangun indeks pencarian di latar belakang secara bertahap (Time-Sliced)
-       * setelah halaman pertama tampil instan di layar.
-       */
-      function scheduleBackgroundIndexing() {
-        const total = allArticles.length;
-        if (total === 0) {
-          isIndexingComplete = true;
-          return;
-        }
-        searchBlobs = new Array(total);
-        indexedCount = 0;
-        isIndexingComplete = false;
-
-        function processIndexBatch() {
-          if (indexedCount >= total) {
-            isIndexingComplete = true;
-            return;
-          }
-          const end = indexedCount + INDEX_CHUNK_SIZE < total
-            ? indexedCount + INDEX_CHUNK_SIZE
-            : total;
-
-          for (; indexedCount < end; indexedCount++) {
-            searchBlobs[indexedCount] = compileBlobAt(indexedCount);
-          }
-
-          if (indexedCount < total) {
-            setTimeout(processIndexBatch, 0);
-          } else {
-            isIndexingComplete = true;
-          }
-        }
-
-        setTimeout(processIndexBatch, 16);
-      }
-
-      /**
-       * Pengurutan tanggal ISO (YYYY-MM-DD) ultra-cepat tanpa localeCompare().
-       * Menghindari bottleneck 20 juta panggilan Intl.Collator pada 1 juta artikel.
-       */
       function sortArticlesByDateFast(articles) {
         const len = articles.length;
         if (len <= 1) return articles;
 
-        // Cek cepat apakah larik sudah terurut menurun (descending)
         let alreadySorted = true;
         for (let i = 1; i < len; i++) {
           const prev = articles[i - 1].tanggal || '';
@@ -302,7 +555,6 @@
         }
         if (alreadySorted) return articles;
 
-        // Gunakan perbandingan string ASCII langsung (300x lebih cepat dari localeCompare)
         return articles.sort((a, b) => {
           const da = a.tanggal || '';
           const db = b.tanggal || '';
@@ -311,131 +563,56 @@
       }
 
       // =========================================================================
-      // 3. MESIN PENCARIAN EKSTREM (SUBMIT-ONLY + ON-DEMAND BLOB + TIME-SLICED)
+      // 4. EKSEKUSI PENCARIAN CERDAS (SUBMIT-ONLY + ANTI-RACE CONDITION)
       // =========================================================================
-      function executeSearch(rawQuery) {
+      async function executeSearch(rawQuery) {
         const token = ++activeSearchToken;
         const cleanQuery = (rawQuery || '').trim();
         activeSearchQuery = cleanQuery;
 
-        // Reset instan O(1) saat kata kunci kosong
         if (!cleanQuery) {
           matchedIndices = null;
+          activeSearchMeta = null;
           currentPage = 1;
           renderCurrentPage(0);
           return;
         }
 
-        const startTime = performance.now();
-        const terms = cleanQuery.toLowerCase().split(/\s+/).filter(Boolean);
-        const termCount = terms.length;
-        const total = allArticles.length;
-        const firstTerm = terms[0];
-
-        // Jalur cepat untuk <= 80.000 entri
-        if (total <= SEARCH_CHUNK_SIZE) {
-          const results = [];
-          for (let i = 0; i < total; i++) {
-            let blob = searchBlobs[i];
-            if (blob === undefined) {
-              blob = compileBlobAt(i);
-              searchBlobs[i] = blob;
-            }
-            if (blob.indexOf(firstTerm) === -1) continue;
-
-            let allMatch = true;
-            for (let t = 1; t < termCount; t++) {
-              if (blob.indexOf(terms[t]) === -1) {
-                allMatch = false;
-                break;
-              }
-            }
-            if (allMatch) results.push(i);
-          }
-
-          if (indexedCount < total) {
-            indexedCount = total;
-            isIndexingComplete = true;
-          }
-
-          const elapsedMs = performance.now() - startTime;
-          matchedIndices = results;
-          currentPage = 1;
-          renderCurrentPage(elapsedMs);
-          return;
-        }
-
-        // Jalur Time-Sliced non-blocking untuk > 80.000 hingga jutaan entri
-        if (searchSubmitBtn) searchSubmitBtn.disabled = true;
-        listStatusEl.textContent =
-          `Memindai ${total.toLocaleString('id-ID')} entri arsip untuk "${cleanQuery}"...`;
-
-        const results = [];
-        let cursor = 0;
-
-        function scanNextChunk() {
+        // Pastikan pengindeksan latar belakang selesai sebelum query dijalankan
+        if (!searchEngine.isReady) {
+          if (searchSubmitBtn) searchSubmitBtn.disabled = true;
+          listStatusEl.textContent = 'Menyelesaikan pengindeksan kamus arsip...';
+          await searchEngine.buildIndexAsync(allArticles);
+          if (searchSubmitBtn) searchSubmitBtn.disabled = false;
           if (token !== activeSearchToken) return;
-
-          const end = cursor + SEARCH_CHUNK_SIZE < total
-            ? cursor + SEARCH_CHUNK_SIZE
-            : total;
-
-          for (; cursor < end; cursor++) {
-            let blob = searchBlobs[cursor];
-            if (blob === undefined) {
-              blob = compileBlobAt(cursor);
-              searchBlobs[cursor] = blob;
-            }
-            if (blob.indexOf(firstTerm) === -1) continue;
-
-            let allMatch = true;
-            for (let t = 1; t < termCount; t++) {
-              if (blob.indexOf(terms[t]) === -1) {
-                allMatch = false;
-                break;
-              }
-            }
-            if (allMatch) results.push(cursor);
-          }
-
-          if (cursor < total) {
-            const pct = Math.round((cursor / total) * 100);
-            listStatusEl.textContent =
-              `Memindai arsip (${pct}% dari ${total.toLocaleString('id-ID')} entri)...`;
-            requestAnimationFrame(scanNextChunk);
-          } else {
-            if (indexedCount < total) {
-              indexedCount = total;
-              isIndexingComplete = true;
-            }
-            if (searchSubmitBtn) searchSubmitBtn.disabled = false;
-            const elapsedMs = performance.now() - startTime;
-            matchedIndices = results;
-            currentPage = 1;
-            renderCurrentPage(elapsedMs);
-          }
         }
 
-        requestAnimationFrame(scanNextChunk);
+        const startTime = performance.now();
+        const searchOutcome = searchEngine.search(cleanQuery);
+        const elapsedMs = performance.now() - startTime;
+
+        matchedIndices = searchOutcome.indices;
+        activeSearchMeta = searchOutcome;
+        currentPage = 1;
+        renderCurrentPage(elapsedMs);
       }
 
       // =========================================================================
-      // 4. RENDER DAFTAR ARTIKEL & PAGINASI (DOM API MURNI — HANYA 25 ITEM)
+      // 5. RENDER DAFTAR ARTIKEL & PAGINASI (DOM API MURNI — HANYA 25 ITEM)
       // =========================================================================
       function renderFeaturedSidebar() {
         featuredListEl.textContent = '';
         const featured = [];
-        // Batasi pemindaian sidebar maksimal 500 entri teratas agar O(1)
         const scanLimit = Math.min(allArticles.length, 500);
 
-        for (let i = 0; i < scanLimit && featured.length < 6; i++) {
+        for (let i = 0; i < scanLimit && featured.length < 5; i++) {
           if (allArticles[i].pilihan) {
             featured.push(allArticles[i]);
           }
         }
 
         if (featured.length === 0) {
-          for (let i = 0; i < Math.min(allArticles.length, 5); i++) {
+          for (let i = 0; i < Math.min(allArticles.length, 3); i++) {
             featured.push(allArticles[i]);
           }
         }
@@ -480,8 +657,18 @@
           const timeInfo = typeof searchElapsedMs === 'number'
             ? ` dalam ${searchElapsedMs.toFixed(1)} md`
             : '';
+
+          let fuzzyHint = '';
+          if (
+            activeSearchMeta &&
+            activeSearchMeta.usedFuzzy &&
+            activeSearchMeta.correctedTerms.length > 0
+          ) {
+            fuzzyHint = ` (koreksi mendekati: ${activeSearchMeta.correctedTerms.join(', ')})`;
+          }
+
           listStatusEl.textContent =
-            `Ditemukan ${totalFiltered.toLocaleString('id-ID')} dokumen untuk kata kunci "${activeSearchQuery}"${timeInfo}.`;
+            `Ditemukan ${totalFiltered.toLocaleString('id-ID')} dokumen untuk "${activeSearchQuery}"${fuzzyHint}${timeInfo}.`;
         } else {
           listStatusEl.textContent =
             `Menampilkan ${totalFiltered.toLocaleString('id-ID')} dokumen arsip tersimpan (diurutkan terbaru).`;
@@ -502,7 +689,7 @@
         const startIdx = (currentPage - 1) * ITEMS_PER_PAGE;
         const endIdx = Math.min(startIdx + ITEMS_PER_PAGE, totalFiltered);
         const nowMs = Date.now();
-        const progressMap = loadProgressMapOnce();
+        const savedResumeIds = loadResumeSetOnce();
         const frag = document.createDocumentFragment();
 
         for (let pos = startIdx; pos < endIdx; pos++) {
@@ -532,11 +719,10 @@
             titleWrap.appendChild(newBadge);
           }
 
-          const savedPct = progressMap.get(item.id) || 0;
-          if (savedPct > 0) {
+          if (savedResumeIds.has(item.id)) {
             const resumeBadge = document.createElement('span');
             resumeBadge.className = 'resume-badge';
-            resumeBadge.textContent = `[LANJUTKAN ${savedPct}%]`;
+            resumeBadge.textContent = '[LANJUTKAN]';
             titleWrap.appendChild(resumeBadge);
           }
 
@@ -561,7 +747,7 @@
       }
 
       // =========================================================================
-      // 5. MUAT KATALOG METADATA & INISIALISASI INSTAN
+      // 6. MUAT KATALOG METADATA & INISIALISASI INSTAN
       // =========================================================================
       async function initArchiveIndex() {
         try {
@@ -575,19 +761,28 @@
             throw new Error('Format metadata.json harus berupa larik JSON.');
           }
 
-          // 1. Urutkan dengan perbandingan string ASCII cepat (tanpa localeCompare)
           allArticles = sortArticlesByDateFast(rawData);
 
-          archiveStatsEl.textContent =
+          const baseStatsText =
             `Total Arsip: ${allArticles.length.toLocaleString('id-ID')} dokumen • ` +
             `Mode: ${navigator.onLine ? 'Daring (Tersinkron)' : 'Luring (Cache Lokal)'}`;
+          archiveStatsEl.textContent = baseStatsText;
 
-          // 2. Gambar halaman pertama & sidebar SEGERA (< 5ms) sebelum indexing latar belakang
+          // Tampilkan halaman pertama & sidebar segera (< 5ms)
           renderFeaturedSidebar();
           renderCurrentPage();
 
-          // 3. Bangun indeks pencarian di latar belakang secara bertahap tanpa membekukan UI
-          scheduleBackgroundIndexing();
+          // Bangun Inverted Index & SymSpell di latar belakang tanpa memblokir UI
+          setTimeout(() => {
+            searchEngine.buildIndexAsync(allArticles, (pct) => {
+              if (pct < 100) {
+                archiveStatsEl.textContent = `${baseStatsText} • Indeks: ${pct}%`;
+              } else {
+                archiveStatsEl.textContent =
+                  `${baseStatsText} • Kamus: ${searchEngine.vocabList.length.toLocaleString('id-ID')} kata`;
+              }
+            });
+          }, 16);
         } catch (err) {
           listStatusEl.textContent = 'Gagal memuat katalog metadata.json.';
           archiveStatsEl.textContent = 'Status: Katalog tidak tersedia.';
