@@ -54,6 +54,7 @@
             placeholder="Contoh: protokol 1996..."
             autocomplete="off"
             spellcheck="false"
+            enterkeyhint="search"
             aria-label="Kata kunci pencarian artikel">
           <div class="classic-btn-group">
             <button type="submit" id="search-submit-btn" class="classic-btn">[ Cari ]</button>
@@ -169,6 +170,7 @@
       const searchInputEl = document.getElementById('search-input');
       const searchSubmitBtn = document.getElementById('search-submit-btn');
       const resetSearchBtn = document.getElementById('reset-search-btn');
+      const articleListSectionEl = document.getElementById('daftar-artikel');
 
       // =========================================================================
       // 1. MESIN PENCARI HIBRIDA: INVERTED INDEX + SYMSPELL + BM25 RANKING
@@ -223,7 +225,6 @@
             const tempPostings = new Map();
             let totalTokens = 0;
 
-            // Fase 1: Tokenisasi & pembangunan posting list per blok tanpa memblokir antarmuka
             for (let start = 0; start < total; start += INDEX_CHUNK_SIZE) {
               const end = Math.min(start + INDEX_CHUNK_SIZE, total);
 
@@ -258,7 +259,6 @@
 
             this.avgDocLength = totalTokens > 0 ? totalTokens / total : 1;
 
-            // Fase 2: Kompresi posting list ke Uint32Array & bangun kamus SymSpell
             this.invertedIndex.clear();
             this.deleteMap.clear();
             this.vocabList = Array.from(tempPostings.keys());
@@ -295,9 +295,6 @@
           return this._buildPromise;
         }
 
-        /**
-         * Damerau-Levenshtein jarak berbatas (maksimal 2) tanpa alokasi matriks besar
-         */
         editDistance(a, b) {
           const m = a.length;
           const n = b.length;
@@ -347,18 +344,13 @@
           return prev1[n];
         }
 
-        /**
-         * Memperluas 1 kata kueri menjadi kata persis, imbuhan, & koreksi salah tik SymSpell
-         */
         expandQueryTerm(qWord) {
-          const matchedTerms = new Map(); // word -> bobot (1.0 = persis)
+          const matchedTerms = new Map();
 
-          // 1. Kecocokan persis O(1)
           if (this.invertedIndex.has(qWord)) {
             matchedTerms.set(qWord, 1.0);
           }
 
-          // 2. Pencarian kandidat SymSpell O(1)
           const queryDeletes = this.generateDeletes(qWord);
           const candidateWords = new Set();
 
@@ -384,7 +376,6 @@
             }
           }
 
-          // 3. Perluasan subkata & imbuhan (dibatasi agar tetap instan pada kamus raksasa)
           if (qWord.length >= 3 && this.vocabList.length <= MAX_SUBWORD_SCAN) {
             const coreRoots = new Set([qWord]);
             for (const [term, w] of matchedTerms.entries()) {
@@ -412,9 +403,6 @@
           return matchedTerms;
         }
 
-        /**
-         * Eksekusi pencarian BM25 instan O(1) terhadap kamus & posting lists
-         */
         search(rawQuery) {
           const queryTokens = this.tokenize(rawQuery);
           if (queryTokens.length === 0) {
@@ -470,7 +458,7 @@
             if (countDiff !== 0) return countDiff;
             const scoreDiff = docScores.get(bId) - docScores.get(a);
             if (Math.abs(scoreDiff) > 1e-6) return scoreDiff;
-            return a - bId; // Pertahankan urutan terbaru jika skor identik
+            return a - bId;
           });
 
           return {
@@ -565,9 +553,7 @@
                 tanggal: rawDate || '-'
               })
             );
-          } catch (_) {
-            // Abaikan jika sessionStorage dibatasi mode privat
-          }
+          } catch (_) {}
         };
 
         document.addEventListener('click', (e) => saveMetaFromLink(e.target));
@@ -639,10 +625,17 @@
         });
       }
 
+      function scrollToArticleResults() {
+        if (!articleListSectionEl) return;
+        requestAnimationFrame(() => {
+          articleListSectionEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+      }
+
       // =========================================================================
       // 5. EKSEKUSI PENCARIAN CERDAS (SUBMIT-ONLY + ANTI-RACE CONDITION)
       // =========================================================================
-      async function executeSearch(rawQuery) {
+      async function executeSearch(rawQuery, shouldFocusResults = false) {
         const token = ++activeSearchToken;
         const cleanQuery = (rawQuery || '').trim();
         activeSearchQuery = cleanQuery;
@@ -652,10 +645,10 @@
           activeSearchMeta = null;
           currentPage = 1;
           renderCurrentPage(0);
+          if (shouldFocusResults) scrollToArticleResults();
           return;
         }
 
-        // Pastikan pengindeksan latar belakang selesai sebelum kueri dijalankan
         if (!searchEngine.isReady) {
           if (searchSubmitBtn) searchSubmitBtn.disabled = true;
           listStatusEl.textContent = 'Menyelesaikan pengindeksan kamus arsip...';
@@ -672,6 +665,10 @@
         activeSearchMeta = searchOutcome;
         currentPage = 1;
         renderCurrentPage(elapsedMs);
+
+        if (shouldFocusResults) {
+          scrollToArticleResults();
+        }
       }
 
       // =========================================================================
@@ -848,11 +845,9 @@
           isCatalogLoaded = true;
           updateArchiveStatsText();
 
-          // Tampilkan halaman pertama & sidebar segera (< 5ms)
           renderFeaturedSidebar();
           renderCurrentPage();
 
-          // Bangun Inverted Index & SymSpell di latar belakang tanpa memblokir antarmuka
           setTimeout(() => {
             searchEngine.buildIndexAsync(allArticles, (pct) => {
               indexProgressPercent = pct;
@@ -872,15 +867,19 @@
       if (searchFormEl && searchInputEl) {
         searchFormEl.addEventListener('submit', (e) => {
           e.preventDefault();
-          executeSearch(searchInputEl.value);
+          searchInputEl.blur(); // Menutup keyboard virtual pada ponsel/tablet
+          if (document.activeElement instanceof HTMLElement) {
+            document.activeElement.blur();
+          }
+          executeSearch(searchInputEl.value, true);
         });
       }
 
       if (resetSearchBtn && searchInputEl) {
         resetSearchBtn.addEventListener('click', () => {
           searchInputEl.value = '';
-          executeSearch('');
-          searchInputEl.focus();
+          searchInputEl.blur();
+          executeSearch('', false);
         });
       }
 
@@ -889,7 +888,7 @@
           if (currentPage > 1) {
             currentPage--;
             renderCurrentPage();
-            document.getElementById('daftar-artikel').scrollIntoView({ behavior: 'smooth' });
+            scrollToArticleResults();
           }
         });
       }
@@ -903,7 +902,7 @@
           if (currentPage < totalPages) {
             currentPage++;
             renderCurrentPage();
-            document.getElementById('daftar-artikel').scrollIntoView({ behavior: 'smooth' });
+            scrollToArticleResults();
           }
         });
       }

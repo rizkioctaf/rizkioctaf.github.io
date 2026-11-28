@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' https: data:; media-src 'self' https:; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'self';">
+  <meta name="referrer" content="no-referrer">
+  <meta name="theme-color" content="#c0c0c0">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Bichig San">
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+  <link rel="apple-touch-icon" href="./icon-192.png">
+  <title>Buat Artikel Baru — Bichig San</title>
+  <link rel="stylesheet" href="./style.css">
+  <style>
+    /* Tata Letak 2 Kolom Seimbang (Kiri: Penyusun, Kanan: Pratinjau Langsung) */
+    .studio-workspace {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 14px;
+      align-items: start;
+      margin-top: 12px;
+    }
+
+    .studio-pane-editor {
+      min-width: 0;
+      width: auto;
+    }
+
+    .studio-pane-preview {
+      min-width: 0;
+      position: sticky;
+      top: 44px;
+    }
+
+    .studio-editor-textarea {
+      min-height: 340px;
+      resize: vertical;
+      line-height: 1.5;
+    }
+
+    .studio-json-pre {
+      max-height: 180px;
+      overflow: auto;
+    }
+
+    @media (max-width: 900px) {
+      .studio-workspace {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .studio-pane-preview {
+        position: static;
+      }
+    }
+  </style>
+</head>
+<body id="top">
+
+<div class="portal-shell">
+  <!-- HEADER BANNER -->
+  <header class="portal-header">
+    <pre class="ascii-logo" aria-hidden="true"> ___ ___ ___ _  _ ___ ___   ___   _   _  _ 
+| _ )_ _/ __| || |_ _/ __| / __| /_\ | \| |
+| _ \| | (__| __ || | (_ | \__ \/ _ \| .` |
+|___/___\___|_||_|___\___| |___/_/ \_\_|\_|</pre>
+    <div class="portal-subtitle">:: STUDIO PENYUSUN ARTIKEL TEKS MURNI (.TXT) &amp; PRATINJAU LANGSUNG ::</div>
+  </header>
+
+  <!-- NAVIGASI ATAS RAMPING (1 BARIS TUNGGAL STICKY) -->
+  <nav class="top-nav-bar" aria-label="Navigasi Penyusun dan Daftar Isi Pratinjau">
+    <div class="top-nav-primary">
+      <a href="./index.html" class="nav-bracket-link" title="Kembali ke Indeks Artikel">
+        <span class="label-desktop">[ &lt;&lt; Kembali ke Indeks Artikel ]</span>
+        <span class="label-mobile">[ &lt;&lt; Indeks ]</span>
+      </a>
+      <span id="draft-save-status" class="nav-progress-badge" aria-live="polite">Draf: Siap</span>
+    </div>
+
+    <div class="top-nav-tools">
+      <button type="button" id="tools-toggle-btn" class="nav-bracket-btn" aria-expanded="false" aria-controls="reader-tools-panel" hidden>[ Daftar Isi &#9662; ]</button>
+    </div>
+  </nav>
+
+  <!-- PANEL DAFTAR ISI OTOMATIS DARI PRATINJAU -->
+  <div id="reader-tools-panel" class="reader-tools-panel" hidden>
+    <div class="reader-tools-header">
+      <span>:: NAVIGASI DAFTAR ISI PRATINJAU ::</span>
+      <button type="button" id="tools-close-btn" class="nav-bracket-btn">[ Tutup &times; ]</button>
+    </div>
+
+    <div id="article-toc-section" class="article-toc-section" hidden>
+      <ul id="article-toc-list" class="article-toc-list"></ul>
+    </div>
+  </div>
+
+  <!-- TATA LETAK 2 KOLOM: KIRI (BUAT ARTIKEL) & KANAN (PREVIEW) -->
+  <div class="studio-workspace">
+    <!-- KOLOM KIRI: PENYUSUN ARTIKEL -->
+    <aside class="portal-sidebar studio-pane-editor" aria-label="Panel Pembuatan Artikel">
+      <span class="sidebar-section-title">[ 1. METADATA &amp; NASKAH ARTIKEL ]</span>
+
+      <div class="article-meta-box">
+        <span><b>BERKAS:</b> <code id="target-file-preview">posts/artikel-baru.txt</code></span>
+        <span><b>UKURAN:</b> <span id="editor-word-count">0 kata &bull; 0 baris</span></span>
+      </div>
+
+      <p>
+        <label for="meta-title"><strong>Judul Utama Artikel:</strong></label><br>
+        <input
+          type="text"
+          id="meta-title"
+          class="classic-input"
+          placeholder="Contoh: Arsitektur Arsip Teks Statis Tahan Banting"
+          autocomplete="off">
+      </p>
+
+      <p>
+        <label for="meta-id"><strong>ID Berkas / Slug URL:</strong></label><br>
+        <input
+          type="text"
+          id="meta-id"
+          class="classic-input"
+          placeholder="Contoh: arsitektur-arsip-teks-statis"
+          autocomplete="off"
+          spellcheck="false">
+      </p>
+
+      <p>
+        <label for="meta-date"><strong>Tanggal Publikasi (YYYY-MM-DD):</strong></label><br>
+        <input
+          type="date"
+          id="meta-date"
+          class="classic-input">
+      </p>
+
+      <p>
+        <label for="meta-tags"><strong>Label Pencarian (pisahkan koma):</strong></label><br>
+        <input
+          type="text"
+          id="meta-tags"
+          class="classic-input"
+          placeholder="Contoh: arsip, protokol, 1996, luring"
+          autocomplete="off">
+      </p>
+
+      <p>
+        <label>
+          <input type="checkbox" id="meta-featured">
+          <strong>Tandai sebagai Artikel Pilihan</strong>
+        </label>
+      </p>
+
+      <p>
+        <label>
+          <input type="checkbox" id="include-header-in-txt" checked>
+          <strong>Sertakan <code># Judul</code> &amp; <code>Tanggal:</code> di awal <code>.txt</code></strong>
+        </label>
+      </p>
+
+      <hr>
+
+      <!-- BILAH ALAT PENYISIP SINTAKS ZINEPARSER -->
+      <div role="toolbar" aria-label="Bilah Alat Format ZineParser">
+        <div class="sidebar-note"><strong>Sisipkan Sintaks ZineParser:</strong></div>
+        <div class="classic-btn-group">
+          <button type="button" class="classic-btn" data-insert-syntax="h2">[ ## Subjudul ]</button>
+          <button type="button" class="classic-btn" data-insert-syntax="h3">[ ### Anak Judul ]</button>
+          <button type="button" class="classic-btn" data-insert-syntax="bold">[ **Tebal** ]</button>
+          <button type="button" class="classic-btn" data-insert-syntax="italic">[ *Miring* ]</button>
+          <button type="button" class="classic-btn" data-insert-syntax="list">[ - Daftar ]</button>
+          <button type="button" class="classic-btn" data-insert-syntax="hr">[ --- Garis ]</button>
+          <button type="button" class="classic-btn" data-insert-syntax="link">[ Tautan ]</button>
+          <button type="button" class="classic-btn" data-insert-syntax="img">[ Gambar ]</button>
+          <button type="button" class="classic-btn" data-insert-syntax="video">[ Video ]</button>
+          <button type="button" class="classic-btn" data-insert-syntax="audio">[ Audio ]</button>
+          <button type="button" class="classic-btn" data-insert-syntax="file">[ Lampiran ]</button>
+          <button type="button" class="classic-btn" data-insert-syntax="chart-bar">[ Grafik Batang ]</button>
+          <button type="button" class="classic-btn" data-insert-syntax="chart-line">[ Grafik Garis ]</button>
+        </div>
+      </div>
+
+      <!-- PANEL DIALOG PENYISIP MEDIA / GRAFIK / TAUTAN -->
+      <div id="syntax-helper-box" class="retro-media-box" hidden>
+        <div class="reader-tools-header">
+          <span id="syntax-helper-title">:: SISIPKAN BLOK KONTEN ::</span>
+          <button type="button" id="syntax-helper-close" class="nav-bracket-btn">[ Batal &times; ]</button>
+        </div>
+        <p id="syntax-helper-desc" class="sidebar-note"></p>
+        <p>
+          <label for="syntax-field-1" id="syntax-label-1"><strong>Nilai 1:</strong></label><br>
+          <input type="text" id="syntax-field-1" class="classic-input" autocomplete="off">
+        </p>
+        <p id="syntax-row-2">
+          <label for="syntax-field-2" id="syntax-label-2"><strong>Nilai 2:</strong></label><br>
+          <input type="text" id="syntax-field-2" class="classic-input" autocomplete="off">
+        </p>
+        <p id="syntax-row-3" hidden>
+          <label for="syntax-field-3" id="syntax-label-3"><strong>Data Grafik (Label:Angka, pisahkan koma):</strong></label><br>
+          <input type="text" id="syntax-field-3" class="classic-input" placeholder="Jan:120, Feb:185, Mar:240" autocomplete="off">
+        </p>
+        <div class="classic-btn-group">
+          <button type="button" id="syntax-helper-apply" class="classic-btn">[ Sisipkan ke Naskah ]</button>
+        </div>
+      </div>
+
+      <p>
+        <label for="article-editor"><strong>Isi Naskah Artikel (.TXT):</strong></label><br>
+        <textarea
+          id="article-editor"
+          class="classic-input studio-editor-textarea"
+          spellcheck="true"
+          placeholder="Tulis paragraf artikel di sini...&#10;&#10;## Subjudul Bagian Pertama&#10;Gunakan **teks tebal**, *teks miring*, atau daftar:&#10;- Butir pertama&#10;  - Sub-butir tingkat kedua&#10;&#10;[chart:bar|Statistik Akses Luring|2024:450, 2025:890, 2026:1420]"></textarea>
+      </p>
+
+      <!-- TOMBOL AKSI EKSPOR & CONTOH -->
+      <div class="classic-btn-group">
+        <button type="button" id="btn-download-txt" class="classic-btn">[ Unduh .TXT ]</button>
+        <button type="button" id="btn-copy-txt" class="classic-btn">[ Salin .TXT ]</button>
+        <button type="button" id="btn-load-sample" class="classic-btn">[ Contoh ]</button>
+        <button type="button" id="btn-reset-editor" class="classic-btn">[ Kosongkan ]</button>
+      </div>
+
+      <div id="action-feedback" class="retro-media-error" hidden></div>
+
+      <hr>
+
+      <!-- KELUARAN POTONGAN METADATA.JSON -->
+      <details id="metadata-output-details" open>
+        <summary><strong>[ Keluaran <code>posts/metadata.json</code> ]</strong></summary>
+        <pre id="metadata-json-snippet" class="studio-json-pre"></pre>
+        <div class="classic-btn-group">
+          <button type="button" id="btn-copy-json" class="classic-btn">[ Salin JSON ]</button>
+          <button type="button" id="btn-download-merged-json" class="classic-btn">[ Unduh metadata.json Terpadu ]</button>
+        </div>
+      </details>
+    </aside>
+
+    <!-- KOLOM KANAN: PRATINJAU LANGSUNG ARTIKEL -->
+    <main class="portal-main portal-main-article studio-pane-preview" aria-label="Pratinjau Langsung Artikel">
+      <article class="readable-measure article-measure">
+        <div class="sidebar-section-title">[ 2. PRATINJAU LANGSUNG HALAMAN BACA ]</div>
+
+        <div id="article-meta" class="article-meta-box">
+          <span><b>DIPUBLIKASIKAN: </b><span id="preview-date">-</span></span>
+          <span><b>ID: </b><span id="preview-id">artikel-baru</span></span>
+        </div>
+
+        <h1 id="article-title" class="article-main-title">
+          Judul Artikel Pratinjau
+        </h1>
+
+        <hr class="thick-rule">
+
+        <div id="article-body" aria-live="polite"></div>
+
+        <hr class="thick-rule">
+        <nav class="article-bottom-nav" aria-label="Navigasi Bawah Pratinjau">
+          <a href="./index.html" class="nav-bracket-link">[ &lt;&lt; Kembali ke Indeks Artikel ]</a>
+          <a href="#top" class="nav-bracket-link">[ Kembali ke Atas &uarr; ]</a>
+        </nav>
+      </article>
+    </main>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="portal-footer">
+    BICHIG SAN &bull; PORTAL ARSIP ARTIKEL STATIS &bull; DISAJIKAN DALAM FORMAT TEKS RINGKAS UNTUK AKSES DARING DAN LURING
+  </footer>
+</div>
+
+<script src="./parser.js"></script>
+
+<script>
+  (function () {
+    'use strict';
+
+    const SAFE_ID_PATTERN = /^[a-zA-Z0-9_-]+$/;
+    const DRAFT_STORAGE_KEY = 'bichig_create_draft_v1';
+
+    // Elemen Form & Editor
+    const titleInput = document.getElementById('meta-title');
+    const idInput = document.getElementById('meta-id');
+    const dateInput = document.getElementById('meta-date');
+    const tagsInput = document.getElementById('meta-tags');
+    const featuredCheckbox = document.getElementById('meta-featured');
+    const includeHeaderCheckbox = document.getElementById('include-header-in-txt');
+    const editorTextarea = document.getElementById('article-editor');
+
+    // Elemen Status & Keluaran
+    const targetFilePreview = document.getElementById('target-file-preview');
+    const editorWordCount = document.getElementById('editor-word-count');
+    const draftSaveStatus = document.getElementById('draft-save-status');
+    const metadataSnippetEl = document.getElementById('metadata-json-snippet');
+    const actionFeedbackEl = document.getElementById('action-feedback');
+
+    // Elemen Pratinjau
+    const previewDateEl = document.getElementById('preview-date');
+    const previewIdEl = document.getElementById('preview-id');
+    const previewTitleEl = document.getElementById('article-title');
+    const previewBodyEl = document.getElementById('article-body');
+
+    // Elemen Helper Penyisip Sintaks
+    const helperBox = document.getElementById('syntax-helper-box');
+    const helperTitle = document.getElementById('syntax-helper-title');
+    const helperDesc = document.getElementById('syntax-helper-desc');
+    const helperCloseBtn = document.getElementById('syntax-helper-close');
+    const helperApplyBtn = document.getElementById('syntax-helper-apply');
+    const helperField1 = document.getElementById('syntax-field-1');
+    const helperField2 = document.getElementById('syntax-field-2');
+    const helperField3 = document.getElementById('syntax-field-3');
+    const helperLabel1 = document.getElementById('syntax-label-1');
+    const helperLabel2 = document.getElementById('syntax-label-2');
+    const helperRow2 = document.getElementById('syntax-row-2');
+    const helperRow3 = document.getElementById('syntax-row-3');
+
+    let idManuallyEdited = false;
+    let renderDebounceTimer = null;
+    let activeHelperMode = null;
+
+    /* ========================================================================
+       UTILITAS SLUG, TANGGAL & NORMALISASI JUDUL (IDENTIK DENGAN VIEW.HTML)
+       ======================================================================== */
+    function getTodayIsoDate() {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, '0');
+      const d = String(now.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+
+    function slugifyTitle(text) {
+      const slug = String(text || '')
+        .toLowerCase()
+        .normalize('NFKD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9_-]+/g, '-')
+        .replace(/-{2,}/g, '-')
+        .replace(/^[-_]+|[-_]+$/g, '');
+      return slug || 'artikel-baru';
+    }
+
+    function sanitizeArticleId(raw) {
+      const cleaned = String(raw || '')
+        .trim()
+        .replace(/[^a-zA-Z0-9_-]+/g, '-')
+        .replace(/-{2,}/g, '-')
+        .replace(/^[-_]+|[-_]+$/g, '');
+      return SAFE_ID_PATTERN.test(cleaned) ? cleaned : 'artikel-baru';
+    }
+
+    function normalizeHeadingForCompare(str) {
+      return String(str || '')
+        .toLowerCase()
+        .replace(/[*_`~]/g, '')
+        .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    function stripDuplicateLeadingH1(rawText, metadataTitle) {
+      if (typeof rawText !== 'string') return '';
+      const cleanText = rawText.replace(/^\uFEFF/, '');
+
+      const leadingH1Match = cleanText.match(/^((?:\s*\r?\n)*)#\s+([^\r\n]+)(?:\r\n|\r|\n)*/);
+      if (!leadingH1Match) return cleanText;
+
+      const h1Text = leadingH1Match[2].trim();
+      const normH1 = normalizeHeadingForCompare(h1Text);
+      const normMeta = normalizeHeadingForCompare(metadataTitle);
+
+      const isDuplicate =
+        normH1.length > 0 &&
+        normMeta.length > 0 &&
+        (normH1 === normMeta ||
+          (normH1.length >= 8 && normMeta.includes(normH1)) ||
+          (normMeta.length >= 8 && normH1.includes(normMeta)));
+
+      if (isDuplicate) {
+        return cleanText.slice(leadingH1Match[0].length);
+      }
+
+      return cleanText;
+    }
+
+    function showFeedback(message, isSuccess = true) {
+      if (!actionFeedbackEl) return;
+      actionFeedbackEl.hidden = false;
+      actionFeedbackEl.style.color = isSuccess ? '#004d00' : '#800000';
+      actionFeedbackEl.style.borderColor = isSuccess ? '#004d00' : '#800000';
+      actionFeedbackEl.style.backgroundColor = isSuccess ? '#eef9ee' : '#fff0f0';
+      actionFeedbackEl.textContent = message;
+    }
+
+    /* ========================================================================
+       PANEL NAVIGASI DAFTAR ISI PRATINJAU (IDENTIK DENGAN VIEW.HTML)
+       ======================================================================== */
+    let closeReaderToolsDrawer = () => {};
+
+    function initReaderToolbar() {
+      const toggleBtn = document.getElementById('tools-toggle-btn');
+      const closeBtn = document.getElementById('tools-close-btn');
+      const panelEl = document.getElementById('reader-tools-panel');
+
+      const setDrawerState = (willOpen) => {
+        if (!panelEl || !toggleBtn || toggleBtn.hidden) return;
+        panelEl.hidden = !willOpen;
+        toggleBtn.setAttribute('aria-expanded', String(willOpen));
+        toggleBtn.classList.toggle('is-active', willOpen);
+        toggleBtn.innerHTML = willOpen ? '[ Daftar Isi &#9652; ]' : '[ Daftar Isi &#9662; ]';
+      };
+
+      closeReaderToolsDrawer = () => setDrawerState(false);
+
+      if (toggleBtn && panelEl) {
+        toggleBtn.addEventListener('click', (event) => {
+          event.stopPropagation();
+          setDrawerState(panelEl.hidden);
+        });
+      }
+
+      if (closeBtn) {
+        closeBtn.addEventListener('click', () => setDrawerState(false));
+      }
+
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && panelEl && !panelEl.hidden) {
+          setDrawerState(false);
+          if (toggleBtn) toggleBtn.focus();
+        }
+      });
+
+      document.addEventListener('click', (event) => {
+        if (
+          panelEl &&
+          !panelEl.hidden &&
+          !panelEl.contains(event.target) &&
+          event.target !== toggleBtn
+        ) {
+          setDrawerState(false);
+        }
+      });
+    }
+
+    function buildPreviewTableOfContents() {
+      const toggleBtn = document.getElementById('tools-toggle-btn');
+      const tocSection = document.getElementById('article-toc-section');
+      const tocList = document.getElementById('article-toc-list');
+
+      if (!previewBodyEl || !tocSection || !tocList) return;
+
+      const headings = previewBodyEl.querySelectorAll('h1, h2, h3');
+      if (headings.length < 2) {
+        if (toggleBtn) toggleBtn.hidden = true;
+        tocSection.hidden = true;
+        return;
+      }
+
+      tocList.innerHTML = '';
+      const fragment = document.createDocumentFragment();
+
+      headings.forEach((heading, index) => {
+        const anchorId = `sec-${index + 1}`;
+        heading.id = anchorId;
+
+        const li = document.createElement('li');
+        const tagLevel = heading.tagName.toLowerCase();
+        if (tagLevel === 'h2') li.className = 'toc-level-2';
+        if (tagLevel === 'h3') li.className = 'toc-level-3';
+
+        const link = document.createElement('a');
+        link.href = `#${anchorId}`;
+        link.textContent = heading.textContent;
+        link.addEventListener('click', () => closeReaderToolsDrawer());
+
+        li.appendChild(link);
+        fragment.appendChild(li);
+      });
+
+      tocList.appendChild(fragment);
+      tocSection.hidden = false;
+      if (toggleBtn) {
+        toggleBtn.hidden = false;
+        toggleBtn.innerHTML = '[ Daftar Isi &#9662; ]';
+      }
+    }
+
+    /* ========================================================================
+       PENYUSUNAN BERKAS .TXT & METADATA JSON
+       ======================================================================== */
+    function getCurrentMetadataObject() {
+      const judul = titleInput.value.trim() || 'Judul Artikel Baru';
+      const id = sanitizeArticleId(idInput.value || slugifyTitle(judul));
+      const tanggal = dateInput.value.trim() || getTodayIsoDate();
+      const tags = tagsInput.value
+        .split(',')
+        .map((t) => t.trim().toLowerCase())
+        .filter(Boolean);
+
+      const entry = {
+        id,
+        judul,
+        tanggal
+      };
+
+      if (tags.length > 0) {
+        entry.tags = Array.from(new Set(tags));
+      }
+      if (featuredCheckbox.checked) {
+        entry.pilihan = true;
+      }
+
+      return entry;
+    }
+
+    function buildFinalTxtContent() {
+      const meta = getCurrentMetadataObject();
+      const rawBody = editorTextarea.value.replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n');
+
+      if (!includeHeaderCheckbox.checked) {
+        return rawBody.trim() ? `${rawBody.trim()}\n` : '';
+      }
+
+      const bodyWithoutDupH1 = stripDuplicateLeadingH1(rawBody, meta.judul).replace(/^\n+/, '');
+      const headerBlock = `# ${meta.judul}\nTanggal: ${meta.tanggal}\n\n`;
+      return `${headerBlock}${bodyWithoutDupH1.trim()}\n`;
+    }
+
+    function updateMetadataAndStats() {
+      const meta = getCurrentMetadataObject();
+      targetFilePreview.textContent = `posts/${meta.id}.txt`;
+      previewDateEl.textContent = meta.tanggal;
+      previewIdEl.textContent = meta.id;
+      previewTitleEl.textContent = meta.judul;
+
+      const textVal = editorTextarea.value.trim();
+      const words = textVal ? textVal.split(/\s+/).length : 0;
+      const lines = editorTextarea.value ? editorTextarea.value.split(/\r?\n/).length : 0;
+      editorWordCount.textContent = `${words.toLocaleString('id-ID')} kata • ${lines.toLocaleString('id-ID')} baris`;
+
+      metadataSnippetEl.textContent = JSON.stringify(meta, null, 2);
+    }
+
+    async function renderLivePreview() {
+      updateMetadataAndStats();
+
+      if (typeof ZineParser === 'undefined') {
+        previewBodyEl.textContent = 'Galat: parser.js gagal dimuat.';
+        return;
+      }
+
+      const meta = getCurrentMetadataObject();
+      const rawBody = editorTextarea.value;
+      const bodyToRender = stripDuplicateLeadingH1(rawBody, meta.judul);
+
+      if (!bodyToRender.trim()) {
+        previewBodyEl.innerHTML = '';
+        const placeholder = document.createElement('p');
+        placeholder.className = 'sidebar-note';
+        placeholder.textContent =
+          'Naskah masih kosong. Mulailah menulis pada panel kiri atau tekan [ Contoh ] untuk melihat seluruh fitur ZineParser.';
+        previewBodyEl.appendChild(placeholder);
+        buildPreviewTableOfContents();
+        return;
+      }
+
+      await ZineParser.render(bodyToRender, previewBodyEl);
+      buildPreviewTableOfContents();
+    }
+
+    function schedulePreviewAndSave() {
+      updateMetadataAndStats();
+      draftSaveStatus.textContent = 'Draf: Menyimpan...';
+
+      clearTimeout(renderDebounceTimer);
+      renderDebounceTimer = setTimeout(() => {
+        saveDraftToLocalStorage();
+        renderLivePreview();
+      }, 180);
+    }
+
+    /* ========================================================================
+       PENYIMPANAN DRAF OTOMATIS (LOCALSTORAGE)
+       ======================================================================== */
+    function saveDraftToLocalStorage() {
+      try {
+        const payload = {
+          judul: titleInput.value,
+          id: idInput.value,
+          idManuallyEdited,
+          tanggal: dateInput.value,
+          tags: tagsInput.value,
+          pilihan: featuredCheckbox.checked,
+          includeHeader: includeHeaderCheckbox.checked,
+          body: editorTextarea.value
+        };
+        localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(payload));
+        draftSaveStatus.textContent = 'Draf: Tersimpan';
+      } catch (_) {
+        draftSaveStatus.textContent = 'Draf: Memori Penuh';
+      }
+    }
+
+    function restoreDraftFromLocalStorage() {
+      try {
+        const raw = localStorage.getItem(DRAFT_STORAGE_KEY);
+        if (!raw) return false;
+        const parsed = JSON.parse(raw);
+        if (!parsed || typeof parsed !== 'object') return false;
+
+        titleInput.value = parsed.judul || '';
+        idInput.value = parsed.id || '';
+        idManuallyEdited = Boolean(parsed.idManuallyEdited);
+        dateInput.value = parsed.tanggal || getTodayIsoDate();
+        tagsInput.value = parsed.tags || '';
+        featuredCheckbox.checked = Boolean(parsed.pilihan);
+        includeHeaderCheckbox.checked =
+          parsed.includeHeader !== undefined ? Boolean(parsed.includeHeader) : true;
+        editorTextarea.value = parsed.body || '';
+        draftSaveStatus.textContent = 'Draf: Dipulihkan';
+        return true;
+      } catch (_) {
+        return false;
+      }
+    }
+
+    /* ========================================================================
+       BILAH ALAT PENYISIP SINTAKS ZINEPARSER
+       ======================================================================== */
+    function insertAtCursor(snippet, selectOffsetStart = 0, selectOffsetEnd = 0) {
+      editorTextarea.focus();
+      const start = editorTextarea.selectionStart;
+      const end = editorTextarea.selectionEnd;
+      const before = editorTextarea.value.slice(0, start);
+      const after = editorTextarea.value.slice(end);
+
+      const needLeadingNewline = before.length > 0 && !before.endsWith('\n') && snippet.startsWith('\n');
+      const finalSnippet = needLeadingNewline ? `\n${snippet}` : snippet;
+
+      editorTextarea.value = `${before}${finalSnippet}${after}`;
+
+      const cursorPos = before.length + finalSnippet.length;
+      if (selectOffsetEnd > selectOffsetStart) {
+        editorTextarea.setSelectionRange(
+          before.length + selectOffsetStart,
+          before.length + selectOffsetEnd
+        );
+      } else {
+        editorTextarea.setSelectionRange(cursorPos, cursorPos);
+      }
+
+      schedulePreviewAndSave();
+    }
+
+    const HELPER_CONFIGS = {
+      link: {
+        title: ':: SISIPKAN TAUTAN SEBARIS ::',
+        desc: 'Hanya protokol https:// atau jalur relatif lokal yang diizinkan oleh ZineParser.',
+        label1: 'Teks Tautan:',
+        placeholder1: 'Contoh: Dokumentasi Protokol',
+        label2: 'URL Tujuan (https://...):',
+        placeholder2: 'https://contoh.org/dokumen',
+        showRow2: true,
+        showRow3: false,
+        build: (v1, v2) => `[${v1 || 'Tautan'}](${v2 || 'https://'})`
+      },
+      img: {
+        title: ':: SISIPKAN GAMBAR ::',
+        desc: 'Gunakan jalur lokal (mis. assets/diagram.png) atau URL https:// dengan keterangan opsional.',
+        label1: 'Jalur Berkas / URL Gambar:',
+        placeholder1: 'assets/ilustrasi.png',
+        label2: 'Keterangan Gambar (Opsional):',
+        placeholder2: 'Gambar 1. Arsitektur jaringan statis',
+        showRow2: true,
+        showRow3: false,
+        build: (v1, v2) =>
+          v2 ? `\n[img:${v1 || 'assets/gambar.png'} | ${v2}]\n` : `\n[img:${v1 || 'assets/gambar.png'}]\n`
+      },
+      video: {
+        title: ':: SISIPKAN VIDEO (CLICK-TO-LOAD 0 KB) ::',
+        desc: 'Format didukung: .mp4, .webm, .ogv, .mov. Video tidak diunduh sebelum tombol ditekan pembaca.',
+        label1: 'Jalur Berkas / URL Video:',
+        placeholder1: 'media/rekaman.mp4',
+        label2: 'Keterangan Video (Opsional):',
+        placeholder2: 'Video demonstrasi antarmuka luring',
+        showRow2: true,
+        showRow3: false,
+        build: (v1, v2) =>
+          v2 ? `\n[video:${v1 || 'media/video.mp4'} | ${v2}]\n` : `\n[video:${v1 || 'media/video.mp4'}]\n`
+      },
+      audio: {
+        title: ':: SISIPKAN AUDIO (CLICK-TO-LOAD 0 KB) ::',
+        desc: 'Format didukung: .mp3, .ogg, .wav, .m4a, .flac, .aac.',
+        label1: 'Jalur Berkas / URL Audio:',
+        placeholder1: 'media/wawancara.mp3',
+        label2: 'Keterangan Audio (Opsional):',
+        placeholder2: 'Rekaman suara arsip (04:12)',
+        showRow2: true,
+        showRow3: false,
+        build: (v1, v2) =>
+          v2 ? `\n[audio:${v1 || 'media/audio.mp3'} | ${v2}]\n` : `\n[audio:${v1 || 'media/audio.mp3'}]\n`
+      },
+      file: {
+        title: ':: SISIPKAN LAMPIRAN UNDUHAN BERKAS ::',
+        desc: 'Format diizinkan: .txt, .zip, .rar, .7z, .pdf, .doc(x), .xls(x), .ppt(x), .csv, .json, .xml, .md, .epub.',
+        label1: 'Jalur Berkas / URL Lampiran:',
+        placeholder1: 'files/paket-arsip.zip',
+        label2: 'Keterangan Lampiran (Opsional):',
+        placeholder2: 'Kode sumber lengkap beserta dokumentasi',
+        showRow2: true,
+        showRow3: false,
+        build: (v1, v2) =>
+          v2 ? `\n[file:${v1 || 'files/lampiran.zip'} | ${v2}]\n` : `\n[file:${v1 || 'files/lampiran.zip'}]\n`
+      },
+      'chart-bar': {
+        title: ':: SISIPKAN GRAFIK BATANG (CANVAS 2D) ::',
+        desc: 'Masukkan pasangan Label:Angka dipisahkan koma (mendukung angka negatif & desimal).',
+        label1: 'Judul Grafik Batang:',
+        placeholder1: 'Pertumbuhan Arsip Artikel per Tahun',
+        label2: '',
+        placeholder2: '',
+        showRow2: false,
+        showRow3: true,
+        build: (v1, _, v3) =>
+          `\n[chart:bar|${v1 || 'Grafik Batang'}|${v3 || '2024:120, 2025:260, 2026:410'}]\n`
+      },
+      'chart-line': {
+        title: ':: SISIPKAN GRAFIK GARIS (CANVAS 2D) ::',
+        desc: 'Masukkan pasangan Label:Angka dipisahkan koma untuk menampilkan tren garis.',
+        label1: 'Judul Grafik Garis:',
+        placeholder1: 'Waktu Muat Halaman Rata-Rata (ms)',
+        label2: '',
+        placeholder2: '',
+        showRow2: false,
+        showRow3: true,
+        build: (v1, _, v3) =>
+          `\n[chart:line|${v1 || 'Grafik Garis'}|${v3 || 'Tahap 1:85, Tahap 2:42, Tahap 3:18'}]\n`
+      }
+    };
+
+    function openSyntaxHelper(mode) {
+      const cfg = HELPER_CONFIGS[mode];
+      if (!cfg) return;
+
+      activeHelperMode = mode;
+      helperTitle.textContent = cfg.title;
+      helperDesc.textContent = cfg.desc;
+      helperLabel1.innerHTML = `<strong>${cfg.label1}</strong>`;
+      helperField1.value = '';
+      helperField1.placeholder = cfg.placeholder1;
+
+      helperRow2.hidden = !cfg.showRow2;
+      if (cfg.showRow2) {
+        helperLabel2.innerHTML = `<strong>${cfg.label2}</strong>`;
+        helperField2.value = '';
+        helperField2.placeholder = cfg.placeholder2;
+      }
+
+      helperRow3.hidden = !cfg.showRow3;
+      if (cfg.showRow3) {
+        helperField3.value = '';
+      }
+
+      helperBox.hidden = false;
+      helperField1.focus();
+    }
+
+    function initToolbarHandlers() {
+      document.querySelectorAll('[data-insert-syntax]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const type = btn.getAttribute('data-insert-syntax');
+          if (type === 'h2') {
+            helperBox.hidden = true;
+            insertAtCursor('\n## Judul Bagian Baru\n', 4, 21);
+          } else if (type === 'h3') {
+            helperBox.hidden = true;
+            insertAtCursor('\n### Sub-Bagian Baru\n', 5, 20);
+          } else if (type === 'bold') {
+            helperBox.hidden = true;
+            insertAtCursor('**teks tebal**', 2, 12);
+          } else if (type === 'italic') {
+            helperBox.hidden = true;
+            insertAtCursor('*teks miring*', 1, 12);
+          } else if (type === 'list') {
+            helperBox.hidden = true;
+            insertAtCursor('\n- Butir pertama\n- Butir kedua\n  - Sub-butir tingkat kedua\n');
+          } else if (type === 'hr') {
+            helperBox.hidden = true;
+            insertAtCursor('\n---\n');
+          } else {
+            openSyntaxHelper(type);
+          }
+        });
+      });
+
+      helperCloseBtn.addEventListener('click', () => {
+        helperBox.hidden = true;
+        activeHelperMode = null;
+      });
+
+      helperApplyBtn.addEventListener('click', () => {
+        if (!activeHelperMode || !HELPER_CONFIGS[activeHelperMode]) return;
+        const cfg = HELPER_CONFIGS[activeHelperMode];
+        const snippet = cfg.build(
+          helperField1.value.trim(),
+          helperField2.value.trim(),
+          helperField3.value.trim()
+        );
+        helperBox.hidden = true;
+        activeHelperMode = null;
+        insertAtCursor(snippet);
+      });
+    }
+
+    /* ========================================================================
+       EKSPOR FILE .TXT & METADATA.JSON TERPADU
+       ======================================================================== */
+    function triggerBlobDownload(content, filename, mimeType) {
+      const blob = new Blob([content], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1500);
+    }
+
+    async function copyToClipboard(text, successMsg) {
+      try {
+        await navigator.clipboard.writeText(text);
+        showFeedback(successMsg, true);
+      } catch (_) {
+        showFeedback('Gagal menyalin otomatis. Silakan salin teks secara manual dari kotak keluaran.', false);
+      }
+    }
+
+    function initExportHandlers() {
+      document.getElementById('btn-download-txt').addEventListener('click', () => {
+        const meta = getCurrentMetadataObject();
+        const txtContent = buildFinalTxtContent();
+        if (!editorTextarea.value.trim()) {
+          showFeedback('Isi naskah masih kosong. Tulis isi artikel terlebih dahulu sebelum mengunduh.', false);
+          return;
+        }
+        triggerBlobDownload(txtContent, `${meta.id}.txt`, 'text/plain;charset=utf-8');
+        showFeedback(
+          `Berkas "${meta.id}.txt" berhasil diunduh. Simpan ke folder posts/${meta.id}.txt lalu perbarui posts/metadata.json.`,
+          true
+        );
+      });
+
+      document.getElementById('btn-copy-txt').addEventListener('click', () => {
+        const txtContent = buildFinalTxtContent();
+        copyToClipboard(txtContent, 'Seluruh isi berkas .txt berhasil disalin ke papan klip.');
+      });
+
+      document.getElementById('btn-copy-json').addEventListener('click', () => {
+        const snippet = metadataSnippetEl.textContent;
+        copyToClipboard(snippet, 'Potongan JSON metadata berhasil disalin ke papan klip.');
+      });
+
+      document.getElementById('btn-download-merged-json').addEventListener('click', async () => {
+        const newEntry = getCurrentMetadataObject();
+        let existingList = [];
+
+        try {
+          const res = await fetch('./posts/metadata.json', { cache: 'no-store' });
+          if (res.ok) {
+            const parsed = await res.json();
+            if (Array.isArray(parsed)) {
+              existingList = parsed.filter(
+                (item) => item && String(item.id).trim() !== newEntry.id
+              );
+            }
+          }
+        } catch (_) {
+          // Jika offline atau posts/metadata.json belum ada, mulai larik baru
+        }
+
+        const merged = [newEntry, ...existingList];
+        merged.sort((a, b) => {
+          const da = a.tanggal || '';
+          const db = b.tanggal || '';
+          return db > da ? 1 : db < da ? -1 : 0;
+        });
+
+        triggerBlobDownload(
+          `${JSON.stringify(merged, null, 2)}\n`,
+          'metadata.json',
+          'application/json;charset=utf-8'
+        );
+        showFeedback(
+          `Berkas "metadata.json" terpadu (${merged.length} entri) berhasil diunduh. Gantikan berkas posts/metadata.json dengan berkas ini.`,
+          true
+        );
+      });
+
+      document.getElementById('btn-load-sample').addEventListener('click', () => {
+        idManuallyEdited = false;
+        titleInput.value = 'Panduan Format Arsip Teks Statis Bichig San';
+        idInput.value = slugifyTitle(titleInput.value);
+        dateInput.value = getTodayIsoDate();
+        tagsInput.value = 'panduan, format, zineparser, arsip';
+        featuredCheckbox.checked = true;
+        includeHeaderCheckbox.checked = true;
+
+        editorTextarea.value = [
+          'Dokumen ini menunjukkan seluruh sintaks resmi yang didukung oleh mesin penerjemah **ZineParser** pada portal *Bichig San*. Seluruh dokumen disimpan dalam berkas teks murni `.txt` agar tetap terbaca lintas generasi perangkat.',
+          '',
+          '## 1. Struktur Tajuk & Daftar Bersarang',
+          'Gunakan tanda pagar (`##` dan `###`) untuk membentuk struktur bab yang otomatis masuk ke menu **[ Daftar Isi ]** di bilah navigasi atas:',
+          '- Tingkat pertama daftar tidak berurutan',
+          '  - Sub-item tingkat kedua dengan indentasi 2 spasi',
+          '    - Sub-item tingkat ketiga (batas maksimal kedalaman)',
+          '- Mendukung **huruf tebal**, *huruf miring*, serta [tautan eksternal aman](https://example.org).',
+          '',
+          '---',
+          '',
+          '## 2. Visualisasi Grafik Data (Canvas 2D)',
+          'Data numerik ringkas dapat dirender langsung menjadi grafik batang maupun garis tanpa pustaka pihak ketiga:',
+          '',
+          '[chart:bar|Perbandingan Ukuran Halaman (KB)|Portal Modern:2450, Blog Standar:680, Bichig San:28]',
+          '',
+          '### Tren Kecepatan Akses Luring',
+          '[chart:line|Waktu Render Artikel (Milidetik)|100 Baris:4, 1.500 Baris:16, 10.000 Baris:68]',
+          '',
+          '## 3. Media Hemat Kuota & Lampiran',
+          'Berkas audio, video, dan arsip lampiran menggunakan pola *Click-to-Load* (0 KB beban awal hingga tombol putar atau unduh ditekan pembaca):',
+          '',
+          '[file:files/spesifikasi-arsip-1996.zip | Paket dokumen spesifikasi format teks murni]'
+        ].join('\n');
+
+        schedulePreviewAndSave();
+        showFeedback('Contoh artikel lengkap berhasil dimuat ke penyusun dan pratinjau.', true);
+      });
+
+      document.getElementById('btn-reset-editor').addEventListener('click', () => {
+        idManuallyEdited = false;
+        titleInput.value = '';
+        idInput.value = '';
+        dateInput.value = getTodayIsoDate();
+        tagsInput.value = '';
+        featuredCheckbox.checked = false;
+        includeHeaderCheckbox.checked = true;
+        editorTextarea.value = '';
+        helperBox.hidden = true;
+        actionFeedbackEl.hidden = true;
+
+        try {
+          localStorage.removeItem(DRAFT_STORAGE_KEY);
+        } catch (_) {}
+
+        draftSaveStatus.textContent = 'Draf: Dikosongkan';
+        renderLivePreview();
+      });
+    }
+
+    /* ========================================================================
+       INISIALISASI HALAMAN
+       ======================================================================== */
+    function initCreatePage() {
+      initReaderToolbar();
+      initToolbarHandlers();
+      initExportHandlers();
+
+      const restored = restoreDraftFromLocalStorage();
+      if (!restored) {
+        dateInput.value = getTodayIsoDate();
+      }
+
+      titleInput.addEventListener('input', () => {
+        if (!idManuallyEdited) {
+          idInput.value = slugifyTitle(titleInput.value);
+        }
+        schedulePreviewAndSave();
+      });
+
+      idInput.addEventListener('input', () => {
+        idManuallyEdited = idInput.value.trim().length > 0;
+        schedulePreviewAndSave();
+      });
+
+      idInput.addEventListener('blur', () => {
+        if (idInput.value.trim()) {
+          idInput.value = sanitizeArticleId(idInput.value);
+          updateMetadataAndStats();
+        }
+      });
+
+      dateInput.addEventListener('change', schedulePreviewAndSave);
+      tagsInput.addEventListener('input', schedulePreviewAndSave);
+      featuredCheckbox.addEventListener('change', schedulePreviewAndSave);
+      includeHeaderCheckbox.addEventListener('change', schedulePreviewAndSave);
+      editorTextarea.addEventListener('input', schedulePreviewAndSave);
+
+      renderLivePreview();
+    }
+
+    initCreatePage();
+  })();
+</script>
+
+</body>
+</html>
