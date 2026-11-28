@@ -8,13 +8,13 @@
   <meta name="theme-color" content="#c0c0c0">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Bichig San">
-  <link rel="manifest" href="manifest.json">
-  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
-  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+  <link rel="apple-touch-icon" href="./icon-192.png">
   <title>Membaca Artikel — Bichig San</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="./style.css">
 </head>
 <body id="top">
 
@@ -31,7 +31,7 @@
   <!-- NAVIGASI ATAS RAMPING (1 BARIS TUNGGAL STICKY) -->
   <nav class="top-nav-bar" aria-label="Navigasi dan Daftar Isi Artikel">
     <div class="top-nav-primary">
-      <a href="index.html" class="nav-bracket-link" title="Kembali ke Indeks Artikel">
+      <a href="./index.html" class="nav-bracket-link" title="Kembali ke Indeks Artikel">
         <span class="label-desktop">[ &lt;&lt; Kembali ke Indeks Artikel ]</span>
         <span class="label-mobile">[ &lt;&lt; Indeks ]</span>
       </a>
@@ -74,7 +74,7 @@
 
       <hr class="thick-rule">
       <nav class="article-bottom-nav" aria-label="Navigasi Bawah Artikel">
-        <a href="index.html" class="nav-bracket-link">[ &lt;&lt; Kembali ke Indeks Artikel ]</a>
+        <a href="./index.html" class="nav-bracket-link">[ &lt;&lt; Kembali ke Indeks Artikel ]</a>
         <a href="#top" class="nav-bracket-link">[ Kembali ke Atas &uarr; ]</a>
       </nav>
     </article>
@@ -86,229 +86,331 @@
   </footer>
 </div>
 
-<script src="parser.js"></script>
+<script src="./parser.js"></script>
 
 <script>
-  const SAFE_ID_PATTERN = /^[a-zA-Z0-9_-]+$/;
-  const STORAGE_PREFIX = 'arsip_read_pos_';
-  const HISTORY_KEY = 'arsip_read_history';
-  const MAX_HISTORY_ITEMS = 30;
+  (function () {
+    'use strict';
 
-  /* ========================================================================
-     HAPUS OTOMATIS BARIS '#' PERTAMA JIKA SAMA/DUPLIKAT
-     ======================================================================== */
-  function normalizeHeadingForCompare(str) {
-    return String(str || '')
-      .toLowerCase()
-      .replace(/[*_`~]/g, '')
-      .replace(/[^\p{L}\p{N}\s]/gu, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
-  }
+    const SAFE_ID_PATTERN = /^[a-zA-Z0-9_-]+$/;
+    const STORAGE_PREFIX = 'arsip_read_pos_';
+    const HISTORY_KEY = 'arsip_read_history';
+    const ACTIVE_META_KEY = 'bichig_active_meta';
+    const MAX_HISTORY_ITEMS = 30;
 
-  function stripDuplicateLeadingH1(rawText, metadataTitle) {
-    if (typeof rawText !== 'string') return '';
-    const cleanText = rawText.replace(/^\uFEFF/, '');
-
-    // Mencocokkan baris kosong awal (jika ada) diikuti satu baris "# Judul..."
-    const leadingH1Match = cleanText.match(/^((?:\s*\r?\n)*)#\s+([^\r\n]+)(?:\r\n|\r|\n)*/);
-    if (!leadingH1Match) return cleanText;
-
-    const h1Text = leadingH1Match[2].trim();
-    const normH1 = normalizeHeadingForCompare(h1Text);
-    const normMeta = normalizeHeadingForCompare(metadataTitle);
-
-    const isDuplicate =
-      normH1.length > 0 &&
-      normMeta.length > 0 &&
-      (normH1 === normMeta ||
-        (normH1.length >= 8 && normMeta.includes(normH1)) ||
-        (normMeta.length >= 8 && normH1.includes(normMeta)));
-
-    if (isDuplicate) {
-      return cleanText.slice(leadingH1Match[0].length);
+    /* ========================================================================
+       RESOLUSI METADATA CEPAT (SESSIONSTORAGE + EKSTRAKSI MANDIRI BERKAS .TXT)
+       ======================================================================== */
+    function readCachedNavMeta(targetId) {
+      try {
+        const raw = sessionStorage.getItem(ACTIVE_META_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (parsed && String(parsed.id).trim() === targetId) {
+          return {
+            judul: String(parsed.judul || '').trim(),
+            tanggal: String(parsed.tanggal || '-').trim()
+          };
+        }
+      } catch (_) {}
+      return null;
     }
 
-    return cleanText;
-  }
-
-  function showSafeError(publicTitle, publicMessage, internalDebugInfo = '') {
-    if (internalDebugInfo) {
-      console.error(`[Portal View Security/Error]: ${internalDebugInfo}`);
+    function normalizeHeadingForCompare(str) {
+      return String(str || '')
+        .toLowerCase()
+        .replace(/[*_`~]/g, '')
+        .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
     }
 
-    const titleEl = document.getElementById('article-title');
-    const metaEl = document.getElementById('article-meta');
-    const bodyEl = document.getElementById('article-body');
+    function stripDuplicateLeadingH1(rawText, metadataTitle) {
+      if (typeof rawText !== 'string') return '';
+      const cleanText = rawText.replace(/^\uFEFF/, '');
 
-    metaEl.textContent = 'STATUS: ARTIKEL TIDAK TERSEDIA';
-    titleEl.textContent = publicTitle;
-    titleEl.style.color = '#800000';
+      const leadingH1Match = cleanText.match(/^((?:\s*\r?\n)*)#\s+([^\r\n]+)(?:\r\n|\r|\n)*/);
+      if (!leadingH1Match) return cleanText;
 
-    bodyEl.innerHTML = '';
-    const errBox = document.createElement('div');
-    errBox.className = 'retro-media-error';
-    errBox.textContent = publicMessage;
-    bodyEl.appendChild(errBox);
-  }
+      const h1Text = leadingH1Match[2].trim();
+      const normH1 = normalizeHeadingForCompare(h1Text);
+      const normMeta = normalizeHeadingForCompare(metadataTitle);
 
-  /* ========================================================================
-     PANEL NAVIGASI DAFTAR ISI (COLLAPSIBLE DRAWER)
-     ======================================================================== */
-  let closeReaderToolsDrawer = () => {};
+      const isDuplicate =
+        normH1.length > 0 &&
+        normMeta.length > 0 &&
+        (normH1 === normMeta ||
+          (normH1.length >= 8 && normMeta.includes(normH1)) ||
+          (normMeta.length >= 8 && normH1.includes(normMeta)));
 
-  function initReaderToolbar() {
-    const toggleBtn = document.getElementById('tools-toggle-btn');
-    const closeBtn = document.getElementById('tools-close-btn');
-    const panelEl = document.getElementById('reader-tools-panel');
+      if (isDuplicate) {
+        return cleanText.slice(leadingH1Match[0].length);
+      }
 
-    const setDrawerState = (willOpen) => {
-      if (!panelEl || !toggleBtn || toggleBtn.hidden) return;
-      panelEl.hidden = !willOpen;
-      toggleBtn.setAttribute('aria-expanded', String(willOpen));
-      toggleBtn.classList.toggle('is-active', willOpen);
-      toggleBtn.innerHTML = willOpen ? '[ Daftar Isi &#9652; ]' : '[ Daftar Isi &#9662; ]';
-    };
+      return cleanText;
+    }
 
-    closeReaderToolsDrawer = () => setDrawerState(false);
+    /**
+     * Mengekstrak judul (# Judul) dan tanggal opsional langsung dari berkas .txt
+     * sehingga view.html tidak pernah perlu mengunduh posts/metadata.json.
+     */
+    function extractMetaFromRawText(rawText, fallbackId, navMeta) {
+      const cleanText = String(rawText || '').replace(/^\uFEFF/, '');
+      const lines = cleanText.split(/\r?\n/);
 
-    if (toggleBtn && panelEl) {
-      toggleBtn.addEventListener('click', (event) => {
-        event.stopPropagation();
-        setDrawerState(panelEl.hidden);
+      let extractedTitle = navMeta && navMeta.judul ? navMeta.judul : '';
+      let extractedDate =
+        navMeta && navMeta.tanggal && navMeta.tanggal !== '-' ? navMeta.tanggal : '';
+      let cutLineIndex = 0;
+
+      for (let i = 0; i < Math.min(lines.length, 6); i++) {
+        const line = lines[i].trim();
+        if (!line) {
+          cutLineIndex = i + 1;
+          continue;
+        }
+
+        const h1Match = line.match(/^#\s+(.+)$/);
+        if (h1Match) {
+          if (!extractedTitle) {
+            extractedTitle = h1Match[1].trim();
+          }
+          cutLineIndex = i + 1;
+          continue;
+        }
+
+        const dateMatch = line.match(/^(?:Tanggal|Date|Dipublikasikan)\s*:\s*(.+)$/i);
+        if (dateMatch) {
+          if (!extractedDate) {
+            extractedDate = dateMatch[1].trim();
+          }
+          cutLineIndex = i + 1;
+          continue;
+        }
+
+        break;
+      }
+
+      if (!extractedTitle) {
+        extractedTitle = fallbackId
+          .replace(/[-_]+/g, ' ')
+          .replace(/\b\w/g, (c) => c.toUpperCase());
+      }
+
+      const bodyWithoutHeader = lines.slice(cutLineIndex).join('\n');
+      const finalBody = stripDuplicateLeadingH1(bodyWithoutHeader, extractedTitle);
+
+      return {
+        judul: extractedTitle,
+        tanggal: extractedDate || '-',
+        bodyText: finalBody
+      };
+    }
+
+    function showSafeError(publicTitle, publicMessage, internalDebugInfo = '') {
+      if (internalDebugInfo) {
+        console.error(`[Portal View Security/Error]: ${internalDebugInfo}`);
+      }
+
+      const titleEl = document.getElementById('article-title');
+      const metaEl = document.getElementById('article-meta');
+      const bodyEl = document.getElementById('article-body');
+
+      metaEl.textContent = 'STATUS: ARTIKEL TIDAK TERSEDIA';
+      titleEl.textContent = publicTitle;
+      titleEl.style.color = '#800000';
+
+      bodyEl.innerHTML = '';
+      const errBox = document.createElement('div');
+      errBox.className = 'retro-media-error';
+      errBox.textContent = publicMessage;
+      bodyEl.appendChild(errBox);
+    }
+
+    /* ========================================================================
+       PANEL NAVIGASI DAFTAR ISI (COLLAPSIBLE DRAWER)
+       ======================================================================== */
+    let closeReaderToolsDrawer = () => {};
+
+    function initReaderToolbar() {
+      const toggleBtn = document.getElementById('tools-toggle-btn');
+      const closeBtn = document.getElementById('tools-close-btn');
+      const panelEl = document.getElementById('reader-tools-panel');
+
+      const setDrawerState = (willOpen) => {
+        if (!panelEl || !toggleBtn || toggleBtn.hidden) return;
+        panelEl.hidden = !willOpen;
+        toggleBtn.setAttribute('aria-expanded', String(willOpen));
+        toggleBtn.classList.toggle('is-active', willOpen);
+        toggleBtn.innerHTML = willOpen ? '[ Daftar Isi &#9652; ]' : '[ Daftar Isi &#9662; ]';
+      };
+
+      closeReaderToolsDrawer = () => setDrawerState(false);
+
+      if (toggleBtn && panelEl) {
+        toggleBtn.addEventListener('click', (event) => {
+          event.stopPropagation();
+          setDrawerState(panelEl.hidden);
+        });
+      }
+
+      if (closeBtn) {
+        closeBtn.addEventListener('click', () => setDrawerState(false));
+      }
+
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && panelEl && !panelEl.hidden) {
+          setDrawerState(false);
+          if (toggleBtn) toggleBtn.focus();
+        }
+      });
+
+      document.addEventListener('click', (event) => {
+        if (
+          panelEl &&
+          !panelEl.hidden &&
+          !panelEl.contains(event.target) &&
+          event.target !== toggleBtn
+        ) {
+          setDrawerState(false);
+        }
       });
     }
 
-    if (closeBtn) {
-      closeBtn.addEventListener('click', () => setDrawerState(false));
+    function buildArticleTableOfContents() {
+      const bodyEl = document.getElementById('article-body');
+      const toggleBtn = document.getElementById('tools-toggle-btn');
+      const tocSection = document.getElementById('article-toc-section');
+      const tocList = document.getElementById('article-toc-list');
+
+      if (!bodyEl || !tocSection || !tocList) return;
+
+      const headings = bodyEl.querySelectorAll('h1, h2, h3');
+      if (headings.length < 2) {
+        if (toggleBtn) toggleBtn.hidden = true;
+        tocSection.hidden = true;
+        return;
+      }
+
+      tocList.innerHTML = '';
+      const fragment = document.createDocumentFragment();
+
+      headings.forEach((heading, index) => {
+        const anchorId = `sec-${index + 1}`;
+        heading.id = anchorId;
+
+        const li = document.createElement('li');
+        const tagLevel = heading.tagName.toLowerCase();
+        if (tagLevel === 'h2') li.className = 'toc-level-2';
+        if (tagLevel === 'h3') li.className = 'toc-level-3';
+
+        const link = document.createElement('a');
+        link.href = `#${anchorId}`;
+        link.textContent = heading.textContent;
+        link.addEventListener('click', () => closeReaderToolsDrawer());
+
+        li.appendChild(link);
+        fragment.appendChild(li);
+      });
+
+      tocList.appendChild(fragment);
+      tocSection.hidden = false;
+      if (toggleBtn) {
+        toggleBtn.hidden = false;
+        toggleBtn.innerHTML = '[ Daftar Isi &#9662; ]';
+      }
     }
 
-    document.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape' && panelEl && !panelEl.hidden) {
-        setDrawerState(false);
-        if (toggleBtn) toggleBtn.focus();
-      }
-    });
+    /* ========================================================================
+       PENGINGAT POSISI BACA & INDIKATOR PERSENTASE PASIF
+       ======================================================================== */
+    function initReadingPositionMemory(articleId) {
+      const storageKey = `${STORAGE_PREFIX}${articleId}`;
+      const progressBadge = document.getElementById('read-progress-indicator');
+      let savedY = null;
+      let isRestoring = false;
+      let userInterrupted = false;
+      let saveTimer = null;
+      let rafPending = false;
+      let lastRestoreBucket = -1;
 
-    document.addEventListener('click', (event) => {
-      if (panelEl && !panelEl.hidden && !panelEl.contains(event.target) && event.target !== toggleBtn) {
-        setDrawerState(false);
-      }
-    });
-  }
-
-  function buildArticleTableOfContents() {
-    const bodyEl = document.getElementById('article-body');
-    const toggleBtn = document.getElementById('tools-toggle-btn');
-    const tocSection = document.getElementById('article-toc-section');
-    const tocList = document.getElementById('article-toc-list');
-
-    if (!bodyEl || !tocSection || !tocList) return;
-
-    const headings = bodyEl.querySelectorAll('h1, h2, h3');
-    if (headings.length < 2) {
-      if (toggleBtn) toggleBtn.hidden = true;
-      tocSection.hidden = true;
-      return;
-    }
-
-    tocList.innerHTML = '';
-    const fragment = document.createDocumentFragment();
-
-    headings.forEach((heading, index) => {
-      const anchorId = `sec-${index + 1}`;
-      heading.id = anchorId;
-
-      const li = document.createElement('li');
-      const tagLevel = heading.tagName.toLowerCase();
-      if (tagLevel === 'h2') li.className = 'toc-level-2';
-      if (tagLevel === 'h3') li.className = 'toc-level-3';
-
-      const link = document.createElement('a');
-      link.href = `#${anchorId}`;
-      link.textContent = heading.textContent;
-      link.addEventListener('click', () => closeReaderToolsDrawer());
-
-      li.appendChild(link);
-      fragment.appendChild(li);
-    });
-
-    tocList.appendChild(fragment);
-    tocSection.hidden = false;
-    if (toggleBtn) {
-      toggleBtn.hidden = false;
-      toggleBtn.innerHTML = '[ Daftar Isi &#9662; ]';
-    }
-  }
-
-  /* ========================================================================
-     PENGINGAT POSISI BACA & INDIKATOR PERSENTASE PASIF
-     ======================================================================== */
-  function initReadingPositionMemory(articleId) {
-    const storageKey = `${STORAGE_PREFIX}${articleId}`;
-    const progressBadge = document.getElementById('read-progress-indicator');
-    let savedY = null;
-    let isRestoring = false;
-    let userInterrupted = false;
-    let saveTimer = null;
-    let rafPending = false;
-    let lastRestoreBucket = -1;
-
-    try {
-      const rawSaved = localStorage.getItem(storageKey);
-      if (rawSaved) {
-        const parsedY = parseInt(rawSaved, 10);
-        if (Number.isFinite(parsedY) && parsedY > 120) {
-          savedY = parsedY;
-          isRestoring = true;
-        }
-      }
-    } catch {}
-
-    const updateHistoryIndex = (key, shouldRemove) => {
       try {
-        let history = [];
-        try {
-          const parsed = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
-          if (Array.isArray(parsed)) history = parsed;
-        } catch {
-          history = [];
-        }
-
-        history = history.filter((item) => item !== key);
-
-        if (!shouldRemove) {
-          history.push(key);
-          while (history.length > MAX_HISTORY_ITEMS) {
-            const oldestKey = history.shift();
-            if (oldestKey) localStorage.removeItem(oldestKey);
+        const rawSaved = localStorage.getItem(storageKey);
+        if (rawSaved) {
+          const parsedY = parseInt(rawSaved, 10);
+          if (Number.isFinite(parsedY) && parsedY > 120) {
+            savedY = parsedY;
+            isRestoring = true;
           }
         }
+      } catch (_) {}
 
-        if (history.length === 0) {
-          localStorage.removeItem(HISTORY_KEY);
-        } else {
-          localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
-        }
-      } catch {}
-    };
-
-    const updateScrollMetrics = () => {
-      rafPending = false;
-      const currentY = Math.round(window.scrollY || window.pageYOffset || 0);
-      const maxScrollable = document.documentElement.scrollHeight - window.innerHeight;
-
-      if (progressBadge && maxScrollable > 240) {
-        const pct = Math.min(100, Math.max(0, Math.round((currentY / maxScrollable) * 100)));
-        progressBadge.hidden = false;
-        progressBadge.textContent = `Posisi: ${pct}%`;
-      }
-
-      if (isRestoring) return;
-
-      clearTimeout(saveTimer);
-      saveTimer = setTimeout(() => {
+      const updateHistoryIndex = (key, shouldRemove) => {
         try {
+          let history = [];
+          try {
+            const parsed = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+            if (Array.isArray(parsed)) history = parsed;
+          } catch (_) {
+            history = [];
+          }
+
+          history = history.filter((item) => item !== key);
+
+          if (!shouldRemove) {
+            history.push(key);
+            while (history.length > MAX_HISTORY_ITEMS) {
+              const oldestKey = history.shift();
+              if (oldestKey) localStorage.removeItem(oldestKey);
+            }
+          }
+
+          if (history.length === 0) {
+            localStorage.removeItem(HISTORY_KEY);
+          } else {
+            localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+          }
+        } catch (_) {}
+      };
+
+      const updateScrollMetrics = () => {
+        rafPending = false;
+        const currentY = Math.round(window.scrollY || window.pageYOffset || 0);
+        const maxScrollable = document.documentElement.scrollHeight - window.innerHeight;
+
+        if (progressBadge && maxScrollable > 240) {
+          const pct = Math.min(100, Math.max(0, Math.round((currentY / maxScrollable) * 100)));
+          progressBadge.hidden = false;
+          progressBadge.textContent = `Posisi: ${pct}%`;
+        }
+
+        if (isRestoring) return;
+
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(() => {
+          try {
+            if (currentY <= 120 || (maxScrollable > 200 && currentY >= maxScrollable - 60)) {
+              localStorage.removeItem(storageKey);
+              updateHistoryIndex(storageKey, true);
+            } else {
+              localStorage.setItem(storageKey, String(currentY));
+              updateHistoryIndex(storageKey, false);
+            }
+          } catch (_) {}
+        }, 250);
+      };
+
+      const onScrollPassive = () => {
+        if (rafPending) return;
+        rafPending = true;
+        requestAnimationFrame(updateScrollMetrics);
+      };
+
+      const saveImmediately = () => {
+        if (isRestoring) return;
+        try {
+          const currentY = Math.round(window.scrollY || window.pageYOffset || 0);
+          const maxScrollable = document.documentElement.scrollHeight - window.innerHeight;
           if (currentY <= 120 || (maxScrollable > 200 && currentY >= maxScrollable - 60)) {
             localStorage.removeItem(storageKey);
             updateHistoryIndex(storageKey, true);
@@ -316,248 +418,228 @@
             localStorage.setItem(storageKey, String(currentY));
             updateHistoryIndex(storageKey, false);
           }
-        } catch {}
-      }, 250);
-    };
-
-    const onScrollPassive = () => {
-      if (rafPending) return;
-      rafPending = true;
-      requestAnimationFrame(updateScrollMetrics);
-    };
-
-    const saveImmediately = () => {
-      if (isRestoring) return;
-      try {
-        const currentY = Math.round(window.scrollY || window.pageYOffset || 0);
-        const maxScrollable = document.documentElement.scrollHeight - window.innerHeight;
-        if (currentY <= 120 || (maxScrollable > 200 && currentY >= maxScrollable - 60)) {
-          localStorage.removeItem(storageKey);
-          updateHistoryIndex(storageKey, true);
-        } else {
-          localStorage.setItem(storageKey, String(currentY));
-          updateHistoryIndex(storageKey, false);
-        }
-      } catch {}
-    };
-
-    const cancelRestoreOnUserInput = () => {
-      if (isRestoring) {
-        userInterrupted = true;
-        isRestoring = false;
-      }
-    };
-
-    window.addEventListener('wheel', cancelRestoreOnUserInput, { passive: true });
-    window.addEventListener('touchstart', cancelRestoreOnUserInput, { passive: true });
-    window.addEventListener('keydown', (e) => {
-      if (['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', ' '].includes(e.key)) {
-        cancelRestoreOnUserInput();
-      }
-    });
-
-    window.addEventListener('scroll', onScrollPassive, { passive: true });
-    window.addEventListener('beforeunload', saveImmediately);
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'hidden') {
-        saveImmediately();
-      }
-    });
-
-    const tryRestore = (isFinished = false, percent = 0) => {
-      if (isFinished) {
-        requestAnimationFrame(updateScrollMetrics);
-      }
-
-      if (!isRestoring || userInterrupted || savedY === null) return;
-
-      const bucket = Math.floor(percent / 15);
-      if (!isFinished && bucket === lastRestoreBucket) return;
-      lastRestoreBucket = bucket;
-
-      requestAnimationFrame(() => {
-        if (!isRestoring || userInterrupted || savedY === null) return;
-        const maxScrollable = document.documentElement.scrollHeight - window.innerHeight;
-        if (maxScrollable >= savedY || isFinished) {
-          const targetY = Math.min(savedY, Math.max(0, maxScrollable));
-          window.scrollTo({ top: targetY, behavior: 'auto' });
-          isRestoring = false;
-          updateScrollMetrics();
-        }
-      });
-    };
-
-    return { tryRestore };
-  }
-
-  let swRegistrationScheduled = false;
-
-  function scheduleServiceWorkerRegistration() {
-    if (swRegistrationScheduled) return;
-    swRegistrationScheduled = true;
-
-    if (!('serviceWorker' in navigator) || !window.isSecureContext) return;
-
-    const registerSw = async () => {
-      try {
-        const registration = await navigator.serviceWorker.register('./sw.js', {
-          updateViaCache: 'none'
-        });
-        await registration.update();
-      } catch (err) {
-        console.warn('[SW Registration]:', err);
-      }
-    };
-
-    if ('requestIdleCallback' in window) {
-      window.requestIdleCallback(() => registerSw(), { timeout: 2500 });
-    } else {
-      setTimeout(registerSw, 1200);
-    }
-  }
-
-  async function loadArticlePage() {
-    initReaderToolbar();
-
-    const urlParams = new URLSearchParams(window.location.search);
-    const rawId = urlParams.get('id');
-
-    if (!rawId || !SAFE_ID_PATTERN.test(rawId)) {
-      showSafeError(
-        'Tautan Artikel Tidak Valid',
-        'Tautan artikel yang Anda buka tidak lengkap atau tidak valid. Silakan pilih artikel melalui halaman Indeks.',
-        `Invalid ID attempt blocked: ${rawId}`
-      );
-      scheduleServiceWorkerRegistration();
-      return;
-    }
-
-    const titleEl = document.getElementById('article-title');
-    const metaEl = document.getElementById('article-meta');
-    const bodyEl = document.getElementById('article-body');
-
-    try {
-      const metaResponse = await fetch('metadata.json', { cache: 'no-cache' });
-      if (!metaResponse.ok) {
-        throw new Error(`HTTP ${metaResponse.status}: Gagal membaca katalog artikel.`);
-      }
-
-      const metaType = (metaResponse.headers.get('content-type') || '').toLowerCase();
-      if (metaType.includes('text/html')) {
-        throw new Error('Respons katalog artikel tidak valid.');
-      }
-
-      const posts = await metaResponse.json();
-      const post = Array.isArray(posts)
-        ? posts.find((item) => item && String(item.id).trim() === rawId)
-        : null;
-
-      if (!post) {
-        showSafeError(
-          'Artikel Tidak Ditemukan',
-          'Artikel yang Anda cari tidak tersedia di dalam indeks atau telah dipindahkan.',
-          `ID "${rawId}" tidak terdaftar di metadata.json`
-        );
-        return;
-      }
-
-      const judul = String(post.judul || post.title || '(Artikel Tanpa Judul)').trim();
-      const tanggal = String(post.tanggal || post.date || '-').trim();
-      const artikelId = String(post.id).trim();
-
-      document.title = `${judul} — Bichig San`;
-      titleEl.textContent = judul;
-
-      metaEl.innerHTML = '';
-
-      const dateSpan = document.createElement('span');
-      const dateBold = document.createElement('b');
-      dateBold.textContent = 'DIPUBLIKASIKAN: ';
-      dateSpan.appendChild(dateBold);
-      dateSpan.appendChild(document.createTextNode(tanggal));
-
-      const idSpan = document.createElement('span');
-      const idBold = document.createElement('b');
-      idBold.textContent = 'ID: ';
-      idSpan.appendChild(idBold);
-      idSpan.appendChild(document.createTextNode(artikelId));
-
-      const progressSpan = document.createElement('span');
-      progressSpan.id = 'render-progress';
-      progressSpan.textContent = 'MEMUAT ISI: 0%';
-
-      metaEl.appendChild(dateSpan);
-      metaEl.appendChild(idSpan);
-      metaEl.appendChild(progressSpan);
-
-      const safeFilePath = `posts/${encodeURIComponent(artikelId)}.txt`;
-      const contentResponse = await fetch(safeFilePath, { cache: 'no-cache' });
-
-      if (!contentResponse.ok) {
-        showSafeError(
-          'Isi Artikel Belum Tersedia',
-          'Berkas isi artikel ini belum tersedia secara luring maupun di peladen.',
-          `Missing content file for ID: ${artikelId}`
-        );
-        return;
-      }
-
-      const contentType = (contentResponse.headers.get('content-type') || '').toLowerCase();
-      if (contentType.includes('text/html')) {
-        showSafeError(
-          'Isi Artikel Belum Tersedia',
-          'Berkas artikel tidak ditemukan di peladen atau belum diterbitkan.',
-          `Soft-404 HTML response blocked for ID: ${artikelId}`
-        );
-        return;
-      }
-
-      const rawText = await contentResponse.text();
-
-      if (typeof ZineParser === 'undefined') {
-        throw new Error('Komponen pembaca artikel gagal dimuat.');
-      }
-
-      // Hapus baris '#' pertama jika sama/duplikat dengan judul dari metadata.json
-      const processedText = stripDuplicateLeadingH1(rawText, judul);
-
-      const scrollMemory = initReadingPositionMemory(artikelId);
-      let isFinalized = false;
-
-      const finalizeArticleRender = () => {
-        if (isFinalized) return;
-        isFinalized = true;
-        if (progressSpan.isConnected) {
-          progressSpan.remove();
-        }
-        buildArticleTableOfContents();
-        scrollMemory.tryRestore(true, 100);
+        } catch (_) {}
       };
 
-      await ZineParser.render(processedText, bodyEl, (percent) => {
-        if (percent < 100) {
-          progressSpan.textContent = `MEMUAT ISI: ${percent}%`;
-          scrollMemory.tryRestore(false, percent);
-        } else {
-          finalizeArticleRender();
+      const cancelRestoreOnUserInput = () => {
+        if (isRestoring) {
+          userInterrupted = true;
+          isRestoring = false;
+        }
+      };
+
+      window.addEventListener('wheel', cancelRestoreOnUserInput, { passive: true });
+      window.addEventListener('touchstart', cancelRestoreOnUserInput, { passive: true });
+      window.addEventListener('keydown', (e) => {
+        if (['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', ' '].includes(e.key)) {
+          cancelRestoreOnUserInput();
         }
       });
 
-      // Pengaman jika Promise render() selesai tanpa memicu callback 100%
-      finalizeArticleRender();
+      window.addEventListener('scroll', onScrollPassive, { passive: true });
+      window.addEventListener('beforeunload', saveImmediately);
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') {
+          saveImmediately();
+        }
+      });
 
-    } catch (error) {
-      showSafeError(
-        'Gangguan Pemuatan Artikel',
-        'Terjadi kendala saat membuka artikel ini. Periksa koneksi internet Anda jika artikel belum tersimpan luring, lalu muat ulang halaman.',
-        error.message
-      );
-    } finally {
-      scheduleServiceWorkerRegistration();
+      const tryRestore = (isFinished = false, percent = 0) => {
+        if (isFinished) {
+          requestAnimationFrame(updateScrollMetrics);
+        }
+
+        if (!isRestoring || userInterrupted || savedY === null) return;
+
+        const bucket = Math.floor(percent / 15);
+        if (!isFinished && bucket === lastRestoreBucket) return;
+        lastRestoreBucket = bucket;
+
+        requestAnimationFrame(() => {
+          if (!isRestoring || userInterrupted || savedY === null) return;
+          const maxScrollable = document.documentElement.scrollHeight - window.innerHeight;
+          if (maxScrollable >= savedY || isFinished) {
+            const targetY = Math.min(savedY, Math.max(0, maxScrollable));
+            window.scrollTo({ top: targetY, behavior: 'auto' });
+            isRestoring = false;
+            updateScrollMetrics();
+          }
+        });
+      };
+
+      return { tryRestore };
     }
-  }
 
-  loadArticlePage();
+    let swRegistrationScheduled = false;
+
+    function scheduleServiceWorkerRegistration() {
+      if (swRegistrationScheduled) return;
+      swRegistrationScheduled = true;
+
+      if (!('serviceWorker' in navigator) || !window.isSecureContext) return;
+
+      let isReloadingForSw = false;
+      navigator.serviceWorker.addEventListener('message', (event) => {
+        if (event.data && event.data.type === 'SW_UPDATED' && !isReloadingForSw) {
+          isReloadingForSw = true;
+          window.location.reload();
+        }
+      });
+
+      const registerSw = async () => {
+        try {
+          const registration = await navigator.serviceWorker.register('./sw.js', {
+            updateViaCache: 'none'
+          });
+          await registration.update();
+          document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+              registration.update().catch(() => {});
+            }
+          });
+        } catch (err) {
+          console.warn('[SW Registration]:', err);
+        }
+      };
+
+      if ('requestIdleCallback' in window) {
+        window.requestIdleCallback(() => registerSw(), { timeout: 2500 });
+      } else {
+        setTimeout(registerSw, 1200);
+      }
+    }
+
+    async function loadArticlePage() {
+      initReaderToolbar();
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const rawId = urlParams.get('id');
+
+      if (!rawId || !SAFE_ID_PATTERN.test(rawId)) {
+        showSafeError(
+          'Tautan Artikel Tidak Valid',
+          'Tautan artikel yang Anda buka tidak lengkap atau tidak valid. Silakan pilih artikel melalui halaman Indeks.',
+          `Invalid ID attempt blocked: ${rawId}`
+        );
+        scheduleServiceWorkerRegistration();
+        return;
+      }
+
+      const artikelId = rawId.trim();
+      const titleEl = document.getElementById('article-title');
+      const metaEl = document.getElementById('article-meta');
+      const bodyEl = document.getElementById('article-body');
+
+      // Tampilkan judul langsung dari sessionStorage (0 ms) bila dibuka dari index.html
+      const navMeta = readCachedNavMeta(artikelId);
+      if (navMeta && navMeta.judul) {
+        document.title = `${navMeta.judul} — Bichig San`;
+        titleEl.textContent = navMeta.judul;
+      }
+
+      try {
+        const safeFilePath = `./posts/${encodeURIComponent(artikelId)}.txt`;
+        const contentResponse = await fetch(safeFilePath, { cache: 'no-store' });
+
+        if (!contentResponse.ok) {
+          showSafeError(
+            'Artikel Tidak Ditemukan',
+            'Berkas artikel yang Anda cari tidak tersedia secara luring maupun di peladen.',
+            `Missing content file for ID: ${artikelId} (HTTP ${contentResponse.status})`
+          );
+          return;
+        }
+
+        const contentType = (contentResponse.headers.get('content-type') || '').toLowerCase();
+        if (contentType.includes('text/html')) {
+          showSafeError(
+            'Artikel Tidak Ditemukan',
+            'Berkas artikel tidak ditemukan di peladen atau belum diterbitkan.',
+            `Soft-404 HTML response blocked for ID: ${artikelId}`
+          );
+          return;
+        }
+
+        const rawText = await contentResponse.text();
+
+        if (typeof ZineParser === 'undefined') {
+          throw new Error('Komponen pembaca artikel gagal dimuat.');
+        }
+
+        const extracted = extractMetaFromRawText(rawText, artikelId, navMeta);
+
+        let finalTanggal = extracted.tanggal;
+        if (finalTanggal === '-') {
+          const lastMod = contentResponse.headers.get('last-modified');
+          if (lastMod) {
+            const parsedDate = new Date(lastMod);
+            if (!Number.isNaN(parsedDate.getTime())) {
+              finalTanggal = parsedDate.toISOString().slice(0, 10);
+            }
+          }
+        }
+
+        document.title = `${extracted.judul} — Bichig San`;
+        titleEl.textContent = extracted.judul;
+
+        metaEl.innerHTML = '';
+
+        const dateSpan = document.createElement('span');
+        const dateBold = document.createElement('b');
+        dateBold.textContent = 'DIPUBLIKASIKAN: ';
+        dateSpan.appendChild(dateBold);
+        dateSpan.appendChild(document.createTextNode(finalTanggal));
+
+        const idSpan = document.createElement('span');
+        const idBold = document.createElement('b');
+        idBold.textContent = 'ID: ';
+        idSpan.appendChild(idBold);
+        idSpan.appendChild(document.createTextNode(artikelId));
+
+        const progressSpan = document.createElement('span');
+        progressSpan.id = 'render-progress';
+        progressSpan.textContent = 'MEMUAT ISI: 0%';
+
+        metaEl.appendChild(dateSpan);
+        metaEl.appendChild(idSpan);
+        metaEl.appendChild(progressSpan);
+
+        const scrollMemory = initReadingPositionMemory(artikelId);
+        let isFinalized = false;
+
+        const finalizeArticleRender = () => {
+          if (isFinalized) return;
+          isFinalized = true;
+          if (progressSpan.isConnected) {
+            progressSpan.remove();
+          }
+          buildArticleTableOfContents();
+          scrollMemory.tryRestore(true, 100);
+        };
+
+        await ZineParser.render(extracted.bodyText, bodyEl, (percent) => {
+          if (percent < 100) {
+            progressSpan.textContent = `MEMUAT ISI: ${percent}%`;
+            scrollMemory.tryRestore(false, percent);
+          } else {
+            finalizeArticleRender();
+          }
+        });
+
+        finalizeArticleRender();
+      } catch (error) {
+        showSafeError(
+          'Gangguan Pemuatan Artikel',
+          'Terjadi kendala saat membuka artikel ini. Periksa koneksi internet Anda jika artikel belum tersimpan luring, lalu muat ulang halaman.',
+          error.message
+        );
+      } finally {
+        scheduleServiceWorkerRegistration();
+      }
+    }
+
+    loadArticlePage();
+  })();
 </script>
 
 </body>

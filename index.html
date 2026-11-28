@@ -3,7 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="referrer" content="no-referrer">
   <meta name="theme-color" content="#c0c0c0">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Bichig San">
   <meta name="description" content="Bichig San adalah portal penyimpanan arsip artikel statis yang ringan, bebas pelacak, dan dapat dibaca kapan saja secara daring maupun luring.">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' https: data:; media-src 'self' https:; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'self';">
   <title>Bichig San — Portal Arsip Artikel Daring dan Luring</title>
@@ -135,7 +140,9 @@
       const ITEMS_PER_PAGE = 25;
       const INDEX_CHUNK_SIZE = 40000;
       const VOCAB_CHUNK_SIZE = 15000;
+      const MAX_SUBWORD_SCAN = 25000;
       const STORAGE_READ_POS_PREFIX = 'arsip_read_pos_';
+      const ACTIVE_META_KEY = 'bichig_active_meta';
       const NEW_ARTICLE_DAYS = 14;
 
       let allArticles = [];
@@ -146,6 +153,8 @@
       let activeSearchToken = 0;
       let deferredInstallPrompt = null;
       let resumeSet = null;
+      let indexProgressPercent = 0;
+      let isCatalogLoaded = false;
 
       // Elemen DOM
       const postListEl = document.getElementById('post-list');
@@ -375,8 +384,8 @@
             }
           }
 
-          // 3. Perluasan subkata & imbuhan (mis. "dta" -> "data" -> "mendata", "pendataan")
-          if (qWord.length >= 3) {
+          // 3. Perluasan subkata & imbuhan (dibatasi agar tetap instan pada kamus raksasa)
+          if (qWord.length >= 3 && this.vocabList.length <= MAX_SUBWORD_SCAN) {
             const coreRoots = new Set([qWord]);
             for (const [term, w] of matchedTerms.entries()) {
               if (w >= 0.7 && term.length >= 3) coreRoots.add(term);
@@ -475,12 +484,31 @@
       const searchEngine = new HyperArchiveSearchEngine();
 
       // =========================================================================
-      // 2. SERVICE WORKER & INSTALASI PWA
+      // 2. SERVICE WORKER (ANTI-CACHE BASI) & INSTALASI PWA
       // =========================================================================
       function setupServiceWorker() {
-        if (!('serviceWorker' in navigator)) return;
+        if (!('serviceWorker' in navigator) || !window.isSecureContext) return;
+
+        let isReloadingForSw = false;
+        navigator.serviceWorker.addEventListener('message', (event) => {
+          if (event.data && event.data.type === 'SW_UPDATED' && !isReloadingForSw) {
+            isReloadingForSw = true;
+            window.location.reload();
+          }
+        });
+
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js').catch(() => {});
+          navigator.serviceWorker
+            .register('./sw.js', { updateViaCache: 'none' })
+            .then((reg) => {
+              reg.update().catch(() => {});
+              document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible') {
+                  reg.update().catch(() => {});
+                }
+              });
+            })
+            .catch(() => {});
         });
       }
 
@@ -512,8 +540,58 @@
       }
 
       // =========================================================================
-      // 3. UTILITAS RINGAN & CACHE RIWAYAT BACA
+      // 3. PENERUSAN METADATA RINGKAS KE VIEW.HTML (0 KB / 0 MS FETCH KATALOG)
       // =========================================================================
+      function setupFastArticleMetaHandoff() {
+        const saveMetaFromLink = (target) => {
+          if (!(target instanceof Element)) return;
+          const link = target.closest('a[href^="view.html?id="]');
+          if (!link) return;
+
+          try {
+            const url = new URL(link.href, window.location.href);
+            const id = url.searchParams.get('id');
+            if (!id) return;
+
+            const row = link.closest('.post-item-row') || link.closest('li');
+            const dateEl = row ? row.querySelector('.date-tag, .sidebar-item-date') : null;
+            const rawDate = dateEl ? dateEl.textContent.trim().replace(/^\[|\]$/g, '') : '-';
+
+            sessionStorage.setItem(
+              ACTIVE_META_KEY,
+              JSON.stringify({
+                id: id.trim(),
+                judul: link.textContent.trim(),
+                tanggal: rawDate || '-'
+              })
+            );
+          } catch (_) {
+            // Abaikan jika sessionStorage dibatasi mode privat
+          }
+        };
+
+        document.addEventListener('click', (e) => saveMetaFromLink(e.target));
+        document.addEventListener('auxclick', (e) => saveMetaFromLink(e.target));
+      }
+
+      // =========================================================================
+      // 4. UTILITAS RINGAN, STATUS KONEKSI & CACHE RIWAYAT BACA
+      // =========================================================================
+      function updateArchiveStatsText() {
+        if (!isCatalogLoaded || !archiveStatsEl) return;
+
+        const baseStatsText =
+          `Total Arsip: ${allArticles.length.toLocaleString('id-ID')} artikel • ` +
+          `Mode: ${navigator.onLine ? 'Daring (Tersinkron)' : 'Luring (Tembolok Lokal)'}`;
+
+        if (indexProgressPercent < 100) {
+          archiveStatsEl.textContent = `${baseStatsText} • Indeks: ${indexProgressPercent}%`;
+        } else {
+          archiveStatsEl.textContent =
+            `${baseStatsText} • Kamus: ${searchEngine.vocabList.length.toLocaleString('id-ID')} kata`;
+        }
+      }
+
       function isRecentArticle(dateStr, nowMs) {
         if (!dateStr) return false;
         const parsed = Date.parse(dateStr);
@@ -522,8 +600,8 @@
         return diffDays >= 0 && diffDays <= NEW_ARTICLE_DAYS;
       }
 
-      function loadResumeSetOnce() {
-        if (resumeSet !== null) return resumeSet;
+      function loadResumeSet(forceRefresh = false) {
+        if (resumeSet !== null && !forceRefresh) return resumeSet;
         resumeSet = new Set();
         try {
           for (let i = 0; i < localStorage.length; i++) {
@@ -562,7 +640,7 @@
       }
 
       // =========================================================================
-      // 4. EKSEKUSI PENCARIAN CERDAS (SUBMIT-ONLY + ANTI-RACE CONDITION)
+      // 5. EKSEKUSI PENCARIAN CERDAS (SUBMIT-ONLY + ANTI-RACE CONDITION)
       // =========================================================================
       async function executeSearch(rawQuery) {
         const token = ++activeSearchToken;
@@ -597,7 +675,7 @@
       }
 
       // =========================================================================
-      // 5. RENDER DAFTAR ARTIKEL & PAGINASI (DOM API MURNI — HANYA 25 ITEM)
+      // 6. RENDER DAFTAR ARTIKEL & PAGINASI (DOM API MURNI — HANYA 25 ITEM)
       // =========================================================================
       function renderFeaturedSidebar() {
         featuredListEl.textContent = '';
@@ -688,12 +766,13 @@
         const startIdx = (currentPage - 1) * ITEMS_PER_PAGE;
         const endIdx = Math.min(startIdx + ITEMS_PER_PAGE, totalFiltered);
         const nowMs = Date.now();
-        const savedResumeIds = loadResumeSetOnce();
+        const savedResumeIds = loadResumeSet(false);
         const frag = document.createDocumentFragment();
 
         for (let pos = startIdx; pos < endIdx; pos++) {
           const realIdx = matchedIndices === null ? pos : matchedIndices[pos];
           const item = allArticles[realIdx];
+          const safeId = String(item.id || '').trim();
 
           const li = document.createElement('li');
           const row = document.createElement('div');
@@ -707,8 +786,8 @@
           titleWrap.className = 'post-title-wrap';
 
           const link = document.createElement('a');
-          link.href = `view.html?id=${encodeURIComponent(item.id)}`;
-          link.textContent = item.judul || item.id;
+          link.href = `view.html?id=${encodeURIComponent(safeId)}`;
+          link.textContent = item.judul || safeId;
           titleWrap.appendChild(link);
 
           if (isRecentArticle(item.tanggal, nowMs)) {
@@ -718,7 +797,7 @@
             titleWrap.appendChild(newBadge);
           }
 
-          if (savedResumeIds.has(item.id)) {
+          if (savedResumeIds.has(safeId)) {
             const resumeBadge = document.createElement('span');
             resumeBadge.className = 'resume-badge';
             resumeBadge.textContent = '[LANJUTKAN]';
@@ -746,26 +825,28 @@
       }
 
       // =========================================================================
-      // 6. MUAT KATALOG METADATA & INISIALISASI INSTAN
+      // 7. MUAT KATALOG METADATA & INISIALISASI INSTAN
       // =========================================================================
       async function initArchiveIndex() {
         try {
-          const response = await fetch('./metadata.json', { cache: 'no-store' });
+          const response = await fetch('./posts/metadata.json', { cache: 'no-store' });
           if (!response.ok) {
             throw new Error(`HTTP ${response.status}`);
           }
 
+          const contentType = (response.headers.get('content-type') || '').toLowerCase();
+          if (contentType.includes('text/html')) {
+            throw new Error('Berkas posts/metadata.json tidak ditemukan di peladen.');
+          }
+
           const rawData = await response.json();
           if (!Array.isArray(rawData)) {
-            throw new Error('Format metadata.json harus berupa larik JSON.');
+            throw new Error('Format posts/metadata.json harus berupa larik JSON.');
           }
 
           allArticles = sortArticlesByDateFast(rawData);
-
-          const baseStatsText =
-            `Total Arsip: ${allArticles.length.toLocaleString('id-ID')} artikel • ` +
-            `Mode: ${navigator.onLine ? 'Daring (Tersinkron)' : 'Luring (Tembolok Lokal)'}`;
-          archiveStatsEl.textContent = baseStatsText;
+          isCatalogLoaded = true;
+          updateArchiveStatsText();
 
           // Tampilkan halaman pertama & sidebar segera (< 5ms)
           renderFeaturedSidebar();
@@ -774,20 +855,16 @@
           // Bangun Inverted Index & SymSpell di latar belakang tanpa memblokir antarmuka
           setTimeout(() => {
             searchEngine.buildIndexAsync(allArticles, (pct) => {
-              if (pct < 100) {
-                archiveStatsEl.textContent = `${baseStatsText} • Indeks: ${pct}%`;
-              } else {
-                archiveStatsEl.textContent =
-                  `${baseStatsText} • Kamus: ${searchEngine.vocabList.length.toLocaleString('id-ID')} kata`;
-              }
+              indexProgressPercent = pct;
+              updateArchiveStatsText();
             });
           }, 16);
         } catch (err) {
-          listStatusEl.textContent = 'Gagal memuat katalog metadata.json.';
+          listStatusEl.textContent = 'Gagal memuat katalog posts/metadata.json.';
           archiveStatsEl.textContent = 'Status: Katalog tidak tersedia.';
           postListEl.textContent = '';
           const errLi = document.createElement('li');
-          errLi.textContent = `Terjadi kendala saat memuat indeks artikel (${err.message}). Periksa koneksi atau berkas metadata.json.`;
+          errLi.textContent = `Terjadi kendala saat memuat indeks artikel (${err.message}). Periksa koneksi atau berkas posts/metadata.json.`;
           postListEl.appendChild(errLi);
         }
       }
@@ -831,8 +908,19 @@
         });
       }
 
+      window.addEventListener('online', updateArchiveStatsText);
+      window.addEventListener('offline', updateArchiveStatsText);
+      window.addEventListener('pageshow', (event) => {
+        if (event.persisted && isCatalogLoaded) {
+          loadResumeSet(true);
+          renderCurrentPage();
+          updateArchiveStatsText();
+        }
+      });
+
       setupServiceWorker();
       setupAppInstallation();
+      setupFastArticleMetaHandoff();
       initArchiveIndex();
     })();
   </script>

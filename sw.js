@@ -3,7 +3,7 @@
    DESKRIPSI: Service Worker Bichig San (Instalasi, Luring & Pembaruan Otomatis)
    - Normalisasi kunci cache berbasis scope agar bebas duplikasi kunci
    - Network-First (cache: 'no-store' + HTTP cache-bust header) untuk HTML,
-     metadata.json, berkas artikel (.txt), CSS, dan parser.js
+     posts/metadata.json, berkas artikel (.txt), CSS, dan parser.js
    - Timeout jaringan cepat (3.5 detik) agar jaringan lambat otomatis beralih
      ke tembolok luring tanpa menggantung antarmuka
    - Cache-First hanya untuk aset biner statis (ikon & font)
@@ -11,7 +11,7 @@
    - Pengecualian cache untuk stream audio/video & Range Request (206)
    ========================================================================== */
 
-const CACHE_VERSION = 'bichig-san-v4';
+const CACHE_VERSION = 'bichig-san-v5';
 const MAX_CACHED_ARTICLES = 50;
 const NETWORK_TIMEOUT_MS = 3500;
 
@@ -22,6 +22,7 @@ const SHELL_ASSETS = [
   './style.css',
   './parser.js',
   './manifest.json',
+  './posts/metadata.json',
   './icon-192.png',
   './icon-512.png',
   './font/Inconsolata.ttf'
@@ -71,7 +72,7 @@ async function safePutCache(cache, canonicalPath, response, isArticleFile = fals
   try {
     if (!response || response.status !== 200 || response.type === 'opaque') return;
 
-    // Hapus entri lama terlebih dahulu agar pembaruan benar-benar menimpa data lama
+    // Hapus entri lama terlebih dahulu agar entri baru menempati posisi paling akhir (LRU)
     await cache.delete(canonicalPath, { ignoreSearch: true });
 
     if (isArticleFile) {
@@ -104,6 +105,11 @@ self.addEventListener('install', (event) => {
           try {
             const res = await fetchFreshWithTimeout(new Request(canonicalPath), 6000);
             if (res && res.status === 200) {
+              const contentType = (res.headers.get('content-type') || '').toLowerCase();
+              const isMetadataAsset = canonicalPath.endsWith('/posts/metadata.json');
+              if (isMetadataAsset && contentType.includes('text/html')) {
+                return;
+              }
               await safePutCache(cache, canonicalPath, res, false);
             }
           } catch {
@@ -145,7 +151,7 @@ async function networkFirstWithCacheUpdate(request, url, fallbackPaths = []) {
   const cache = await caches.open(CACHE_VERSION);
   const isHtmlRequest = request.mode === 'navigate' || url.pathname.endsWith('.html');
   const isArticleFile = url.pathname.includes('/posts/') && url.pathname.endsWith('.txt');
-  const isMetadataFile = url.pathname.endsWith('/metadata.json');
+  const isMetadataFile = url.pathname.endsWith('/posts/metadata.json');
 
   const normalizedPaths = fallbackPaths.map(toCanonicalPathname);
   const canonicalKey =
@@ -227,7 +233,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Seluruh dokumen teks & kode aplikasi (HTML, metadata.json, artikel .txt, CSS, JS):
+  // Seluruh dokumen teks & kode aplikasi (HTML, posts/metadata.json, artikel .txt, CSS, JS):
   // Wajib Network-First agar perubahan langsung tampil tanpa perlu hapus cache manual
   const fallbacks = url.pathname.endsWith('view.html')
     ? ['./view.html']
