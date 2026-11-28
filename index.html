@@ -16,6 +16,22 @@
   <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
   <link rel="apple-touch-icon" href="./icon-192.png">
   <link rel="stylesheet" href="./style.css">
+  <style>
+    /* Bilah Dropdown Khusus Tampilan Mobile (Desktop Tidak Terpengaruh) */
+    .mobile-sidebar-nav {
+      display: none;
+    }
+
+    @media (max-width: 800px) {
+      .mobile-sidebar-nav {
+        display: flex;
+      }
+
+      .portal-sidebar.is-mobile-collapsed {
+        display: none;
+      }
+    }
+  </style>
 </head>
 <body id="top">
 
@@ -38,10 +54,25 @@
       </div>
     </div>
 
+    <!-- Bilah Menu Dropdown Khusus Mobile (Serupa Daftar Isi di view.html) -->
+    <nav class="top-nav-bar mobile-sidebar-nav" aria-label="Menu Pencarian dan Pilihan Mobile">
+      <div class="top-nav-primary">
+        <span class="nav-progress-badge" id="mobile-nav-badge">:: MENU PORTAL ::</span>
+      </div>
+      <div class="top-nav-tools">
+        <button
+          type="button"
+          id="mobile-sidebar-toggle"
+          class="nav-bracket-btn"
+          aria-expanded="false"
+          aria-controls="portal-sidebar-drawer">[ Pencarian &amp; Pilihan &#9662; ]</button>
+      </div>
+    </nav>
+
     <!-- Tata Letak 2 Kolom Klasik -->
     <div class="portal-workspace">
       <!-- Sidebar Kiri: Pencarian, Pilihan Redaksi & PWA -->
-      <aside class="portal-sidebar" aria-label="Navigasi dan Pencarian Arsip">
+      <aside id="portal-sidebar-drawer" class="portal-sidebar is-mobile-collapsed" aria-label="Navigasi dan Pencarian Arsip">
         <span class="sidebar-section-title">[ PENCARIAN INDEKS ]</span>
         <form id="search-form" class="classic-search-form" role="search">
           <label for="search-input" class="sidebar-note">
@@ -54,7 +85,6 @@
             placeholder="Contoh: protokol 1996..."
             autocomplete="off"
             spellcheck="false"
-            enterkeyhint="search"
             aria-label="Kata kunci pencarian artikel">
           <div class="classic-btn-group">
             <button type="submit" id="search-submit-btn" class="classic-btn">[ Cari ]</button>
@@ -170,7 +200,47 @@
       const searchInputEl = document.getElementById('search-input');
       const searchSubmitBtn = document.getElementById('search-submit-btn');
       const resetSearchBtn = document.getElementById('reset-search-btn');
-      const articleListSectionEl = document.getElementById('daftar-artikel');
+      const sidebarDrawerEl = document.getElementById('portal-sidebar-drawer');
+      const mobileSidebarToggleBtn = document.getElementById('mobile-sidebar-toggle');
+      const mobileNavBadgeEl = document.getElementById('mobile-nav-badge');
+
+      // =========================================================================
+      // 0. MENU DROPDOWN MOBILE UNTUK PENCARIAN & ARTIKEL PILIHAN
+      // =========================================================================
+      let setMobileDrawerOpen = () => {};
+
+      function initMobileSidebarDropdown() {
+        if (!sidebarDrawerEl || !mobileSidebarToggleBtn) return;
+
+        setMobileDrawerOpen = (willOpen) => {
+          sidebarDrawerEl.classList.toggle('is-mobile-collapsed', !willOpen);
+          mobileSidebarToggleBtn.setAttribute('aria-expanded', String(willOpen));
+          mobileSidebarToggleBtn.classList.toggle('is-active', willOpen);
+          mobileSidebarToggleBtn.innerHTML = willOpen
+            ? '[ Tutup Menu &#9652; ]'
+            : '[ Pencarian &amp; Pilihan &#9662; ]';
+        };
+
+        mobileSidebarToggleBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const isCurrentlyClosed = sidebarDrawerEl.classList.contains('is-mobile-collapsed');
+          setMobileDrawerOpen(isCurrentlyClosed);
+          if (isCurrentlyClosed && searchInputEl) {
+            searchInputEl.focus();
+          }
+        });
+
+        document.addEventListener('keydown', (e) => {
+          if (
+            e.key === 'Escape' &&
+            window.innerWidth <= 800 &&
+            !sidebarDrawerEl.classList.contains('is-mobile-collapsed')
+          ) {
+            setMobileDrawerOpen(false);
+            mobileSidebarToggleBtn.focus();
+          }
+        });
+      }
 
       // =========================================================================
       // 1. MESIN PENCARI HIBRIDA: INVERTED INDEX + SYMSPELL + BM25 RANKING
@@ -625,27 +695,25 @@
         });
       }
 
-      function scrollToArticleResults() {
-        if (!articleListSectionEl) return;
-        requestAnimationFrame(() => {
-          articleListSectionEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        });
-      }
-
       // =========================================================================
       // 5. EKSEKUSI PENCARIAN CERDAS (SUBMIT-ONLY + ANTI-RACE CONDITION)
       // =========================================================================
-      async function executeSearch(rawQuery, shouldFocusResults = false) {
+      async function executeSearch(rawQuery) {
         const token = ++activeSearchToken;
         const cleanQuery = (rawQuery || '').trim();
         activeSearchQuery = cleanQuery;
+
+        if (mobileNavBadgeEl) {
+          mobileNavBadgeEl.textContent = cleanQuery
+            ? `Filter: "${cleanQuery}"`
+            : ':: MENU PORTAL ::';
+        }
 
         if (!cleanQuery) {
           matchedIndices = null;
           activeSearchMeta = null;
           currentPage = 1;
           renderCurrentPage(0);
-          if (shouldFocusResults) scrollToArticleResults();
           return;
         }
 
@@ -665,10 +733,6 @@
         activeSearchMeta = searchOutcome;
         currentPage = 1;
         renderCurrentPage(elapsedMs);
-
-        if (shouldFocusResults) {
-          scrollToArticleResults();
-        }
       }
 
       // =========================================================================
@@ -867,19 +931,22 @@
       if (searchFormEl && searchInputEl) {
         searchFormEl.addEventListener('submit', (e) => {
           e.preventDefault();
-          searchInputEl.blur(); // Menutup keyboard virtual pada ponsel/tablet
-          if (document.activeElement instanceof HTMLElement) {
-            document.activeElement.blur();
+          executeSearch(searchInputEl.value);
+          if (window.innerWidth <= 800) {
+            setMobileDrawerOpen(false);
           }
-          executeSearch(searchInputEl.value, true);
         });
       }
 
       if (resetSearchBtn && searchInputEl) {
         resetSearchBtn.addEventListener('click', () => {
           searchInputEl.value = '';
-          searchInputEl.blur();
-          executeSearch('', false);
+          executeSearch('');
+          if (window.innerWidth <= 800) {
+            setMobileDrawerOpen(false);
+          } else {
+            searchInputEl.focus();
+          }
         });
       }
 
@@ -888,7 +955,7 @@
           if (currentPage > 1) {
             currentPage--;
             renderCurrentPage();
-            scrollToArticleResults();
+            document.getElementById('daftar-artikel').scrollIntoView({ behavior: 'smooth' });
           }
         });
       }
@@ -902,7 +969,7 @@
           if (currentPage < totalPages) {
             currentPage++;
             renderCurrentPage();
-            scrollToArticleResults();
+            document.getElementById('daftar-artikel').scrollIntoView({ behavior: 'smooth' });
           }
         });
       }
@@ -917,6 +984,7 @@
         }
       });
 
+      initMobileSidebarDropdown();
       setupServiceWorker();
       setupAppInstallation();
       setupFastArticleMetaHandoff();
