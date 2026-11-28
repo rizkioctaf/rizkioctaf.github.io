@@ -5,15 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' https: data:; media-src 'self' https:; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'self';">
   <meta name="referrer" content="no-referrer">
-  <meta name="theme-color" content="#000080">
+  <meta name="theme-color" content="#c0c0c0">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Arsip Digital">
+  <meta name="apple-mobile-web-app-title" content="Bichig San">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
   <link rel="apple-touch-icon" href="icon-192.png">
-  <title>Membaca Artikel — Arsip Digital</title>
+  <title>Membaca Artikel — Bichig San</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body id="top">
@@ -21,22 +21,21 @@
 <div class="portal-shell">
   <!-- HEADER BANNER -->
   <header class="portal-header">
-    <pre class="ascii-logo" aria-hidden="true">
- _  _  ___  __  __ __   __ _  _    ___  ___  ___  
-| \| |/ _ \|  \/  |\ \ / /| \| |  / _ \| _ \|   \ 
-| .` | (_) | |\/| | \ V / | .` | | (_) |   /| |) |
-|_|\_|\___/|_|  |_|  |_|  |_|\_|  \___/|_|_\|___/ </pre>
-    <div class="portal-subtitle">ARSIP DIGITAL &bull; CATATAN TEKNOLOGI, REKAYASA WEB &amp; DOKUMENTASI TEKNIS</div>
+    <pre class="ascii-logo" aria-hidden="true"> ___ ___ ___ _  _ ___ ___   ___   _   _  _ 
+| _ )_ _/ __| || |_ _/ __| / __| /_\ | \| |
+| _ \| | (__| __ || | (_ | \__ \/ _ \| .` |
+|___/___\___|_||_|___\___| |___/_/ \_\_|\_|</pre>
+    <div class="portal-subtitle">:: PORTAL ARSIP ARTIKEL STATIS &bull; RINGAN &bull; BEBAS PELACAK &bull; DARING DAN LURING ::</div>
   </header>
 
   <!-- NAVIGASI ATAS RAMPING (1 BARIS TUNGGAL STICKY) -->
   <nav class="top-nav-bar" aria-label="Navigasi dan Daftar Isi Artikel">
     <div class="top-nav-primary">
-      <a href="index.html" class="nav-bracket-link" title="Kembali ke Indeks Dokumen">
-        <span class="label-desktop">[ &lt;&lt; Kembali ke Indeks Dokumen ]</span>
+      <a href="index.html" class="nav-bracket-link" title="Kembali ke Indeks Artikel">
+        <span class="label-desktop">[ &lt;&lt; Kembali ke Indeks Artikel ]</span>
         <span class="label-mobile">[ &lt;&lt; Indeks ]</span>
       </a>
-      <span id="read-progress-indicator" class="nav-progress-badge" aria-live="off" hidden>Pos: 0%</span>
+      <span id="read-progress-indicator" class="nav-progress-badge" aria-live="off" hidden>Posisi: 0%</span>
     </div>
 
     <div class="top-nav-tools">
@@ -48,7 +47,7 @@
   <div id="reader-tools-panel" class="reader-tools-panel" hidden>
     <div class="reader-tools-header">
       <span>:: NAVIGASI DAFTAR ISI ::</span>
-      <button type="button" id="tools-close-btn" class="nav-bracket-btn">[ Tutup x ]</button>
+      <button type="button" id="tools-close-btn" class="nav-bracket-btn">[ Tutup &times; ]</button>
     </div>
 
     <!-- BAGIAN DAFTAR ISI OTOMATIS DI DALAM PANEL -->
@@ -75,7 +74,7 @@
 
       <hr class="thick-rule">
       <nav class="article-bottom-nav" aria-label="Navigasi Bawah Artikel">
-        <a href="index.html" class="nav-bracket-link">[ &lt;&lt; Kembali ke Indeks Dokumen ]</a>
+        <a href="index.html" class="nav-bracket-link">[ &lt;&lt; Kembali ke Indeks Artikel ]</a>
         <a href="#top" class="nav-bracket-link">[ Kembali ke Atas &uarr; ]</a>
       </nav>
     </article>
@@ -83,7 +82,7 @@
 
   <!-- FOOTER -->
   <footer class="portal-footer">
-    Akhir Halaman &bull; Arsip Digital &bull; Diterbitkan dalam Format Halaman Teks Ringkas.
+    BICHIG SAN &bull; PORTAL ARSIP ARTIKEL STATIS &bull; DISAJIKAN DALAM FORMAT TEKS RINGKAS UNTUK AKSES DARING DAN LURING
   </footer>
 </div>
 
@@ -302,7 +301,7 @@
       if (progressBadge && maxScrollable > 240) {
         const pct = Math.min(100, Math.max(0, Math.round((currentY / maxScrollable) * 100)));
         progressBadge.hidden = false;
-        progressBadge.textContent = `Pos: ${pct}%`;
+        progressBadge.textContent = `Posisi: ${pct}%`;
       }
 
       if (isRestoring) return;
@@ -425,8 +424,8 @@
 
     if (!rawId || !SAFE_ID_PATTERN.test(rawId)) {
       showSafeError(
-        'Alamat Artikel Tidak Valid',
-        'Tautan artikel yang Anda buka tidak lengkap atau tidak valid. Silakan pilih artikel melalui halaman Beranda.',
+        'Tautan Artikel Tidak Valid',
+        'Tautan artikel yang Anda buka tidak lengkap atau tidak valid. Silakan pilih artikel melalui halaman Indeks.',
         `Invalid ID attempt blocked: ${rawId}`
       );
       scheduleServiceWorkerRegistration();
@@ -440,12 +439,12 @@
     try {
       const metaResponse = await fetch('metadata.json', { cache: 'no-cache' });
       if (!metaResponse.ok) {
-        throw new Error(`HTTP ${metaResponse.status}: Gagal membaca daftar artikel.`);
+        throw new Error(`HTTP ${metaResponse.status}: Gagal membaca katalog artikel.`);
       }
 
       const metaType = (metaResponse.headers.get('content-type') || '').toLowerCase();
       if (metaType.includes('text/html')) {
-        throw new Error('Respons daftar artikel tidak valid.');
+        throw new Error('Respons katalog artikel tidak valid.');
       }
 
       const posts = await metaResponse.json();
@@ -456,7 +455,7 @@
       if (!post) {
         showSafeError(
           'Artikel Tidak Ditemukan',
-          'Artikel yang Anda cari tidak tersedia atau telah dipindahkan.',
+          'Artikel yang Anda cari tidak tersedia di dalam indeks atau telah dipindahkan.',
           `ID "${rawId}" tidak terdaftar di metadata.json`
         );
         return;
@@ -466,7 +465,7 @@
       const tanggal = String(post.tanggal || post.date || '-').trim();
       const artikelId = String(post.id).trim();
 
-      document.title = `${judul} — Arsip Digital`;
+      document.title = `${judul} — Bichig San`;
       titleEl.textContent = judul;
 
       metaEl.innerHTML = '';
@@ -497,7 +496,7 @@
       if (!contentResponse.ok) {
         showSafeError(
           'Isi Artikel Belum Tersedia',
-          'Artikel ini sedang dalam proses penyuntingan dan belum dapat dibaca.',
+          'Berkas isi artikel ini belum tersedia secara luring maupun di peladen.',
           `Missing content file for ID: ${artikelId}`
         );
         return;
@@ -507,7 +506,7 @@
       if (contentType.includes('text/html')) {
         showSafeError(
           'Isi Artikel Belum Tersedia',
-          'Berkas artikel tidak ditemukan di server atau belum diterbitkan.',
+          'Berkas artikel tidak ditemukan di peladen atau belum diterbitkan.',
           `Soft-404 HTML response blocked for ID: ${artikelId}`
         );
         return;
@@ -550,7 +549,7 @@
     } catch (error) {
       showSafeError(
         'Gangguan Pemuatan Artikel',
-        'Terjadi kendala saat membuka artikel ini. Silakan muat ulang halaman atau kembali ke Beranda.',
+        'Terjadi kendala saat membuka artikel ini. Periksa koneksi internet Anda jika artikel belum tersimpan luring, lalu muat ulang halaman.',
         error.message
       );
     } finally {

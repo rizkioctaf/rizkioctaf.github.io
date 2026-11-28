@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#000080">
-  <meta name="description" content="Arsip digital statis ringan berisi catatan teknologi, rekayasa web, dan dokumentasi teknis.">
+  <meta name="theme-color" content="#c0c0c0">
+  <meta name="description" content="Bichig San adalah portal penyimpanan arsip artikel statis yang ringan, bebas pelacak, dan dapat dibaca kapan saja secara daring maupun luring.">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' https: data:; media-src 'self' https:; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'self';">
-  <title>Arsip Digital — Catatan Teknologi &amp; Dokumentasi Teknis</title>
+  <title>Bichig San — Portal Arsip Artikel Daring dan Luring</title>
   <link rel="manifest" href="./manifest.json">
   <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
   <link rel="apple-touch-icon" href="./icon-192.png">
@@ -17,20 +17,19 @@
   <div class="portal-shell">
     <!-- Header Banner Klasik 1996 -->
     <header class="portal-header">
-      <pre class="ascii-logo" aria-label="NOMYN ORD">
- _  _  ___  __  __ __   __ _  _    ___  ___  ___  
-| \| |/ _ \|  \/  |\ \ / /| \| |  / _ \| _ \|   \ 
-| .` | (_) | |\/| | \ V / | .` | | (_) |   /| |) |
-|_|\_|\___/|_|  |_|  |_|  |_|\_|  \___/|_|_\|___/ </pre>
+      <pre class="ascii-logo" aria-label="BICHIG SAN"> ___ ___ ___ _  _ ___ ___   ___   _   _  _ 
+| _ )_ _/ __| || |_ _/ __| / __| /_\ | \| |
+| _ \| | (__| __ || | (_ | \__ \/ _ \| .` |
+|___/___\___|_||_|___\___| |___/_/ \_\_|\_|</pre>
       <div class="portal-subtitle">
-        :: PORTAL DOKUMENTASI TEKS STATIS &bull; RINGAN &bull; BEBAS PELACAK &bull; SIAP LURING ::
+        :: PORTAL ARSIP ARTIKEL STATIS &bull; RINGAN &bull; BEBAS PELACAK &bull; DARING DAN LURING ::
       </div>
     </header>
 
     <!-- Ticker Pengumuman Klasik -->
-    <div class="ticker-box" role="region" aria-label="Pengumuman Arsip">
+    <div class="ticker-box" role="region" aria-label="Pengumuman Portal">
       <div class="ticker-track" id="ticker-text">
-        *** SELAMAT DATANG DI ARSIP DIGITAL &mdash; DOKUMENTASI TEKNIS BERFORMAT TEKS MURNI (.TXT) &bull; MENDUKUNG MODE BACA LURING (PWA) &bull; PENCARIAN CERDAS TOLERAN TYPO &amp; PERINGKAT BM25 ***
+        *** SELAMAT DATANG DI BICHIG SAN &mdash; RUANG PENYIMPANAN ARSIP ARTIKEL BERFORMAT TEKS MURNI (.TXT) &bull; DAPAT DIBACA KAPAN SAJA SECARA DARING MAUPUN LURING (PWA) &bull; DILENGKAPI PENCARIAN CERDAS TOLERAN SALAH TIK &amp; PERINGKAT BM25 ***
       </div>
     </div>
 
@@ -41,7 +40,7 @@
         <span class="sidebar-section-title">[ PENCARIAN INDEKS ]</span>
         <form id="search-form" class="classic-search-form" role="search">
           <label for="search-input" class="sidebar-note">
-            Masukkan kata kunci judul, tanggal, atau tag, lalu tekan <strong>[ Cari ]</strong>:
+            Masukkan kata kunci judul, tanggal, atau label, lalu tekan <strong>[ Cari ]</strong>:
           </label>
           <input
             type="search"
@@ -53,15 +52,15 @@
             aria-label="Kata kunci pencarian artikel">
           <div class="classic-btn-group">
             <button type="submit" id="search-submit-btn" class="classic-btn">[ Cari ]</button>
-            <button type="button" id="reset-search-btn" class="classic-btn">[ Reset ]</button>
+            <button type="button" id="reset-search-btn" class="classic-btn">[ Atur Ulang ]</button>
           </div>
         </form>
 
         <hr>
 
-        <span class="sidebar-section-title">[ DOKUMEN PILIHAN ]</span>
+        <span class="sidebar-section-title">[ ARTIKEL PILIHAN ]</span>
         <ul id="featured-list" class="sidebar-featured-list">
-          <li><span class="sidebar-note">Memuat daftar pilihan...</span></li>
+          <li><span class="sidebar-note">Memuat daftar artikel pilihan...</span></li>
         </ul>
 
         <hr>
@@ -75,7 +74,7 @@
           <hr>
           <span class="sidebar-section-title">[ APLIKASI LURING ]</span>
           <span class="sidebar-note">
-            Pasang arsip ini ke layar utama agar dapat dibaca tanpa koneksi internet.
+            Pasang portal ini ke layar utama agar seluruh artikel tersimpan dapat dibaca tanpa koneksi internet.
           </span>
           <button type="button" id="pwa-install-btn" class="classic-btn sidebar-install-btn">
             [ Pasang Aplikasi ]
@@ -85,9 +84,9 @@
 
       <!-- Konten Utama: Daftar Indeks Artikel & Paginasi -->
       <main class="portal-main" id="daftar-artikel">
-        <h1 class="section-heading">INDEKS DOKUMEN &amp; CATATAN ARSIP</h1>
+        <h1 class="section-heading">INDEKS ARSIP ARTIKEL</h1>
         <p class="section-subtext" id="list-status">
-          Memuat katalog metadata arsip...
+          Memuat katalog metadata artikel...
         </p>
 
         <hr class="thick-rule">
@@ -113,7 +112,7 @@
 
         <div class="article-bottom-nav">
           <span class="list-footnote">
-            Seluruh dokumen disajikan dalam format teks biasa (.txt) untuk kompatibilitas jangka panjang.
+            Seluruh artikel disimpan dalam format teks biasa (.txt) untuk ketahanan dan keterbacaan jangka panjang.
           </span>
           <a href="#top" class="nav-bracket-link">[ Kembali ke Atas &uarr; ]</a>
         </div>
@@ -122,7 +121,7 @@
 
     <!-- Footer Klasik -->
     <footer class="portal-footer">
-      ARSIP DIGITAL &bull; FORMAT TEKS STATIS &bull; DIOPTIMALKAN UNTUK KECEPATAN &amp; AKSESIBILITAS LURING
+      BICHIG SAN &bull; PORTAL ARSIP ARTIKEL STATIS &bull; DIOPTIMALKAN UNTUK KECEPATAN DAN AKSES LURING
     </footer>
   </div>
 
@@ -215,7 +214,7 @@
             const tempPostings = new Map();
             let totalTokens = 0;
 
-            // Fase 1: Tokenisasi & pembangunan posting list per blok tanpa memblokir UI
+            // Fase 1: Tokenisasi & pembangunan posting list per blok tanpa memblokir antarmuka
             for (let start = 0; start < total; start += INDEX_CHUNK_SIZE) {
               const end = Math.min(start + INDEX_CHUNK_SIZE, total);
 
@@ -340,12 +339,12 @@
         }
 
         /**
-         * Memperluas 1 kata kueri menjadi kata eksak, imbuhan, & koreksi typo SymSpell
+         * Memperluas 1 kata kueri menjadi kata persis, imbuhan, & koreksi salah tik SymSpell
          */
         expandQueryTerm(qWord) {
-          const matchedTerms = new Map(); // word -> bobot (1.0 = eksak)
+          const matchedTerms = new Map(); // word -> bobot (1.0 = persis)
 
-          // 1. Kecocokan eksak O(1)
+          // 1. Kecocokan persis O(1)
           if (this.invertedIndex.has(qWord)) {
             matchedTerms.set(qWord, 1.0);
           }
@@ -376,7 +375,7 @@
             }
           }
 
-          // 3. Perluasan sub-kata & imbuhan (mis. "dta" -> "data" -> "mendata", "pendataan")
+          // 3. Perluasan subkata & imbuhan (mis. "dta" -> "data" -> "mendata", "pendataan")
           if (qWord.length >= 3) {
             const coreRoots = new Set([qWord]);
             for (const [term, w] of matchedTerms.entries()) {
@@ -578,7 +577,7 @@
           return;
         }
 
-        // Pastikan pengindeksan latar belakang selesai sebelum query dijalankan
+        // Pastikan pengindeksan latar belakang selesai sebelum kueri dijalankan
         if (!searchEngine.isReady) {
           if (searchSubmitBtn) searchSubmitBtn.disabled = true;
           listStatusEl.textContent = 'Menyelesaikan pengindeksan kamus arsip...';
@@ -619,7 +618,7 @@
 
         if (featured.length === 0) {
           const emptyLi = document.createElement('li');
-          emptyLi.textContent = 'Belum ada dokumen pilihan.';
+          emptyLi.textContent = 'Belum ada artikel pilihan.';
           featuredListEl.appendChild(emptyLi);
           return;
         }
@@ -668,10 +667,10 @@
           }
 
           listStatusEl.textContent =
-            `Ditemukan ${totalFiltered.toLocaleString('id-ID')} dokumen untuk "${activeSearchQuery}"${fuzzyHint}${timeInfo}.`;
+            `Ditemukan ${totalFiltered.toLocaleString('id-ID')} artikel untuk "${activeSearchQuery}"${fuzzyHint}${timeInfo}.`;
         } else {
           listStatusEl.textContent =
-            `Menampilkan ${totalFiltered.toLocaleString('id-ID')} dokumen arsip tersimpan (diurutkan terbaru).`;
+            `Menampilkan ${totalFiltered.toLocaleString('id-ID')} artikel tersimpan (diurutkan terbaru).`;
         }
 
         postListEl.textContent = '';
@@ -679,8 +678,8 @@
         if (totalFiltered === 0) {
           const emptyLi = document.createElement('li');
           emptyLi.textContent = activeSearchQuery
-            ? `Tidak ada dokumen yang cocok dengan kata kunci "${activeSearchQuery}". Tekan [ Reset ] untuk menampilkan semua arsip.`
-            : 'Belum ada dokumen yang dipublikasikan pada arsip ini.';
+            ? `Tidak ada artikel yang cocok dengan kata kunci "${activeSearchQuery}". Tekan [ Atur Ulang ] untuk menampilkan semua arsip.`
+            : 'Belum ada artikel yang tersimpan pada portal ini.';
           postListEl.appendChild(emptyLi);
           paginationBarEl.hidden = true;
           return;
@@ -764,15 +763,15 @@
           allArticles = sortArticlesByDateFast(rawData);
 
           const baseStatsText =
-            `Total Arsip: ${allArticles.length.toLocaleString('id-ID')} dokumen • ` +
-            `Mode: ${navigator.onLine ? 'Daring (Tersinkron)' : 'Luring (Cache Lokal)'}`;
+            `Total Arsip: ${allArticles.length.toLocaleString('id-ID')} artikel • ` +
+            `Mode: ${navigator.onLine ? 'Daring (Tersinkron)' : 'Luring (Tembolok Lokal)'}`;
           archiveStatsEl.textContent = baseStatsText;
 
           // Tampilkan halaman pertama & sidebar segera (< 5ms)
           renderFeaturedSidebar();
           renderCurrentPage();
 
-          // Bangun Inverted Index & SymSpell di latar belakang tanpa memblokir UI
+          // Bangun Inverted Index & SymSpell di latar belakang tanpa memblokir antarmuka
           setTimeout(() => {
             searchEngine.buildIndexAsync(allArticles, (pct) => {
               if (pct < 100) {
@@ -788,7 +787,7 @@
           archiveStatsEl.textContent = 'Status: Katalog tidak tersedia.';
           postListEl.textContent = '';
           const errLi = document.createElement('li');
-          errLi.textContent = `Terjadi kendala saat memuat indeks arsip (${err.message}). Periksa koneksi atau berkas metadata.json.`;
+          errLi.textContent = `Terjadi kendala saat memuat indeks artikel (${err.message}). Periksa koneksi atau berkas metadata.json.`;
           postListEl.appendChild(errLi);
         }
       }

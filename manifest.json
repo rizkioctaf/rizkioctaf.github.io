@@ -1,8 +1,8 @@
 {
   "id": "./index.html",
-  "name": "Arsip Digital — Catatan Teknologi & Dokumentasi Teknis",
-  "short_name": "Arsip Digital",
-  "description": "Arsip digital statis ringan berisi catatan teknologi, rekayasa web, dan dokumentasi teknis.",
+  "name": "Bichig San — Portal Arsip Artikel Daring dan Luring",
+  "short_name": "Bichig San",
+  "description": "Bichig San adalah portal penyimpanan arsip artikel statis yang ringan, bebas pelacak, dan dapat dibaca kapan saja secara daring maupun luring.",
   "lang": "id",
   "dir": "ltr",
   "start_url": "./index.html",
@@ -11,8 +11,8 @@
   "display_override": ["standalone", "minimal-ui"],
   "orientation": "any",
   "background_color": "#c0c0c0",
-  "theme_color": "#000080",
-  "categories": ["education", "books", "news"],
+  "theme_color": "#c0c0c0",
+  "categories": ["article", "education", "news"],
   "icons": [
     {
       "src": "./icon-192.png",
@@ -35,9 +35,9 @@
   ],
   "shortcuts": [
     {
-      "name": "Indeks Dokumen Arsip",
-      "short_name": "Indeks Arsip",
-      "description": "Buka daftar lengkap dokumen dan artikel arsip",
+      "name": "Indeks Arsip Artikel",
+      "short_name": "Indeks Artikel",
+      "description": "Buka daftar lengkap arsip artikel yang tersimpan",
       "url": "./index.html#daftar-artikel",
       "icons": [
         {
